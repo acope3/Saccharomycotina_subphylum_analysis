@@ -1,0 +1,2369 @@
+---
+title: "Exploratory_analyses"
+author: "Alex Cope"
+date: "8/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(AnaCoDa,lib.loc="~/R_dev")
+library(rtracklayer)
+library(cowplot)
+library(ggpubr)
+library(ggpointdensity)
+library(parallel)
+library(ggside)
+
+convertElongationRatesToRelative<- function()
+{
+  
+  deta <- read.table("Post_analysis/all_dEta_rerun_ser.tsv",sep="\t",header=T,stringsAsFactors = F,row.names=1)
+  files <- list.files(path="tRNA/tGCN/",pattern=".tsv",full.names = F,recursive = F)
+  aa <- aminoAcids()
+  ctg.ser <- F
+  for (i in 1:length(files))
+  {
+    f <- files[i]
+    species <- unlist(strsplit(f,".tsv"))[1]
+    cognate <- read.table(file.path("tRNA","Cognate",f),sep="\t",header=T,stringsAsFactors = F,row.names = 1)
+    deta.spec <- deta[,species,drop=F]
+    
+    deta.spec <- deta.spec[which(!is.na(deta.spec)),,drop=F]
+    if (!"CTG" %in% rownames(deta.spec))
+    {
+      ctg.ser <- T
+      cognate["CTG","AA"] <- "J"
+    } else{
+      ctg.ser <- F
+    }
+    deta.trna <- merge(deta.spec,cognate,by=0,all.y = T)
+    deta.trna[is.na(deta.trna)] <- 0
+    deta.trna <- deta.trna[which(!deta.trna$AA %in% c("M","X","W")),]
+    for (a in aa)
+    {
+      if (a == "M" || a == "X" || a == "W") next
+      if(a == "L" && ctg.ser)
+      {
+        codons.w.ref <- c("CTA","CTC","CTT","TTA","TTG")
+        codons.wo.ref <- c("CTA","CTC","CTT","TTA")
+      } else {
+        codons.w.ref <- AAToCodon(a,F)
+        codons.wo.ref <- AAToCodon(a,T)
+      }
+      ref.codon <- codons.w.ref[which(!codons.w.ref %in% codons.wo.ref)] 
+      ref.row <- which(deta.trna$Row.names == ref.codon)
+      codon.rows <- which(deta.trna$Row.names %in% codons.w.ref)
+      deta.trna[codon.rows,"relative.w.tRNA"] <- deta.trna[codon.rows,"w.tRNA"] - deta.trna[ref.row,"w.tRNA"]
+      write.table(deta.trna,file.path("tRNA","Cognate_w_trna",f),col.names=T,row.names=F,quote=F,sep="\t")
+    }
+  }
+}
+
+
+
+combineCUBByCluster <- function(species)
+{
+  clust <- read_tsv(paste0("~/Labella2019_scripts/Clara_k_2/",species),col_types = cols())
+  original_gene_order <- clust$Gene
+ 
+  #cub <- read_tsv(paste0("/data2/cope/codonW/",species,"/",species %>% str_replace(".cds",".out")),trim_ws=T)  %>% 
+  #                                   dplyr::select(title,CAI,Fop)
+  
+  #cub <- cub%>% rename(GeneID=title,CAI_CA=CAI,Fop_CA=Fop)
+  #cub$GeneID <- original_gene_order
+  
+  cai_ribo <- read_csv(paste0("~/Labella2019_scripts/CAI_top_10/",species),col_types = cols())
+  #fop_ribo <- read_csv(paste0("~/Labella2019_scripts/Fop/",species),col_types = cols())
+  
+  cub<- cai_ribo %>% rename(CAI=Mean) 
+  #fop_ribo <- fop_ribo %>% rename(Fop_ribo=Fop,GeneID=GeneId)
+  #cub_ribo <- cai_ribo %>% left_join(fop_ribo,by="GeneID")
+
+  cub <- cub %>% left_join(cub_ribo,by="GeneID")
+  if (! dir.exists(paste0("/data2/cope/codonW/",species)))
+  {
+    dir.create(paste0("/data2/cope/codonW/",species))
+  }
+  write.csv(cub,paste0("/data2/cope/codonW/",species,"/",species %>% str_replace(".cds",".out_all")),quote=F,row.names=F)
+}
+
+gffToDataFrame <- function(gff,gff.id)
+{
+  chr <- as.character(gff$seqid)
+  tid <- gff[,gff.id]
+  df <- data.frame(Chr=chr,Gene=tid,Strand=gff$strand,stringsAsFactors = F)
+  df <- df %>% distinct()
+  return(df)
+}
+
+createChrDf <- function(cluster.file,gc.file,gff.file,gff.id="transcript_id",chr.reg=NULL,chr.to.exclude=NULL)
+{
+  gff <- readGFF(gff.file)
+  gff.cds <- gff[which(gff$type == "CDS"),]
+
+ 
+  clust <- read_tsv(cluster.file,col_types=cols())
+  gc <- read_tsv(gc.file,col_types=cols())
+  
+ 
+  gff.cds$ID <- str_remove(gff.cds[,gff.id],"-[TP]")
+  gff.cds <- gff.cds[which(gff.cds$ID %in% gc$Gene),]
+  clust$Gene <- str_remove(clust$Gene,"(_Allele){0,1}")
+  gc$Gene <- str_remove(gc$Gene,"(_Allele){0,1}")
+ 
+  gc.clust <- gc %>% left_join(clust,by="Gene")
+  max.cluster <- gc.clust  %>% group_by(Cluster) %>% 
+               summarize(Median.GC3 = median(GC3)) %>%
+               filter(!is.na(Cluster)) %>%
+               top_n(1) %>%
+               dplyr::rename(Max.Cluster=Cluster)
+
+  gc.clust <- gc.clust %>% mutate(Max.Cluster = max.cluster$Max.Cluster)
+
+
+  gc.clust <- gc.clust %>% 
+              mutate(Cluster = case_when(Cluster == 1 & Max.Cluster == 1 ~ 2,
+                                         Cluster == 2 & Max.Cluster == 1 ~ 1,
+                                         Cluster == 1 & Max.Cluster == 2 ~ 1,
+                                         Cluster == 2 & Max.Cluster == 2 ~ 2)
+              )
+
+  gene.names <- gc.clust$Gene
+  
+  gc.clust <- gc.clust %>% column_to_rownames("Gene")
+  gc.clust <- gc.clust %>% add_column(Gene = gene.names)
+ 
+  gc.clust <- gc.clust[unique(gff.cds$ID),]
+  gc.clust <- gc.clust[which(!is.na(gc.clust$Gene)),]
+  gff.cds <- gffToDataFrame(gff.cds,gff.id)
+  if(!is.null(chr.reg))
+  {
+    gff.cds$Chr <- str_extract(gff.cds$Chr,pattern = chr.reg)
+    gff.cds <- gff.cds %>% filter(!is.na(Chr))
+  }
+  gc.clust <- gc.clust %>% left_join(gff.cds,by="Gene")
+  if (!is.null(chr.to.exclude))
+  {
+    gc.clust <- gc.clust %>% filter(!Chr %in% chr.to.exclude)
+  }
+  gc.clust <- gc.clust %>% filter(!is.na(Cluster))
+  gc.clust$Cluster_binary <- ifelse(gc.clust$Cluster == 1,0,1)
+  gc.clust <- gc.clust %>% distinct()
+  return(gc.clust)
+}
+
+calculateMovingAverage <- function(gc.clust,window.size=20)
+{
+  gc.clust <- gc.clust %>% group_by(Chr) %>% mutate(Gene.Number=seq(1,length(Chr)),
+                                                                        `GC3%` = data.table::frollmean(GC3,n=window.size,fill=NA,na.rm=T,align="center"),
+                                                                        `Percentage of Genes in\nHigher GC3% Cluster`=data.table::frollmean(Cluster_binary,n=window.size,fill=NA,na.rm=T,align="center")) %>%
+                ungroup()
+gc.clust <- gc.clust %>% mutate(Cluster = case_when(Cluster == 1 ~ "Lower GC3%",
+                                         Cluster == 2 ~ "Higher GC3%",
+                                         is.na(Cluster) ~ "Excluded CDS")
+                    )
+
+  return(gc.clust)
+}
+
+calculateIndependentWindow <- function(gc.clust,window.size=20)
+{
+  roll.avg <- gc.clust %>% group_by(Chr) %>% 
+              summarize(`GC3%` = gtools::running(GC3,by=window.size,fun=mean,na.rm=T),
+                        `Percentage of Genes in\nHigher GC3% Cluster` = gtools::running(Cluster_binary,by=window.size,fun=mean,na.rm=T))
+  return(roll.avg)
+}
+
+
+compareGC3ToClusterFreq <- function(cluster.file,gc.file,gff.file,gff.id="transcript_id",chr.reg=NULL,window.size=20,chr.to.plot=NULL,title="Comparing GC3% and Cluster Frequency Along Chromosomes",chr.to.exclude=NULL,plots.to.create=c("moving","independent"))
+{
+  gc.clust <- createChrDf(cluster.file,gc.file,gff.file,gff.id=gff.id,chr.reg=chr.reg,chr.to.exclude=chr.to.exclude)
+  num.genes.per.chr <- gc.clust %>% group_by(Chr) %>% dplyr::count(Chr)
+  
+  small.chr <- num.genes.per.chr %>% filter(n < (2 * window.size)) %>% dplyr::select(Chr)
+  gc.clust <- gc.clust %>% filter(!Chr %in% unlist(small.chr))
+  
+  gc.clust <- gc.clust %>% filter(!is.na(Chr))
+  
+  gc.var <- list(Mov.Avg=NULL,
+                 Non.overlap=NULL)
+  if ("moving" %in% plots.to.create)
+  {
+    mov.avg <- calculateMovingAverage(gc.clust,window.size=window.size)
+    mov.avg <- mov.avg %>% filter(!is.na(Chr))
+    if(!is.null(chr.to.plot))
+    {
+      mov.avg <- mov.avg %>% filter(Chr==chr.to.plot)
+    }
+    mov.avg.long <- mov.avg %>%
+                      pivot_longer(cols=c(`GC3%`,`Percentage of Genes in\nHigher GC3% Cluster`),
+                                   names_to="Moving.Average",
+                                   values_to="Frequency")
+    
+    color.scheme <- c("#000000","#E41A1C","#377EB8")
+    names(color.scheme) <- c("Excluded CDS","Lower GC3%","Higher GC3%")
+    gc3.lineplot <- ggplot(mov.avg.long) + 
+             geom_line(aes(x=Gene.Number,y=Frequency,linetype=Moving.Average)) +
+             geom_xsidetile(aes(x=Gene.Number,y=0.5,height=0.5,fill=Cluster)) +
+             #geom_line(aes(x=Gene.Number,y=`GC3%`)) +
+             ggside(x.pos="bottom") +
+             theme_cowplot() +
+             ylim(c(0,1)) +
+             scale_fill_manual(values=color.scheme,name="Gene Cluster") +
+             scale_linetype_manual(values=c(`GC3%`=1,`Percentage of Genes in\nHigher GC3% Cluster`=2),name = "Moving Average")+
+             ggtitle(title) +
+             xlab("Gene Number") +
+             ylab("Frequency") +
+             #ylab("GC3%")
+             scale_xsidey_continuous(breaks = NULL, labels = "", expand = expansion(c(0,.1))) +
+             scale_ysidex_continuous(breaks = NULL, labels = "", expand = expansion(c(0,.1)))
+    if (is.null(chr.to.plot))
+    {
+      gc3.lineplot <- gc3.lineplot + facet_wrap(~Chr,scales="free")
+    }
+    gc.var[["Mov.Avg"]] <- gc3.lineplot
+  }
+  if ("independent" %in% plots.to.create) 
+  {
+
+    window.avg <- calculateIndependentWindow(gc.clust,window.size = window.size)
+    non.overlap <- ggplot(window.avg,aes(x=`GC3%`, y=`Percentage of Genes in\nHigher GC3% Cluster`)) +
+                 geom_point() +
+                 theme_cowplot() +
+                 stat_cor(method="spearman",label.sep="\n")
+  
+    gc.var[["Non.overlap"]] <- non.overlap
+  }
+  return(gc.var)
+}
+```
+
+## Pichia membranifaciens
+
+```{r echo = F}
+x.label <- "Empirical Expression"
+y.label <- "Predicted Expression"
+
+
+runs.k.1 <- paste0("/data2/Labella2019/Final_runs/Results_k_1/",exp.data,"/run_2/Parameter_est/gene_expression.txt")
+runs.k.2 <- paste0("/data2/Labella2019/Final_runs/Results_k_2_selectionShared/",exp.data,"/run_2/Parameter_est/gene_expression.txt")
+#cub <- paste0("codonW/",exp.data,"/",exp.data %>% str_replace(".cds",".out_all"))
+cub <- paste0("CAI_top_10/",exp.data)
+
+
+
+mixtures <- paste0("Clara_k_2/",exp.data)
+emp.data <- paste0("Expression_updated/",exp.data)
+titles <- exp.data %>% 
+          str_remove(".max.cds") %>% 
+          str_extract("[a-z]+_[a-z]+") %>%
+          str_split("_") %>% 
+          lapply(function(x){paste(str_to_sentence(x[1]),x[2])})
+
+
+species <- emp.data %>% str_extract("[A-Z0-9a-z]*_{0,1}[a-z]+_[a-z]+_{0,1}[A-Za-z0-9]*\\.max\\.cds")
+
+gc.files <- file.path("GC",species)
+names(gc.files) <- species
+gc.df <- map(gc.files,read_tsv,col_types = cols()) %>% bind_rows(.id="Species")
+gc.df <- gc.df %>% dplyr::rename(GeneID=Gene)
+
+names(mixtures) <- species
+mixtures.df <- map(mixtures,read_tsv,col_types = cols()) %>% bind_rows(.id="Species")
+mixtures.df <- mixtures.df %>% dplyr::rename(GeneID=Gene)
+
+gc.mixture.df <- mixtures.df %>% left_join(gc.df,by=c("Species","GeneID"))
+max.cluster <- gc.mixture.df  %>% group_by(Species,Cluster) %>% 
+               summarize(Mean.GC3 = mean(GC3)) %>% 
+               top_n(1) %>%
+               dplyr::rename(Max.Cluster=Cluster)
+
+gc.mixture.df <- gc.mixture.df %>% left_join(max.cluster,by="Species")
+gc.mixture.df <- gc.mixture.df %>% 
+              mutate(Cluster = case_when(Cluster == 1 & Max.Cluster == 1 ~ 2,
+                                         Cluster == 2 & Max.Cluster == 1 ~ 1,
+                                         Cluster == 1 & Max.Cluster == 2 ~ 1,
+                                         Cluster == 2 & Max.Cluster == 2 ~ 2)
+              )
+
+
+
+
+
+```
+
+
+```{r echo = F}
+pichia.exp <- "Expression_updated/pichia_membranifaciens.max.cds"
+clusters <- "Clara_k_2/pichia_membranifaciens.max.cds"
+
+
+fop <- compareCUBToRnaSeq("codonW/pichia_membranifaciens.max.cds/pichia_membranifaciens.max.out_all",pichia.exp,title = "Pichia membranifaciens\nFop (Ribosomal Protein)",metric = "Fop_ribo",clusters = NULL,x.label = x.label,y.label=y.label)
+fop
+
+cai <- compareCUBToRnaSeq("codonW/pichia_membranifaciens.max.cds/pichia_membranifaciens.max.out_all",pichia.exp,title = "Pichia membranifaciens\nCAI (Ribosomal Protein)",metric = "CAI_ribo",clusters = NULL,x.label = x.label,y.label=y.label)
+cai
+
+k1 <- compareCUBToRnaSeq("/data2/Labella2019/Results_k_1/pichia_membranifaciens.max.cds/restart_5/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=1",metric = "Mean",x.label = x.label,y.label=y.label)
+k1
+
+```
+
+
+```{r echo = F}
+
+k2.all.uniq <- compareCUBToRnaSeq("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_2_1_vs_2_allUnique/restart_4/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=2, All Unique",metric = "Mean",clusters = clusters,x.label = x.label,y.label=y.label)
+k2.all.uniq
+
+k2.sel.shar <- compareCUBToRnaSeq("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_2_1_vs_2_selectionShared//restart_4/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=2, Selection Shared",metric = "Mean",clusters = clusters,x.label = x.label,y.label=y.label)
+k2.sel.shar
+
+k2.mut.shar <- compareCUBToRnaSeq("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_2_1_vs_2_mutationShared//restart_4/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=2, Mutation Shared",metric = "Mean",clusters = clusters,x.label = x.label,y.label=y.label)
+k2.mut.shar
+
+
+```
+
+### K = 3
+
+```{r echo = F}
+clusters.k3 <- "Clara/pichia_membranifaciens.max.cds"
+
+k3.all.uniq <- compareCUBToRnaSeq("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_3_1_2_vs_3_allUnique//restart_4/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=3, 1+2 vs. 3, All Unique",metric = "Mean",clusters = clusters.k3,x.label = x.label,y.label=y.label)
+k3.all.uniq
+
+k3.sel.shar <- compareCUBToRnaSeq("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_3_1_2_vs_3_selectionShared/restart_4/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=3, 1+2 vs. 3, Selection Shared",metric = "Mean",clusters = clusters.k3,x.label = x.label,y.label=y.label)
+k3.sel.shar
+
+k3.mut.shar <- compareCUBToRnaSeq("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_3_1_2_vs_3_mutationShared/restart_4/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=3, 1+2 vs. 3, Mutation Shared",metric = "Mean",clusters = clusters.k3,x.label = x.label,y.label=y.label)
+k3.mut.shar
+
+k3.mut.shar <- compareCUBToRnaSeq("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_3_1_3_vs_2_mutationShared/restart_4/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=3, 1+3 vs. 2, Mutation Shared",metric = "Mean",clusters = clusters.k3,x.label = x.label,y.label=y.label)
+k3.mut.shar
+
+
+```
+
+
+
+```{r echo = F}
+
+k2.clust <- read_tsv("Clara_k_2/pichia_membranifaciens.max.cds")
+k3.clust <- read_tsv("Clara/pichia_membranifaciens.max.cds")
+k2.clust <- k2.clust %>% rename(GeneID=Gene) %>% mutate(Cluster=as.factor(Cluster))
+k3.clust <- k3.clust %>% rename(GeneID=Gene) %>% mutate(Cluster=as.factor(Cluster))
+
+phi.k2.sel.shar <- read_csv("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_2_1_vs_2_selectionShared/restart_4/Parameter_est/gene_expression.txt") %>% dplyr::select(GeneID,Mean)
+phi.k3.sel.shar <- read_csv("/data2/Labella2019/Pichia/pichia_membranifaciens.max.cds_k_3_1_2_vs_3_selectionShared/restart_4/Parameter_est/gene_expression.txt") %>% dplyr::select(GeneID,Mean)
+
+phi.k2.k3 <- phi.k2.sel.shar %>% left_join(phi.k3.sel.shar,by="GeneID",suffix=c(".K2",".K3"))
+phi.k2.k3 <- phi.k2.k3 %>% left_join(k3.clust,by="GeneID")
+
+phi.comp <- ggplot(phi.k2.k3,) + 
+            geom_point(aes(x=Mean.K2,y=Mean.K3,color=Cluster)) +
+            stat_cor(aes(x=Mean.K2,y=Mean.K3,color=Cluster),method="spearman",show.legend = F) +
+            stat_cor(aes(x=Mean.K2,y=Mean.K3),method="spearman",label.x.npc = "center") +
+            theme_cowplot() +
+            xlab("Predicted Expression (K=2)") +
+            ylab("Predicted Expression (K=3)") +
+            ggtitle("Pichia membranifaciens\nComparing Phi when using 2 vs. 3 clusters")
+phi.comp
+```
+
+```{r echo = F}
+pichia.exp <- "Expression/pichia_membranifaciens.max.cds"
+clusters.k2 <- "Clara_k_2/pichia_membranifaciens.max.cds"
+clusters.k3 <- "Clara/pichia_membranifaciens.max.cds"
+
+
+k1 <- compareCUBToRnaSeq("/data2/Labella2019/Results_k_1/pichia_membranifaciens.max.cds/restart_5/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=1",metric = "Mean",clusters=clusters.k2,x.label = x.label,y.label=y.label)
+k1
+
+k1 <- compareCUBToRnaSeq("/data2/Labella2019/Results_k_1/pichia_membranifaciens.max.cds/restart_5/Parameter_est/gene_expression.txt",pichia.exp,title = "Pichia membranifaciens\nK=1",metric = "Mean",clusters=clusters.k3,x.label = x.label,y.label=y.label)
+k1
+k1 + facet_wrap(~Cluster)
+
+
+```
+```{r echo = F}
+pichia.clust <- read_tsv("Clara/pichia_membranifaciens.max.cds")
+pichia.gc <- read_tsv("GC/pichia_membranifaciens.max.cds")
+pichia.gc.mix <- pichia.gc %>% left_join(pichia.clust,by="Gene")
+pichia.gc3 <- ggplot(pichia.gc.mix) + geom_violin(aes(x=factor(Cluster),y=GC3),fill="skyblue") +
+     xlab("Cluster") + 
+     ggtitle("GC3 Frequency Per Cluster:\nP. membranifaciens") +
+     theme_cowplot()
+pichia.gc3
+
+pichia.emp <- read_csv("Expression/pichia_membranifaciens.max.cds")
+pichia.emp <- pichia.emp %>% rename(Gene=Labella_id)
+pichia.emp.mix <- pichia.emp%>% left_join(pichia.clust,by="Gene")
+pichia.exp <- ggplot(pichia.emp.mix) + geom_violin(aes(x=factor(Cluster),y=log10(tpm)),fill="skyblue") +
+     xlab("Cluster") + 
+     ggtitle("Empirical Expression Per Cluster:\nP. membranifaciens") +
+     theme_cowplot()
+pichia.exp
+
+pichia.gc3.emp <- pichia.emp.mix %>% left_join(pichia.gc.mix,by="Gene")
+pichia.gc3.emp <- pichia.gc3.emp %>% filter(tpm > 1e-05)
+pichia.exp.gc3 <- ggplot(pichia.gc3.emp) + geom_point(aes(x=GC3,y=log10(tpm),color=as.factor(Cluster.x))) +
+     xlab("GC3") + 
+     ggtitle("Empirical Expression vs GC3:\nP. membranifaciens") +
+     theme_cowplot() +
+     stat_cor(aes(x=GC3,y=log10(tpm)),method="spearman",label.sep="\n",label.y.npc = "bottom")
+pichia.exp.gc3
+
+pichia.exp.gc3 + facet_wrap(~Cluster.x)
+
+
+```
+
+
+
+```{r echo=F,fig.height=16,fig.width=20}
+gffToDataFrame <- function(gff)
+{
+  chr <- as.character(gff@seqnames)
+  tid <- gff$transcript_id
+  df <- data.frame(Chr=chr,Gene=tid,stringsAsFactors = F)
+  df <- df %>% distinct()
+  return(df)
+}
+
+compareGC3ToClusterFreq_k3 <- function(cluster.file,gc.file,gff.file)
+{
+  clust <- read_tsv(cluster.file)
+  gene.names <- clust$Gene
+  clust <- as.data.frame.matrix(table(clust))
+  gc <- read_tsv(gc.file)
+  clust$Gene <- gene.names
+  gc.clust <- gc %>% left_join(clust,by="Gene")
+  gc.clust <- gc.clust %>% rename(Cluster_1=`1`,Cluster_2=`2`,Cluster_3=`3`)
+  gc.clust <- gc.clust %>% column_to_rownames("Gene")
+  gc.clust <- gc.clust %>% add_column(Gene = gene.names)
+  
+  gff <- readGFFAsGRanges(gff.file)
+  gff.cds <- gff[which(gff$type == "CDS")]
+  gff.cds$ID <- str_remove(gff.cds$transcript_id,"-mRNA-1")
+
+  gc.clust <- gc.clust[unique(gff.cds$ID),]
+  gff.df <- gffToDataFrame(gff.cds)
+  gc.clust <- gc.clust[which(!is.na(gc.clust$Gene)),]
+
+  gc.clust <- gc.clust %>% left_join(gff.df,by="Gene")
+  gc.clust <-gc.clust %>% distinct()
+  gc.clust <- gc.clust %>% group_by(Chr) %>% mutate(Gene.Number=seq(1,length(Chr)),
+                                            GC3.Freq = zoo::rollmean(GC3,k=20,fill=NA),
+                                            Cluster.1.Freq=zoo::rollmean(Cluster_1,k=20,fill=NA),
+                                            Cluster.2.Freq=zoo::rollmean(Cluster_2,k=20,fill=NA),
+                                            Cluster.3.Freq=zoo::rollmean(Cluster_3,k=20,fill=NA)) %>% 
+    ungroup()
+
+  return(gc.clust)
+}
+
+compareGC3ToClusterFreq <- function(cluster.file,gc.file,gff.file)
+{
+  clust <- read_tsv(cluster.file)
+  gene.names <- clust$Gene
+  clust <- as.data.frame.matrix(table(clust))
+  gc <- read_tsv(gc.file)
+  clust$Gene <- gene.names
+  gc.clust <- gc %>% left_join(clust,by="Gene")
+  gc.clust <- gc.clust %>% rename(Cluster_1=`1`,Cluster_2=`2`)
+  gc.clust <- gc.clust %>% column_to_rownames("Gene")
+  gc.clust <- gc.clust %>% add_column(Gene = gene.names)
+  
+  gff <- readGFFAsGRanges(gff.file)
+  gff.cds <- gff[which(gff$type == "CDS")]
+  gff.cds$ID <- str_remove(gff.cds$transcript_id,"-mRNA-1")
+
+  gc.clust <- gc.clust[unique(gff.cds$ID),]
+  gff.df <- gffToDataFrame(gff.cds)
+  gc.clust <- gc.clust[which(!is.na(gc.clust$Gene)),]
+
+  gc.clust <- gc.clust %>% left_join(gff.df,by="Gene")
+  gc.clust <-gc.clust %>% distinct()
+  gc.clust <- gc.clust %>% group_by(Chr) %>% mutate(Gene.Number=seq(1,length(Chr)),
+                                            GC3.Freq = zoo::rollmean(GC3,k=20,fill=NA),
+                                            Cluster.1.Freq=zoo::rollmean(Cluster_1,k=20,fill=NA),
+                                            Cluster.2.Freq=zoo::rollmean(Cluster_2,k=20,fill=NA)) %>% 
+    ungroup()
+
+  return(gc.clust)
+}
+gc.clust <- compareGC3ToClusterFreq("Clara/pichia_membranifaciens.max.cds","GC/pichia_membranifaciens.max.cds",gff.file = "/data2/Labella2019/Genomes/gtf/pichia_membranifaciens.max.gtf")
+
+
+gc.clust.long <- gc.clust %>% pivot_longer(cols=c("GC3.Freq","Cluster.1.Freq","Cluster.2.Freq","Cluster.3.Freq"),names_to="Moving.Average",values_to="Frequency")
+
+
+p <- ggplot(gc.clust.long) + geom_line(aes(x=Gene.Number,y=Frequency,color=Moving.Average)) +
+                           xlab("Gene Number") + 
+                           ylab("Frequency") +
+                           theme_cowplot()+
+                           geom_hline(yintercept = mean(gc.clust$GC3.Freq,na.rm=T),linetype=2) +
+                           facet_wrap(~Chr,scales="free_x")
+
+p
+
+```
+
+
+
+## Recombination
+
+```{r echo = F}
+
+calb.mix <- read.csv("Clara_k_2/candida_albicans.max.cds",sep="\t",header=T,stringsAsFactors = F)
+calb.gc <- read.table("GC/candida_albicans.max.cds",sep="\t",header=T,stringsAsFactors = F)
+
+calb.mix$Gene <- str_remove(calb.mix$Gene,"_[AB](_Allele){0,1}")
+calb.gc$Gene <- str_remove(calb.gc$Gene,"_[AB](_Allele){0,1}")
+
+calb.gc.mix <- calb.gc %>% left_join(calb.mix,by="Gene")
+max.cluster <- calb.gc.mix  %>% group_by(Cluster) %>% 
+               summarize(Mean.GC3 = mean(GC3)) %>% 
+               top_n(1) %>%
+               dplyr::rename(Max.Cluster=Cluster)
+calb.gc.mix <- calb.gc.mix %>% mutate(Max.Cluster = max.cluster$Max.Cluster)
+calb.gc.mix <- calb.gc.mix %>% 
+              mutate(Cluster = case_when(Cluster == 1 & Max.Cluster == 1 ~ 2,
+                                         Cluster == 2 & Max.Cluster == 1 ~ 1,
+                                         Cluster == 1 & Max.Cluster == 2 ~ 1,
+                                         Cluster == 2 & Max.Cluster == 2 ~ 2)
+              )
+
+calb.gc.mix$Gene <- str_remove(calb.gc.mix$Gene,"(_Allele){0,1}")
+rownames(calb.gc.mix) <- calb.gc.mix$Gene
+calb.gff <- readGFFAsGRanges("Genomes/Genomes/gff/candida.albicans.max.cds")
+
+calb.gff.chr <- as.data.frame(calb.gff) %>% filter(type == "chromosome") %>% filter(str_detect(Name,pattern = "chr[0-9A-Z]A")) 
+end <- calb.gff.chr %>% dplyr::select(width) %>% deframe() %>% purrr::accumulate(sum)
+start <- c(1,end[1:(length(end)-1)]+1)
+chr.nt <- data.frame(Chr=calb.gff.chr$seqnames,start=start,end=end)
+calb.recomb <- as.numeric(readLines("calbicans_recomb_breakpoints.txt"))
+calb.recomb <- calb.recomb[!is.na(calb.recomb)]
+
+chr.num <- 1
+
+c6.break.points <- calb.recomb[which(calb.recomb > chr.nt[chr.num,"start"] & calb.recomb < chr.nt[chr.num,"end"])] - (chr.nt[chr.num,"start"]-1)
+
+
+calb.gff.cds <- calb.gff[which(calb.gff$type == "CDS")]
+calb.gff.cds$ID <- str_remove(calb.gff.cds$ID,"-[0-9A-Za-z\\-]")
+
+
+calb.genome <- readDNAStringSet("Genomes/Genomes/fas/candida_albicans.fas")
+
+
+ranges.c6 <- calb.genome@ranges[chr.num,]
+start.c6 <- ranges.c6@start
+end.c6 <- start.c6 + ranges.c6@width
+
+gc.sliding <-letterFrequencyInSlidingView(calb.genome[[chr.num]],letters="GC",view.width = 1000,as.prob=T)
+gc.sliding <- data.frame(Nucleotide.Pos=seq(1,length(gc.sliding)),GC=gc.sliding)
+
+
+
+calb.gff.c6 <- calb.gff[calb.gff@seqnames == "Ca22chr1A_C_albicans_SC5314",]
+calb.gff.c6.cds <- calb.gff.c6[which(calb.gff.c6$type == "CDS")]
+calb.gff.c6.cds$ID <- str_remove(calb.gff.c6.cds$ID,"_[AB]-[0-9A-Za-z\\-]")
+
+cds.df <- as.data.frame(calb.gff.c6.cds)
+cds.df$Gene <- calb.gff.c6.cds$ID
+cds.df <- cds.df %>% left_join(calb.gc.mix,by="Gene")
+cds.df <- cds.df %>% replace_na(list(Cluster = 0))
+
+chr.df <- data.frame(Nucleotide.Pos = seq(1:ranges.c6@width))
+pos.df <- apply(cds.df,MARGIN = 1,function(x)
+  {
+    data.frame(Nucleotide.Pos=seq(x$start,x$end),
+               Gene=rep(x$ID,x$width))
+  }) %>% bind_rows()
+
+chr.df <- chr.df %>% left_join(pos.df,by="Nucleotide.Pos")
+
+
+
+cds.df <- cds.df %>% mutate(Cluster = case_when(Cluster == 1 ~ "Lower GC3%",
+                                         Cluster == 2 ~ "Higher GC3%",
+                                         Cluster == 0 ~ "Excluded CDS")
+                     )
+
+chr.df <- chr.df %>% left_join(gc.sliding,by="Nucleotide.Pos")
+
+```
+
+```{r echo = F}
+calb.genome <- readDNAStringSet("Genomes/Genomes/fas/candida_albicans.fas")
+calb.genome.no.mito <- calb.genome[-8]
+calb.genome.cat <- xscat(unlist(calb.genome.no.mito))
+overall.gc <- letterFrequency(calb.genome.cat,"GC",as.prob = T)
+recomb.points <- unique(chr.recomb.df[,"Break"])
+surrounding.regions <- lapply(recomb.points,
+  function(x){
+    letterFrequency(calb.genome.cat[(x-100):(x+100)],letters = "GC",as.prob = T)
+})
+
+null.points <- recomb.points + sample(c(10000,-10000),size=length(recomb.points),replace = T)
+null.regions <- lapply(null.points,
+  function(x){
+    letterFrequency(calb.genome.cat[(x-100):(x+100)],letters = "GC",as.prob = T)
+})
+
+t.test(unlist(surrounding.regions),unlist(null.regions))
+
+t.test(unlist(surrounding.regions),mu=overall.gc,alternative="greater")
+```
+
+# S. uvarum local minimum
+
+```{r,fig.width=12,fig.height=5}
+suvar.gtf <- readGFF("Genomes/Genomes/gtf_sorted/saccharomyces_uvarum.max.gtf")
+suvar.gtf.cds <- suvar.gtf[which(suvar.gtf$type == "CDS"),]
+suvar.gtf.cds <- gffToDataFrame(suvar.gtf.cds,"transcript_id") %>% dplyr::rename(GeneID=Gene)
+suvar.k.1.1 <- read_csv("Final_runs/Results_k_1/saccharomyces_uvarum.max.cds/run_1/Parameter_est/gene_expression.txt") %>% 
+  dplyr::select(GeneID,Mean) %>% 
+  dplyr::rename(Mean.k.1.1 = Mean)
+suvar.k.1.2 <- read_csv("Final_runs/Results_k_1/saccharomyces_uvarum.max.cds/run_2/Parameter_est/gene_expression.txt") %>% 
+  dplyr::select(GeneID,Mean) %>% 
+  dplyr::rename(Mean.k.1.2 = Mean)
+suvar.k.2 <- read_csv("Final_runs/Results_k_2_selectionShared/saccharomyces_uvarum.max.cds/run_2/Parameter_est/gene_expression.txt") %>% 
+  dplyr::select(GeneID,Mean) %>%
+  dplyr::rename(Mean.k.2 = Mean)
+empirical.data <- read_csv("Expression_updated/saccharomyces_uvarum.max.cds",col_types = cols()) %>% 
+    mutate(across(contains("tpm_kallisto"),~na_if(., 0))) %>%
+    mutate(across(contains("tpm_kallisto"),log)) %>%
+    mutate(
+      Log.Mean.Expression=rowMeans(dplyr::select(.,contains("tpm_kallisto")),na.rm=T),
+      Empirical=exp(Log.Mean.Expression)) %>% 
+      dplyr::select(-contains("tpm_kallisto"),-Log.Mean.Expression)
+empirical.data$Empirical <- 10^6/sum(empirical.data$Empirical,na.rm=T) * empirical.data$Empirical
+
+gc <- read_tsv("GC/saccharomyces_uvarum.max.cds") %>% dplyr::rename(GeneID=Gene)
+clust <- read_tsv("Clara_k_2/saccharomyces_uvarum.max.cds") %>% dplyr::rename(GeneID=Gene) %>% mutate(Cluster=as.factor(Cluster))
+phi <- suvar.k.1.1 %>% left_join(suvar.k.1.2,by="GeneID") %>% 
+  left_join(suvar.k.2,by="GeneID") %>% 
+  left_join(empirical.data,by="GeneID") %>% 
+  left_join(gc,by="GeneID") %>%
+  left_join(clust,by="GeneID")
+phi.gtf <- phi %>% inner_join(suvar.gtf.cds,by="GeneID")
+
+phi.k.1.1.v.1.2 <- ggplot(phi.gtf,aes(x=Mean.k.1.1,y=Mean.k.1.2)) + geom_point() +
+               scale_x_log10() +
+               scale_y_log10() +
+               stat_cor(method="spearman") +
+               theme_cowplot()
+
+
+phi.k.1.1.v.k.2 <- ggplot(phi.gtf,aes(x=Mean.k.1.1,y=Mean.k.2)) + geom_point() +
+               scale_x_log10() +
+               scale_y_log10() +
+               stat_cor(method="spearman") +
+               theme_cowplot() 
+
+phi.k.1.1.v.k.2
+
+
+
+
+phi.k.2.v.emp <- ggplot(phi.gtf,aes(x=Empirical,y=Mean.k.2)) + geom_point(aes(color=Cluster)) +
+               scale_x_log10() +
+               scale_y_log10() +
+               stat_cor(method="spearman") +
+               theme_cowplot()
+
+phi.k.2.v.emp
+
+
+phi.k.1.1.v.emp <- ggplot(phi.gtf,aes(x=Empirical,y=Mean.k.1.1)) + geom_pointdensity(size=0.5,show.legend = F) + 
+                 scale_x_log10(labels = trans_format("log10", math_format(10^.x))) + 
+                 scale_y_log10(labels = trans_format("log10", math_format(10^.x))) +
+                 theme_cowplot() +
+                 ggtitle("S. uvarum ConstMut Model Fit\nLocal Maximum") +
+                 ylab("Scaled Predicted Expression") +
+                 xlab("Empirical Expression (RNA TPM)") +
+                 viridis::scale_color_viridis(option = "magma") + 
+                 stat_cor(method = "spearman",label.sep = "\n") +
+                theme(aspect.ratio=1)
+
+phi.k.1.1.v.emp
+
+mcmc.k.1.1 <- loadMCMCObject("Final_runs/Results_k_1/saccharomyces_uvarum.max.cds/run_1/R_objects/mcmc.Rda")
+mcmc.k.1.2 <- loadMCMCObject("Final_runs/Results_k_1/saccharomyces_uvarum.max.cds/run_2/R_objects/mcmc.Rda")
+
+mcmc.k.1.1.post <- mcmc.k.1.1$getLogPosteriorTrace()[5000:20000]
+mcmc.k.1.2.post <- mcmc.k.1.2$getLogPosteriorTrace()[5000:20000]
+post.df <- data.frame(Sample=5000:20000,`Run.1`=mcmc.k.1.1.post,`Run.2`=mcmc.k.1.2.post)
+post.df.long <- post.df %>% pivot_longer(-Sample,names_to="ConstMut.Run",values_to="LogPosterior")
+
+
+mcmc.compare <- ggplot(post.df.long,aes(x=Sample,y=LogPosterior,color=ConstMut.Run)) + geom_line() +
+                theme_cowplot() +
+                ggtitle("Comparing LogPosterior of ConstMut Fits\nS. uvarum") +
+                theme(aspect.ratio=1)
+
+mcmc.compare
+
+
+suvar.constmut <- plot_grid(mcmc.compare,phi.k.1.1.v.emp,labels=c("A","B"),align="vh",axis='tlrb',ncol=2)
+suvar.constmut
+
+suvar.k.1.1.sel <- read_csv("Final_runs/Results_k_1/saccharomyces_cerevisiae.max.cds/run_1/Parameter_est/saccharomyces_cerevisiae.max.cds_Mutation.csv")
+
+suvar.k.2.sel.1 <- read_csv("Final_runs/Results_k_2_selectionShared/saccharomyces_uvarum.max.cds/run_2/Parameter_est/1_Mutation.csv")
+suvar.k.2.sel.2 <- read_csv("Final_runs/Results_k_2_selectionShared/saccharomyces_uvarum.max.cds/run_2/Parameter_est/2_Mutation.csv")
+
+
+
+
+ggsave("Figures/suvarum_local_maximum_fits.pdf",height=5,width=12)
+
+```
+
+
+
+
+
+
+
+
+# Does clustering on codon frequencies increase false positive rate of standard hypothesis tests?
+
+```{r}
+library(seqinr)
+library(ca)
+library(cluster)
+library(parallel)
+
+
+
+
+num.genes <- 1500
+length.genes <- 300
+size <- num.genes
+gene.ids <- paste0("Gene_",seq(1:num.genes))
+codon.list <- codons()
+codon.list <- codon.list[which(!codon.list %in% c("TAG","TAA","TGA"))]
+genes <- vector(length=num.genes)
+
+
+p.val <- mclapply(1:100,function(x)
+{
+  for (i in 1:num.genes)
+  {
+    # Create completely random codon sequences, no mutation biases or natural selection
+    # Split into single nucleotides because that is the format seqinr::uco expects 
+  	seq <- strsplit(
+  	  paste0("ATG",paste0(sample(codon.list,size=length.genes-1,replace=T),sep="",collapse=""),sep="",collapse=""),
+  	  split="",fixed=T)
+    genes[i] <- seq
+  }
+  
+  ## calculate GC3 content of random sequences
+  rand.gc3 <- unlist(lapply(genes,GC3))
+  
+  df <- data.frame(genes=gene.ids)
+  df[words()] <- numeric(length=size)
+  
+  codon.counts<-lapply(genes,
+      function(x){
+        ## eff returns codon counts
+  			tmp <- uco(x,frame=0,index="eff");
+  			## Get absolute codon frequencies per gene. x is sequence of nucleotides, so divide length by 3 to get number of codons
+  			tmp <- tmp/(length(x)/3)
+  		})
+  
+  # words() is seqinr function that returns vector of possible codons 
+  for (i in 1:size)
+  {
+  	df[i,words()] <- codon.counts[[i]][words()]
+  }
+  df[is.na(df)] <-0
+  
+  rownames(df) <- df$genes
+  df<-df[,2:ncol(df)]
+  ## don't care about stop codons
+  df<-df[,which(!colnames(df) %in% c("taa","tga","tag"))]
+  
+  ## perform correspondence analysis on absolute codon frequencies
+  fit <- ca(df)
+  
+  ## cluster based on first 4 principal component axes
+  clarax <- clara(x=fit$rowcoord[,1:4],k=2,samples=50,sampsize=length(genes)/2,rngR=T,pamLike=T)
+  
+  ## Get clusters assigned from k-medoids CLARA 
+  clusters <- clarax$clustering
+  
+  ## get indices of genes assigned to cluster 1 and cluster 2
+  k1 <- which(clusters == 1)
+  k2 <- which(clusters == 2)
+  
+  ## Test if difference in mean GC3 between clusters.
+  sig <- ks.test(rand.gc3[k1],rand.gc3[k2])
+  return(sig$p.value)
+},mc.cores = 8)
+
+hist(unlist(p.val),breaks = seq(0.0,1,0.05),main="KS-test p-value distribution",xlab="p-value")
+abline(v=0.05,col="red")
+hist(p.adjust(unlist(p.val),method="BH"),breaks = seq(0.0,1,0.05),main="KS-test BH adjusted p-value distribution",xlab="BH adjusted p-value")
+abline(v=0.05,col="red")
+```
+
+
+```{r}
+clusterGenes <- function(codon.counts)
+{
+  abs.codon.freq <- codon.counts %>% mutate(Total=rowSums(across(where(is.numeric))),across(!c(Total,Gene),~.x/Total)) %>%
+                      dplyr::select(-Gene,-Total)
+  fit <- ca(abs.codon.freq)
+  
+  ## cluster based on first 4 principal component axes
+  clarax <- clara(x=fit$rowcoord[,1:4],k=2,samples=20,sampsize=nrow(abs.codon.freq)/2,rngR=T,pamLike=T,cluster.only = T)
+
+  return(clarax)
+}
+
+
+
+bootstrapCounts <- function(codon.counts,...)
+{
+  df.long <- codon.counts %>% rownames_to_column("Gene") %>% 
+    pivot_longer(-Gene,names_to="Codon",values_to="Count") %>%
+    rowwise() %>% ## have to do because codonToAA not vectorized
+    mutate(AA=codonToAA(Codon)) %>%
+    ungroup()
+
+
+  one.codon.df <- df.long %>% filter(AA %in% c("M","W","J")) %>% pivot_wider(c(Gene),names_from=Codon,values_from=Count)
+  df.long <- df.long %>% filter(!AA %in% c("M","W","J"))
+  
+  df.split <- df.long %>% group_by(AA) %>% 
+    group_split() %>% 
+    purrr::map(~.x %>% pivot_wider(c(Gene),names_from=Codon,values_from=Count) %>% 
+                 column_to_rownames("Gene") %>%
+                 as.matrix())
+  perm.counts <- lapply(df.split,vegan::permatfull)
+  
+  permuted.matrices <- lapply(1:99,function(x){
+    lapply(perm.counts,function(y){
+      as.tibble(y$perm[[x]],...)
+    }) %>% bind_cols() %>% mutate(Gene = gene.ids) %>% left_join(one.codon.df,by="Gene") %>% dplyr::relocate(Gene)
+  })
+
+  nuc <- str_split(words(),"")
+  gc.codons <- words()[which(unlist(lapply(nuc, function(x){
+        x[3] %in% c("g","c") 
+              }
+            )
+          )
+        )]
+  gc.codons <- gc.codons[which(!gc.codons %in% c("taa","tga","tag"))]
+  
+  gc3.matrix <- purrr::map(permuted.matrices,. %>% mutate(GC3=rowSums(across(all_of(gc.codons)))/rowSums(across(where(is.numeric)))) %>% 
+               dplyr::select(GC3)
+  ) %>% bind_cols()
+
+  purrr::map(permuted.matrices,clusterGenes)
+}
+
+
+# num.genes <- 1500
+# length.genes <- 300
+# size <- num.genes
+# gene.ids <- paste0("Gene_",seq(1:num.genes))
+# codon.list <- codons()
+# codon.list <- codon.list[which(!codon.list %in% c("TAG","TAA","TGA"))]
+# genes <- vector(length=num.genes)
+# 
+# 
+# for (i in 1:num.genes)
+# {
+#   # Create completely random codon sequences, no mutation biases or natural selection
+#   # Split into single nucleotides because that is the format seqinr::uco expects 
+# 	seq <- strsplit(
+# 	  paste0("ATG",paste0(sample(codon.list,size=length.genes-1,replace=T),sep="",collapse=""),sep="",collapse=""),
+# 	  split="",fixed=T)
+#   genes[i] <- seq
+# }
+# 
+# ## calculate GC3 content of random sequences
+# rand.gc3 <- unlist(lapply(genes,GC3))
+# 
+# df <- data.frame(genes=gene.ids)
+# df[words()] <- numeric(length=size)
+input <- "saccharomyces_cerevisiae.max.cds"
+genome.file <- file.path("Genomes","Genomes","cds_cleaned",input)
+
+genome <- initializeGenomeObject(genome.file)
+size <- length(genome)
+
+genes <- lapply(1:size,function(x){tmp<-genome$getGeneByIndex(x,F);tmp$seq})
+
+genes <- lapply(genes,function(x){unlist(strsplit(x,split="",fixed=T))})
+
+gene.ids <- unlist(lapply(1:size,function(x){tmp<-genome$getGeneByIndex(x,F);tmp$id}))
+df <- data.frame(genes=unlist(gene.ids))
+df[words()] <- numeric(length=size)
+
+codon.counts<-lapply(genes,
+    function(x){
+      ## eff returns codon counts
+			tmp <- uco(x,frame=0,index="eff");
+		
+		})
+  
+# words() is seqinr function that returns vector of possible codons 
+for (i in 1:size)
+{
+	df[i,words()] <- codon.counts[[i]][words()]
+}
+df[is.na(df)] <-0
+
+rownames(df) <- df$genes
+df<-df[,2:ncol(df)]
+## don't care about stop codons
+df<-df[,which(!colnames(df) %in% c("taa","tga","tag"))]
+
+df.long <- df %>% rownames_to_column("Gene") %>% 
+  pivot_longer(-Gene,names_to="Codon",values_to="Count") %>%
+  rowwise() %>% ## have to do because codonToAA not vectorized
+  mutate(AA=codonToAA(Codon)) %>%
+  ungroup()
+
+
+one.codon.df <- df.long %>% filter(AA %in% c("M","W","J")) %>% pivot_wider(c(Gene),names_from=Codon,values_from=Count)
+df.long <- df.long %>% filter(!AA %in% c("M","W","J"))
+
+df.split <- df.long %>% group_by(AA) %>% 
+  group_split() %>% 
+  purrr::map(~.x %>% pivot_wider(c(Gene),names_from=Codon,values_from=Count) %>% 
+               column_to_rownames("Gene") %>%
+               as.matrix())
+perm.counts <- lapply(df.split,vegan::permatfull,fixedmar="columns",times=1000)
+
+permuted.matrices <- lapply(1:1000,function(x){
+  lapply(perm.counts,function(y){
+    as_tibble(y$perm[[x]])
+  }) %>% bind_cols() %>% mutate(Gene = gene.ids) %>% left_join(one.codon.df,by="Gene") %>% dplyr::relocate(Gene)
+})
+
+nuc <- str_split(words(),pattern="")
+
+gc.codons <- words()[which(unlist(lapply(nuc, function(x){
+      x[3] %in% c("g","c") 
+            }
+          )
+        )
+      )]
+gc.codons <- gc.codons[which(!gc.codons %in% c("taa","tga","tag"))]
+
+gc3.matrix <- purrr::map(permuted.matrices,. %>% mutate(GC3=rowSums(across(all_of(gc.codons)))/rowSums(across(where(is.numeric)))) %>% 
+               dplyr::select(GC3)
+  ) %>% bind_cols()
+
+clusters.matrix <- mclapply(permuted.matrices,clusterGenes,mc.cores = 32)
+clusters.matrix <- clusters.matrix %>% bind_cols()
+
+
+diff.vector <- lapply(1:ncol(clusters.matrix), function(i){
+  clust <- clusters.matrix[,i] %>% deframe()
+  gc3 <- gc3.matrix[,i] %>% deframe()
+  k1 <- which(clust == 1)
+  k2 <- which(clust == 2)
+  mean(gc3[k1]) - mean(gc3[k2])
+})
+
+```
+
+
+# Fisher exact for recombination points
+
+
+
+```{r echo=F,fig.width=12,fig.height=12}
+calb.gc.mix <- createChrDf("Clara_k_2/candida_albicans.max.cds","GC/candida_albicans.max.cds","Genomes/Genomes/gff/candida.albicans.max.cds",gff.id="ID",chr.reg = "chr[0-9R]" )
+calb.gc.mix <- calb.gc.mix %>% dplyr::rename(seqnames=Chr) %>% 
+  mutate(Gene=str_remove(Gene,"_[AB]"),
+        Cluster = case_when(Cluster == 1 ~ "Lower GC3%",
+        Cluster == 2 ~ "Higher GC3%",
+        is.na(Cluster) ~ "Excluded CDS")) %>% 
+  filter(str_detect(seqnames,pattern = "chr[0-9A-Z]"))
+                                         
+rownames(calb.gc.mix) <- calb.gc.mix$Gene
+
+calb.gff <- readGFFAsGRanges("Genomes/Genomes/gff/candida.albicans.max.cds")
+
+calb.gff.cds <- calb.gff[calb.gff$type=="CDS"]
+calb.gff.cds.df <- as.data.frame(calb.gff.cds) %>% mutate(ID = str_remove(ID,"_[AB]-[0-9A-Za-z\\-]"),
+                                                       Gene=ID,
+                                                       seqnames = str_extract(seqnames, pattern = "chr[0-9R]")) %>%
+                   dplyr::select(-Parent) %>%
+                   distinct(seqnames,Gene,.keep_all = T)
+
+calb.gff.chr <- as.data.frame(calb.gff) %>% 
+  filter(type == "chromosome" & str_detect(seqnames,pattern = "chr[0-9R]A")) %>%
+  mutate(seqnames = str_extract(seqnames, pattern = "chr[0-9R]"))
+
+end <- calb.gff.chr %>% dplyr::select(width) %>% 
+  deframe() %>% 
+  purrr::accumulate(sum)
+
+
+start <- c(1,end[1:(length(end)-1)]+1)
+
+chr.nt <- data.frame(Chr=calb.gff.chr$seqnames,start=start,end=end)
+calb.recomb <- as.numeric(readLines("calbicans_recomb_breakpoints.txt"))
+
+
+calb.recomb <- calb.recomb[!is.na(calb.recomb)]
+
+chr.recomb <- unlist(lapply(calb.recomb,function(x){ 
+  chr.nt[which((chr.nt[,"start"] < x) & (x < chr.nt[,"end"])),"Chr"] 
+  }))
+
+chr.recomb.df <- data.frame(Chr=chr.recomb,Break=calb.recomb)
+
+chr.recomb.df <- chr.recomb.df %>% left_join(chr.nt,by="Chr") %>% 
+  mutate(Break_rel=Break - (start-1),
+         start_rel = start - (start-1),
+         end_rel = end - (start - 1)) %>% 
+  distinct()
+
+
+## For determining if breakpoint is between CDS or start of next gene
+calb.gff.cds.df <- calb.gff.cds.df %>% group_by(seqnames) %>% mutate(start.next.gene = lead(start))
+
+
+## Get recombination points within a CDS. We only want to count these once for visualization
+recomb.in.gene <- apply(chr.recomb.df,1,
+               function(x){
+                          calb.gff.cds.df[which((calb.gff.cds.df$seqnames == x["Chr"]) & 
+                                                  (calb.gff.cds.df[,"start"] < (as.numeric(x["Break_rel"]))) & 
+                                                  (calb.gff.cds.df[,"end"] > (as.numeric(x["Break_rel"])))), ]
+}) %>% bind_rows() %>% distinct() %>% mutate(IN.CDS=T)
+
+
+calb.gc.mix <- calb.gc.mix %>% group_by(seqnames) %>% mutate(Gene.Number=seq(1:length(seqnames)))
+
+## Get recombination points between CDS. For visualization, we will only plot them once if two are between the same CDS
+recomb.between.genes <- apply(chr.recomb.df,1,
+               function(x){
+                          calb.gff.cds.df[which((calb.gff.cds.df$seqnames == x["Chr"]) & 
+                                                  (calb.gff.cds.df[,"end"] < (as.numeric(x["Break_rel"]))) & 
+                                                  (calb.gff.cds.df[,"start.next.gene"] > (as.numeric(x["Break_rel"])))), ]
+}) %>% bind_rows() %>% distinct() %>% mutate(IN.CDS=F)
+
+recomb.df <- list(recomb.in.gene,recomb.between.genes) %>% bind_rows()
+recomb.df <- recomb.df %>% left_join(calb.gc.mix) %>% mutate(Gene.Number=ifelse(!IN.CDS,Gene.Number+0.5,Gene.Number))
+
+
+color.scheme <- c("#000000","#E41A1C","#377EB8")
+names(color.scheme) <- c("Excluded CDS","Lower GC3%","Higher GC3%")
+recomb.plot <- ggplot(calb.gc.mix,aes(x=Gene.Number),y=1) + 
+         geom_vline(data=recomb.df,aes(xintercept=Gene.Number)) +
+         geom_xsidetile(aes(x=Gene.Number,y=0.5,height=0.5,fill=Cluster)) +
+         ggside(x.pos="bottom") +
+         theme_cowplot() +
+         ylim(c(0,1)) +
+         scale_fill_manual(values=color.scheme,name="Gene Cluster") +
+         xlab("Gene Number") +
+         ylab("Frequency") +
+         theme(axis.title.y=element_blank(),
+           axis.text.y=element_blank(), 
+           axis.ticks.y=element_blank(),
+           axis.line.y = element_blank()) +
+         scale_xsidey_continuous(breaks = NULL, labels = "", expand = expansion(c(0,.1))) +
+         scale_ysidex_continuous(breaks = NULL, labels = "", expand = expansion(c(0,.1))) +
+         ggtitle("Map of Recombination Breakpoints in C. albicans") +
+         facet_wrap(~seqnames,scales="free_x")
+
+recomb.plot
+
+ggsave2("Figures/calbicans_recombination.pdf",recomb.plot,width=12,height=12)
+
+```
+
+
+
+```{r}
+genes <- apply(chr.recomb.df,1,
+               function(x){
+                          calb.gff.cds.df[which((calb.gff.cds.df$seqnames == x["Chr"]) & 
+                                                  (calb.gff.cds.df[,"start"] > (as.numeric(x["Break_rel"]) - 1500)) & 
+                                                  (calb.gff.cds.df[,"end"] < (as.numeric(x["Break_rel"]) + 1500))), ]
+}) %>% bind_rows() %>% distinct()
+
+calb.gc.mix.recomb <- calb.gc.mix %>% mutate(Recombination = ifelse(Gene %in% genes$Gene,"Near","Far"))
+
+count.mat <- table(calb.gc.mix.recomb %>% ungroup() %>% filter(Cluster != "Excluded CDS") %>% dplyr::select(Cluster,Recombination))
+count.mat <- count.mat[,c("Near","Far")]
+
+fisher.test(count.mat)
+
+testStrandDifference <- function(cluster.file,gc.file,gff.file,gff.id="transcript_id",chr.reg=NULL,chr.to.exclude=NULL)
+{
+  gc.clust <- createChrDf(cluster.file, gc.file, gff.file, gff.id = gff.id, chr.reg = chr.reg, chr.to.exclude = chr.to.exclude)
+  count.table <- gc.clust %>% filter(!is.na(Strand) & !is.na(Cluster)) %>% dplyr::select(Strand,Cluster)
+  return(fisher.test(table(count.table)))
+}
+
+calb.stand <- testStrandDifference("Clara_k_2/candida_albicans.max.cds","GC/candida_albicans.max.cds","Genomes/Genomes/gff/candida.albicans.max.cds",gff.id="ID",chr.reg="chr[0-9R]")
+scer.strand <- testStrandDifference("Clara_k_2/saccharomyces_cerevisiae.max.cds","GC/saccharomyces_cerevisiae.max.cds","Genomes/Genomes/gff/saccharomyces_cerevisiae_max.cds",title="S. cerevisiae",gff.id = "locus_tag",chr.to.exclude = "NC_001224.1")
+
+exp.data.filt <- exp.data[which(!exp.data %in% c("saccharomyces_cerevisiae.max.cds","candida_albicans.max.cds"))]
+
+other.species.strand <-lapply(exp.data.filt,function(x){
+  x.gtf <- str_replace(x,".cds",".gtf")
+  tmp <- testStrandDifference(str_c("Clara_k_2/",x,sep=""),str_c("GC/",x,sep=""),str_c("Genomes/Genomes/gtf_sorted/",x.gtf,sep=""))
+  p.val <- tmp$p.value
+  names(p.val) <- x
+  p.val
+})
+
+```
+
+
+
+## Phylogenetic Analysis
+
+Now that we are slightly more confident in most of our runs, let's perform a phylogenetic analysis of our parameter estimates
+
+```{r echo = F}
+library(geiger)
+
+model.fits <- vector(mode="list",length=0)
+
+## Unfortunately, geiger cannot handle missing values. Need to remove CTG
+deta.matrix.updated.no.ctg <- deta.matrix.updated[,which(colnames(deta.matrix.updated) != "CTG")]
+deta.sd.no.ctg <- deta.sd[,which(colnames(deta.sd) != "CTG")]
+
+
+for (codon in colnames(deta.matrix.updated.no.ctg))
+{
+  trait <- deta.matrix.updated.no.ctg[,codon]
+  se <- deta.sd.no.ctg[,codon]
+  
+  bm.fit <- fitContinuous(fungi.tree,dat = trait,SE=se,model = "BM",ncores = 16)
+  ou.fit <- fitContinuous(fungi.tree,dat = trait,SE=se,model = "OU",ncores = 16,control = list(niter=150))
+  
+  model.fits[[codon]] <- list(BM.fit=bm.fit,OU.fit=ou.fit)
+}
+
+Delta.AICc <- lapply(model.fits,function(x){
+  x$OU.fit$opt$aicc - x$BM.fit$opt$aicc
+})
+model.fit.df <- data.frame(Codon=names(model.fits),Model.Fit=unlist(Delta.AICc),stringsAsFactors = F)
+
+d.aicc.plot <- ggplot(model.fit.df) + geom_histogram(aes(x=Model.Fit),color="black",fill="blue",binwidth=10) + 
+  ggtitle("Evolution of Selection Coefficients:\nModel Selection (OU - BM)") +
+  xlab(expression(Delta*AICc)) +
+  geom_vline(xintercept = c(-10,10),linetype=2) +
+  theme_cowplot()
+d.aicc.plot
+
+```
+
+
+
+
+```{r echo = F}
+
+dm.model.fits <- vector(mode="list",length=0)
+
+## Unfortunately, geiger cannot handle missing values. Need to remove CTG
+dm.matrix.updated.no.ctg <- dm.matrix.updated[,which(colnames(dm.matrix.updated) != "CTG")]
+dm.sd.no.ctg <- dm.sd[,which(colnames(dm.sd) != "CTG")]
+
+
+for (codon in colnames(dm.matrix.updated.no.ctg))
+{
+  trait <- dm.matrix.updated.no.ctg[,codon]
+  se <- dm.sd.no.ctg[,codon]
+  
+  bm.fit <- fitContinuous(fungi.tree,dat = trait,SE=se,model = "BM",ncores = 16)
+  ou.fit <- fitContinuous(fungi.tree,dat = trait,SE=se,model = "OU",ncores = 16,control = list(niter=150))
+  
+  dm.model.fits[[codon]] <- list(BM.fit=bm.fit,OU.fit=ou.fit)
+}
+
+Delta.AICc <- lapply(dm.model.fits,function(x){
+  x$OU.fit$opt$aicc - x$BM.fit$opt$aicc
+})
+model.fit.df <- data.frame(Codon=names(dm.model.fits),Model.Fit=unlist(Delta.AICc),stringsAsFactors = F)
+
+d.aicc.plot <- ggplot(model.fit.df) + geom_histogram(aes(x=Model.Fit),color="black",fill="blue",binwidth=10) + 
+  ggtitle("Evolution of Mutation Bias:\nModel Selection (OU - BM)") +
+  xlab(expression(Delta*AICc)) +
+  geom_vline(xintercept = c(-10,10),linetype=2) +
+  theme_cowplot()
+d.aicc.plot
+
+```
+
+
+```{r echo = F}
+sel.sig <- unlist(lapply(model.fits,function(x){x$OU.fit$opt$sigsq}))
+mut.sig <- unlist(lapply(dm.model.fits,function(x){x$OU.fit$opt$sigsq}))
+
+sel.alp <- unlist(lapply(model.fits,function(x){x$OU.fit$opt$alpha}))
+mut.alp <- unlist(lapply(dm.model.fits,function(x){x$OU.fit$opt$alpha}))
+
+plot(log(sel.sig),log(mut.sig),xlab="sigma sq. (Selection)",ylab="sigma sq. (Mutation)",main="Comparing OU Parameters:\nSigma Squared")
+abline(a = 0, b =1, lty=2,col="red")
+
+plot(log(sel.alp),log(mut.alp),xlab="alpha (Selection)",ylab="alpha (Mutation)",main="Comparing OU Parameters:\nAlpha")
+abline(a = 0, b =1, lty=2,col="red")
+
+
+```
+
+
+```{r,fig.width=8,fig.height=8}
+lkluy <- df %>% filter(Species == "candida_albicans.max.cds")
+lkluy.long <- lkluy %>% 
+  dplyr::select(GeneID,Phi_Shared_Mutation,Phi_Variable_Mutation,Empirical) %>%
+  dplyr::rename(ConstMut = Phi_Shared_Mutation,VarMut=Phi_Variable_Mutation) %>%
+  pivot_longer(c(ConstMut,VarMut),names_to="ROC",values_to="Phi")
+
+p <- ggplot(lkluy.long,aes(x=Empirical,y=Phi)) + 
+              geom_pointdensity(size=0.5,show.legend = F) +
+              scale_x_log10(labels = trans_format("log10", math_format(10^.x))) + 
+              scale_y_log10(labels = trans_format("log10", math_format(10^.x))) +
+              ylab("Predicted Expression\nROC-SEMPPR") +
+              xlab("Empirical Expression\nRNA TPM") +
+              viridis::scale_color_viridis(option = "magma") + 
+              stat_cor(method = "spearman",label.sep = "\n",label.x.npc = 0.05,label.y.npc = 0.95) +
+             theme_cowplot() +
+             ggtitle("Accounting for variation in non-adaptive nucleotide biases\nimproves detection of selection on codon usage") +
+             theme(aspect.ratio = 1) +
+             facet_wrap(~ROC)
+p
+p <- ggplot(lkluy,aes(x=Empirical,y=Phi_Shared_Mutation)) + 
+              geom_point(size=0.5,show.legend = F) +
+              scale_x_log10(labels = trans_format("log10", math_format(10^.x))) + 
+              scale_y_log10(labels = trans_format("log10", math_format(10^.x))) +
+              ylab("Predicted Expression\nROC-SEMPPR") +
+              xlab("Empirical Expression\nRNA TPM") +
+              viridis::scale_color_viridis(option = "magma") + 
+              stat_cor(method = "spearman",label.sep = "\n",label.x.npc = 0.05,label.y.npc = 0.95) +
+             theme_cowplot() +
+             ggtitle("Assessing ROC-SEMPPR Performance\nL. kluyveri (ConstMut)") +
+             theme(aspect.ratio = 1)
+p
+
+p <- ggplot(lkluy,aes(x=Empirical,y=Phi_Variable_Mutation)) + 
+              geom_point(size=0.5) +
+              scale_x_log10(labels = trans_format("log10", math_format(10^.x))) + 
+              scale_y_log10(labels = trans_format("log10", math_format(10^.x))) +
+              ylab("Predicted Expression\nROC-SEMPPR") +
+              xlab("Empirical Expression\nRNA TPM") +
+              viridis::scale_color_viridis(option = "magma") + 
+              stat_cor(method = "spearman",label.sep = "\n",label.x.npc = 0.05,label.y.npc = 0.95) +
+             theme_cowplot() +
+             ggtitle("Assessing ROC-SEMPPR Performance\nL. kluyveri (VarMut)") +
+             theme(aspect.ratio = 1)
+p
+
+```
+
+```{r}
+calb.gff <- readGFFAsDf("/data2/Labella2019/Genomes/gff/candida.albicans.max.cds")
+calb.gff.gene <- calb.gff %>% filter(type=="gene")
+methyl.df <- read_tsv("~/calbicans_methylated_orfs.txt")
+methyl.df <- methyl.df %>% filter(Enrichment > 6)
+old.names <- calb.gff.gene %>% 
+  mutate(Alias=str_extract_all(Note,"orf19\\.[0-9]+"),Alias=toupper(Alias)) %>%
+  dplyr::select(ID,Alias,orf_classification) %>% 
+  filter(!is.na(Alias)) %>%
+  mutate(ID=str_remove(ID,"_[AB]")) %>%
+  unique()
+
+methyl.df <- methyl.df %>% left_join(old.names,by="Alias") %>% distinct(Alias,.keep_all = T)
+
+ca.clust <- read_tsv("~/Labella2019_scripts/Clara_k_2/candida_albicans.max.cds")
+ca.clust <- ca.clust %>% mutate(ID=str_remove(Gene,"_[AB]"))
+
+methyl.df <- methyl.df %>% inner_join(ca.clust,by="ID")
+
+table(methyl.df$Cluster)
+ca.phi <- read_csv("Results/VarMut/candida_albicans.max.cds/run_1/Parameter_est/gene_expression.txt")
+ca.phi <- ca.phi %>% dplyr::rename(Gene=GeneID) %>% 
+  dplyr::select(Gene,Mean)
+
+methyl.df.phi <- methyl.df %>% left_join(ca.phi) %>% 
+  mutate(Mean=log(Mean),Cluster = Cluster -1) %>% 
+  filter(!is.na(Mean))
+clust.pred <- glm(Cluster ~ Enrichment + Mean + Enrichment * Mean,
+                  data=methyl.df.phi,
+                  family="binomial")
+summary(clust.pred)
+
+
+
+ca.gc3 <- read_tsv("Data/GC/candida_albicans.max.cds")
+ca.gc3.clust <- ca.gc3 %>% left_join(ca.clust,by="Gene")
+
+
+ca.gc3.clust <- ca.gc3.clust %>% left_join(ca.phi,by="Gene")
+
+```
+
+
+```{r}
+readGFFAsDf <- purrr::compose(
+  rtracklayer::readGFFAsGRanges,
+  data.frame,
+  as_tibble,
+  .dir = "forward" # functions called from left to right
+)
+
+calb.gff <- readGFFAsDf("/data2/Labella2019/Genomes/gff/candida.albicans.max.cds")
+calb.gff.gene <- calb.gff %>% filter(type=="gene")
+rr.df <- read_csv("~/candida_repeat_region.csv")
+old.names <- calb.gff.gene %>% 
+  mutate(Alias=str_extract(Note,"orf19\\.[0-9]+")) %>%
+  dplyr::select(ID,Alias,orf_classification) %>% 
+  filter(!is.na(Alias))# %>%
+ # mutate(ID=str_remove(ID,"_[AB]")) %>%
+ # unique()
+rr.df <- rr.df %>% dplyr::rename(Alias=`ORF19 ID`)
+rr.df <- rr.df %>% left_join(old.names,by="Alias") %>% distinct(Alias,.keep_all = T)
+
+ca.clust <- read_tsv("Results/Clustering/candida_albicans.max.cds")
+ca.gc <- read_tsv("Data/GC/candida_albicans.max.cds")
+
+
+ca.clust <- ca.clust %>% left_join(ca.gc,by="Gene") %>% mutate(ID=Gene)#=str_remove(Gene,"_[AB]"))
+max.cluster <- ca.clust %>% group_by(Cluster) %>% 
+               summarize(Median.GC3 = median(GC3)) %>% 
+               top_n(1) %>%
+               dplyr::rename(Max.Cluster=Cluster)
+ca.clust <- ca.clust %>% mutate(Max.Cluster = max.cluster$Max.Cluster) %>% 
+              mutate(Cluster = case_when(Cluster == 1 & Max.Cluster == 1 ~ "Higher GC3",
+                                         Cluster == 2 & Max.Cluster == 1 ~ "Lower GC3",
+                                         Cluster == 1 & Max.Cluster == 2 ~ "Lower GC3",
+                                         Cluster == 2 & Max.Cluster == 2 ~ "Higher GC3")
+                     )
+
+rr.df <- rr.df %>% inner_join(ca.clust,by="ID") %>% mutate(`Repeat Status` = fct_relevel(`Repeat Status`,c("Repeat CDS","Non-repeat CDS")))
+
+rr.count <- table(rr.df[,c("Cluster","Repeat Status")])
+fisher.test(rr.count)
+
+```
+
+```{r}
+
+snf2 <- read_csv("~/calbicans_snf2_peaks.csv")
+calb.gc.mix <- createChrDf("Results/Clustering//candida_albicans.max.cds","Data/GC/candida_albicans.max.cds","/data2/Labella2019/Genomes/gff/candida.albicans.max.cds",gff.id="ID",chr.reg = "chr[0-9R]" )
+calb.gc.mix <- calb.gc.mix %>% dplyr::rename(seqnames=Chr) %>% 
+  mutate(Gene=str_remove(Gene,"_[AB]"),
+        Cluster = case_when(Cluster == 1 ~ "Lower GC3%",
+        Cluster == 2 ~ "Higher GC3%",
+        is.na(Cluster) ~ "Excluded CDS")) %>% 
+  filter(str_detect(seqnames,pattern = "chr[0-9A-Z]"))
+                                         
+rownames(calb.gc.mix) <- calb.gc.mix$Gene
+
+calb.mix <- calb.gc.mix %>% dplyr::select(Gene,Cluster)
+
+snf2 <- unique(str_remove(unlist(str_split(snf2$GeneIDs,";")),"_[AB]"))
+
+gene.snf2 <- calb.mix %>% mutate(Peak = ifelse(Gene %in% snf2,"Yes","No"))
+
+snf2.table <- table(gene.snf2[,c("Cluster","Peak")])
+
+fisher.test(snf2.table)
+```
+
+
+
+```{r}
+library(GenomicRanges)
+library(methylKit)
+methyl.raw <- processBismarkAln("/data2/cope/DNA_methylation/nondir_alignment/SRR5927905_1_val_1_bismark_bt2_pe.deduplicated.sorted.bam",sample.id="control",assembly="C.albicans",save.folder=getwd())
+getMethylationStats(methyl.raw,plot=TRUE,both.strands=FALSE)
+
+
+calb.gff <- readGFFAsGRanges("/data2/Labella2019/Genomes/gff/candida.albicans.max.cds")
+calb.gff.cds <- calb.gff[calb.gff$type=="CDS"]
+cds.methyl <- regionCounts(methyl.raw,calb.gff.cds)
+
+
+
+```
+
+```{r warning=F}
+calb.gc.mix <- createChrDf("Results/Clustering//candida_albicans.max.cds","Data/GC/candida_albicans.max.cds","/data2/Labella2019/Genomes/gff/candida.albicans.max.cds",gff.id="ID",chr.reg = "chr[0-9R]" )
+calb.gc.mix <- calb.gc.mix %>% dplyr::rename(seqnames=Chr) %>% 
+  mutate(Gene=str_remove(Gene,"_[AB]"),
+        Cluster = case_when(Cluster == 1 ~ "Lower GC3%",
+        Cluster == 2 ~ "Higher GC3%",
+        is.na(Cluster) ~ "Excluded CDS")) %>% 
+  filter(str_detect(seqnames,pattern = "chr[0-9A-Z]"))
+                                         
+rownames(calb.gc.mix) <- calb.gc.mix$Gene
+
+calb.gff <- readGFFAsGRanges("/data2/Labella2019/Genomes/gff/candida.albicans.max.cds")
+
+calb.gff.cds <- calb.gff[calb.gff$type=="CDS"]
+calb.gff.cds.df <- as.data.frame(calb.gff.cds) %>% mutate(ID = str_remove(ID,"_[AB]-[0-9A-Za-z\\-]"),
+                                                       Gene=ID,
+                                                       seqnames = str_extract(seqnames, pattern = "chr[0-9R]")) %>%
+                   dplyr::select(-Parent) %>%
+                   distinct(seqnames,Gene,.keep_all = T)
+
+
+
+hetero.regions <- read_csv("~/calbicans_loh.csv")
+hetero.regions <- hetero.regions %>% mutate(HOM = ifelse(SC5314 == 0,"HOM","HET"),CHR=paste0("chr",CHR))
+homo.regions <- hetero.regions %>% filter(HOM == "HOM")
+
+
+homo.regions.by.pos <- apply(homo.regions,M=1,function(x){
+  df <- data.frame(seqnames=x["CHR"],POSITION=seq(x["SHR START"],x["CHR END"]))
+  df
+}) %>% bind_rows()
+
+cds.in.homo.start <- homo.regions.by.pos %>% 
+  dplyr::left_join(calb.gff.cds.df,by=c("seqnames","POSITION"="start")) %>%
+  filter(!is.na(end)) %>%
+  dplyr::select(seqnames,Gene)
+
+cds.in.homo.end  <- homo.regions.by.pos %>% 
+  dplyr::left_join(calb.gff.cds.df,by=c("seqnames","POSITION"="end")) %>%
+  filter(!is.na(start)) %>%
+  dplyr::select(seqnames,Gene)
+
+cds.in.homo <- list(cds.in.homo.start,cds.in.homo.end) %>% bind_rows() %>% distinct()
+
+cds.in.homo <- cds.in.homo %>% left_join(calb.gc.mix,by="Gene")
+
+calb.gc.mix <- calb.gc.mix %>% mutate(HOM = ifelse(Gene %in% cds.in.homo$Gene,"HOM","HET"))
+
+calb.gc.mix <- calb.gc.mix %>% mutate(HOM = ifelse(Gene %in% cds.in.homo$Gene,"HOM","HET"))
+calb.gc.mix <- calb.gc.mix %>% mutate(HOM=factor(HOM,levels = c("HOM","HET")))
+clust.hom <- table(calb.gc.mix[,c("Cluster","HOM")])
+fisher.test(clust.hom)
+```
+
+
+```{r,fig.width=16,fig.height=16}
+calb.gc.mix <- createChrDf("Results/Clustering//candida_albicans.max.cds","Data/GC/candida_albicans.max.cds","/data2/Labella2019/Genomes/gff/candida.albicans.max.cds",gff.id="ID",chr.reg = "chr[0-9R]" )
+calb.gc.mix <- calb.gc.mix %>% dplyr::rename(seqnames=Chr) %>% 
+  mutate(Gene=str_remove(Gene,"_[AB]"),
+        Cluster = case_when(Cluster == 1 ~ "Lower GC3%",
+        Cluster == 2 ~ "Higher GC3%",
+        is.na(Cluster) ~ "Excluded CDS")) %>% 
+  filter(str_detect(seqnames,pattern = "chr[0-9A-Z]"))
+                                         
+rownames(calb.gc.mix) <- calb.gc.mix$Gene
+
+calb.gff <- readGFFAsGRanges("/data2/Labella2019/Genomes/gff/candida.albicans.max.cds")
+
+calb.gff.cds <- calb.gff[calb.gff$type=="CDS"]
+calb.gff.cds.df <- as.data.frame(calb.gff.cds) %>% mutate(ID = str_remove(ID,"_[AB]-[0-9A-Za-z\\-]"),
+                                                       Gene=ID,
+                                                       seqnames = str_extract(seqnames, pattern = "chr[0-9R]")) %>%
+                   dplyr::select(-Parent) %>%
+                   distinct(seqnames,Gene,.keep_all = T)
+
+calb.gff.chr <- as.data.frame(calb.gff) %>% 
+  filter(type == "chromosome" & str_detect(seqnames,pattern = "chr[0-9R]A")) %>%
+  mutate(seqnames = str_extract(seqnames, pattern = "chr[0-9R]"))
+
+end <- calb.gff.chr %>% dplyr::select(width) %>% 
+  deframe() %>% 
+  purrr::accumulate(sum)
+
+
+start <- c(1,end[1:(length(end)-1)]+1)
+
+chr.nt <- data.frame(Chr=calb.gff.chr$seqnames,start=start,end=end)
+calb.recomb <- as.numeric(readLines("~/Labella2019_scripts/calbicans_recomb_breakpoints.txt"))
+
+
+calb.recomb <- calb.recomb[!is.na(calb.recomb)]
+
+chr.recomb <- unlist(lapply(calb.recomb,function(x){ 
+  chr.nt[which((chr.nt[,"start"] < x) & (x < chr.nt[,"end"])),"Chr"] 
+  }))
+
+chr.recomb.df <- data.frame(Chr=chr.recomb,Break=calb.recomb)
+
+chr.recomb.df <- chr.recomb.df %>% left_join(chr.nt,by="Chr") %>% 
+  mutate(Break_rel=Break - (start-1),
+         start_rel = start - (start-1),
+         end_rel = end - (start - 1)) %>% 
+  distinct()
+
+
+## For determining if breakpoint is between CDS or start of next gene
+calb.gff.cds.df <- calb.gff.cds.df %>% group_by(seqnames) %>% mutate(start.next.gene = lead(start))
+
+
+## Get recombination points within a CDS. We only want to count these once for visualization
+recomb.in.gene <- apply(chr.recomb.df,1,
+               function(x){
+                          calb.gff.cds.df[which((calb.gff.cds.df$seqnames == x["Chr"]) & 
+                                                  (calb.gff.cds.df[,"start"] < (as.numeric(x["Break_rel"]))) & 
+                                                  (calb.gff.cds.df[,"end"] > (as.numeric(x["Break_rel"])))), ]
+}) %>% bind_rows() %>% distinct() %>% mutate(IN.CDS=T)
+
+
+calb.gc.mix <- calb.gc.mix %>% group_by(seqnames) %>% mutate(Gene.Number=seq(1:length(seqnames)))
+
+## Get recombination points between CDS. For visualization, we will only plot them once if two are between the same CDS
+recomb.between.genes <- apply(chr.recomb.df,1,
+               function(x){
+                          calb.gff.cds.df[which((calb.gff.cds.df$seqnames == x["Chr"]) & 
+                                                  (calb.gff.cds.df[,"end"] < (as.numeric(x["Break_rel"]))) & 
+                                                  (calb.gff.cds.df[,"start.next.gene"] > (as.numeric(x["Break_rel"])))), ]
+}) %>% bind_rows() %>% distinct() %>% mutate(IN.CDS=F)
+
+recomb.df <- list(recomb.in.gene,recomb.between.genes) %>% bind_rows()
+recomb.df <- recomb.df %>% left_join(calb.gc.mix) %>% mutate(Gene.Number=ifelse(!IN.CDS,Gene.Number+0.5,Gene.Number))
+
+
+color.scheme <- c("#000000","#E41A1C","#377EB8")
+names(color.scheme) <- c("Excluded CDS","Lower GC3%","Higher GC3%")
+recomb.plot <- ggplot(calb.gc.mix,aes(x=Gene.Number),y=1) + 
+         geom_vline(data=recomb.df,aes(xintercept=Gene.Number)) +
+         geom_xsidetile(aes(x=Gene.Number,y=0.5,height=0.5,fill=Cluster)) +
+         ggside(x.pos="bottom") +
+         theme_cowplot() +
+         ylim(c(0,1)) +
+         scale_fill_manual(values=color.scheme,name="Gene Cluster") +
+         xlab("Gene Number") +
+         ylab("Frequency") +
+         theme(axis.title.y=element_blank(),
+           axis.text.y=element_blank(), 
+           axis.ticks.y=element_blank(),
+           axis.line.y = element_blank()) +
+         scale_xsidey_continuous(breaks = NULL, labels = "", expand = expansion(c(0,.1))) +
+         scale_ysidex_continuous(breaks = NULL, labels = "", expand = expansion(c(0,.1))) +
+         ggtitle("Map of Recombination Breakpoints in C. albicans") +
+         facet_wrap(~seqnames,scales="free_x")
+
+recomb.plot
+
+ggsave2("Figures/calbicans_recombination.pdf",recomb.plot,width=12,height=12)
+
+```
+
+
+
+```{r}
+
+genes <- apply(chr.recomb.df,1,
+               function(x){
+                          calb.gff.cds.df[which((calb.gff.cds.df$seqnames == x["Chr"]) & 
+                                                  (calb.gff.cds.df[,"start"] > (as.numeric(x["Break_rel"]) - 10000)) & 
+                                                  (calb.gff.cds.df[,"end"] < (as.numeric(x["Break_rel"]) + 10000))), ]
+}) %>% bind_rows() %>% distinct()
+
+calb.gc.mix.recomb <- calb.gc.mix %>% mutate(Recombination = ifelse(Gene %in% genes$Gene,"Near","Far"))
+
+count.mat <- table(calb.gc.mix.recomb %>% 
+                     ungroup() %>% 
+                     filter(seqnames %in% c("chr2","chr3","chr4")) %>%
+                     filter(Cluster != "Excluded CDS") %>% 
+                     dplyr::select(Cluster,Recombination))
+count.mat <- count.mat[,c("Near","Far")]
+count.mat
+fisher.test(count.mat)
+
+
+count.mat <- table(calb.gc.mix.recomb %>% 
+                     ungroup() %>% 
+                     filter(!seqnames %in% c("chr2","chr3","chr4","chr5","chr6")) %>%
+                     filter(Cluster != "Excluded CDS") %>% 
+                     dplyr::select(Cluster,Recombination))
+count.mat <- count.mat[,c("Near","Far")]
+count.mat
+fisher.test(count.mat)
+```
+
+```{r}
+calb.gc.mix <- createChrDf("Results/Clustering//candida_albicans.max.cds","Data/GC/candida_albicans.max.cds","/data2/Labella2019/Genomes/gff/candida.albicans.max.cds",gff.id="ID",chr.reg = "chr[0-9R]" )
+calb.gc.mix <- calb.gc.mix %>% dplyr::rename(seqnames=Chr) %>% 
+  mutate(Gene=str_remove(Gene,"_[AB]"),
+        Cluster = case_when(Cluster == 1 ~ "Lower GC3%",
+        Cluster == 2 ~ "Higher GC3%",
+        is.na(Cluster) ~ "Excluded CDS")) %>% 
+  filter(str_detect(seqnames,pattern = "chr[0-9A-Z]"))
+                                         
+rownames(calb.gc.mix) <- calb.gc.mix$Gene
+
+calb.gff <- readGFFAsGRanges("/data2/Labella2019/Genomes/gff/candida.albicans.max.cds")
+
+calb.gff.cds <- calb.gff[calb.gff$type=="CDS"]
+calb.gff.cds.df <- as.data.frame(calb.gff.cds) %>% mutate(ID = str_remove(ID,"_[AB]-[0-9A-Za-z\\-]"),
+                                                       Gene=ID,
+                                                       seqnames = str_extract(seqnames, pattern = "chr[0-9R]")) %>%
+                   dplyr::select(-Parent) %>%
+                   distinct(seqnames,Gene,.keep_all = T)
+
+dna.rep <- read_tsv("GSE17963_final_data.txt",comment = "#") %>%
+           dplyr::select(Chromosome,Position,Wild_type) %>%
+           dplyr::rename(seqnames=Chromosome) %>%
+           mutate(seqnames = ifelse(seqnames == 0,"chrR",paste0("chr",seqnames)))
+dna.rep.index <- sample(1:nrow(dna.rep),size = 500000,replace = F)
+dna.rep <- dna.rep[dna.rep.index,]
+genes <- apply(dna.rep,1,
+               function(x){
+                          tmp <- calb.gff.cds.df[which((calb.gff.cds.df$seqnames == x["seqnames"]) & 
+                                                  (calb.gff.cds.df[,"start"] < (as.numeric(x["Position"]))) & 
+                                                  (calb.gff.cds.df[,"end"] > (as.numeric(x["Position"])))), ]
+                          if(nrow(tmp) > 0)
+                          {
+                            timing.df <- data.frame(seqnames=tmp$seqnames,GeneID=tmp$ID,Timing=as.numeric(unname(x["Wild_type"])))
+                            timing.df
+                          }
+}) %>% bind_rows() #%>% distinct()
+
+genes.sum <- genes %>% group_by(GeneID) %>% summarize(Timing=median(Timing))
+
+calb.dna.rep.test <- genes.sum %>% left_join(calb.gc.mix,by=c("GeneID"="Gene"))
+cor.test(calb.dna.rep.test$Timing,calb.dna.rep.test$GC3,method="spearman")
+
+p <- ggplot(calb.dna.rep.test,aes(x=Timing,y=GC3,color=Cluster)) + geom_point() +
+     stat_cor(method="spearman")
+p
+```
+
+
+```{r}
+scer.gff <- readGFFAsDf("Data/gff/saccharomyces_cerevisiae_max.cds")
+scer.gff.cds <- scer.gff %>% filter(type == "CDS")
+scer.gff.cds <- scer.gff.cds %>% filter(seqnames != "NC_001224.1")
+
+hotspots <- read_tsv("~/hot_spots.txt")
+chr <- sort(unique(hotspots$chr))
+names(chr) <- unique(scer.gff.cds$seqnames)
+
+scer.gff.cds <- scer.gff.cds %>% mutate(seqnames = chr[seqnames])
+
+hotspots.co <- hotspots %>% filter(type == "CO")
+
+cds.in.hotspots <- apply(hotspots,1,
+               function(x){
+                      scer.gff.cds[which((scer.gff.cds$seqnames == x["chr"]) & 
+                                                  (scer.gff.cds[,"start"] > (as.numeric(x["first"]))-500) & 
+                                                  (scer.gff.cds[,"end"] < (as.numeric(x["last"]))+500)), ]
+}) %>% bind_rows() %>% distinct()
+
+sc.clust <- read_tsv("Results/Clustering/saccharomyces_cerevisiae.max.cds")
+sc.gc <- read_tsv("Data/GC/saccharomyces_cerevisiae.max.cds")
+
+sc.clust.gc <- sc.clust %>% left_join(sc.gc,by="Gene")
+max.cluster <- sc.clust.gc %>% group_by(Cluster) %>% 
+               summarize(Median.GC3 = median(GC3)) %>% 
+               top_n(1) %>%
+               dplyr::rename(Max.Cluster=Cluster)
+sc.clust.gc <- sc.clust.gc %>% mutate(Max.Cluster = max.cluster$Max.Cluster) %>% 
+              mutate(Cluster = case_when(Cluster == 1 & Max.Cluster == 1 ~ "Higher GC3",
+                                         Cluster == 2 & Max.Cluster == 1 ~ "Lower GC3",
+                                         Cluster == 1 & Max.Cluster == 2 ~ "Lower GC3",
+                                         Cluster == 2 & Max.Cluster == 2 ~ "Higher GC3")
+                     )
+
+cds.in.hotspots <- cds.in.hotspots %>% 
+  left_join(sc.clust.gc,by=c("locus_tag" = "Gene"))
+
+sc.clust.gc <- sc.clust.gc %>% 
+  mutate(Hotspot = ifelse(Gene %in% cds.in.hotspots$locus_tag,"Hotspot","Not hotspot"))
+
+sc.count <- table(sc.clust.gc[,c("Cluster","Hotspot")])
+sc.count
+fisher.test(sc.count)
+```
+
+
+## Varying wobble penalties across species
+```{r,fig.width=9,fig.height=9}
+s.values.scer <- read_tsv("tai_s_weights_starting_scer_top_10_percent_genes.tsv") %>% 
+  dplyr::select(-s9,-Performance.original) %>% 
+  pivot_longer(-Species,names_to="Parameter",values_to="Optimized")
+s.values.uniform <- read_tsv("tai_s_weights_starting_uniform_top_10_percent_genes.tsv") %>% 
+  dplyr::select(-s9,-Performance.original) %>% 
+  pivot_longer(-Species,names_to="Parameter",values_to="Optimized")
+
+s.values <- s.values.scer %>% left_join(s.values.uniform,by=c("Species","Parameter"),suffix=c("_Scer","_Uniform"))
+
+compare.s <- ggplot(s.values,aes(x=Optimized_Uniform,y=Optimized_Scer)) +
+  geom_point() +
+  xlab("Estimate (Uniform Start)") +
+  ylab("Estimate (S.cerevisiae Start)") +
+  geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ggtitle("Comparison of wobble penalty estimates:\ntAI vs. gene expression") +
+  theme(aspect.ratio=1) +
+  theme_cowplot() +
+  stat_cor(method="spearman") +
+  facet_wrap(~Parameter) 
+
+compare.s
+```
+
+
+```{r,fig.width=7,fig.height=7}
+s.values.uniform <- read_tsv("tai_s_weights_starting_scer_top_10_percent_genes.tsv") %>% dplyr::select(-s9)
+
+
+s.values.long <- s.values.uniform %>% 
+  pivot_longer(-c(Species,starts_with("Performance")),names_to="Wobble",values_to="Penalty")
+
+s.hist <- ggplot(s.values.long,aes(x=Penalty)) +
+  geom_histogram(color="black",fill="white") +
+  xlab("Wobble Penalty") +
+  ylab("Count") +
+  ggtitle("Distribution of wobble penalities") +
+  theme(aspect.ratio=1) +
+  theme_cowplot() +
+  facet_wrap(~Wobble)
+
+s.hist
+
+s.values.long.filt <- s.values.long %>% filter(!Species %in% improved.fits.species)
+
+s.hist <- ggplot(s.values.long.filt,aes(x=Penalty)) +
+  geom_histogram(color="black",fill="white") +
+  xlab("Wobble Penalty") +
+  ylab("Count") +
+  ggtitle("Distribution of wobble penalities\nremove VarMut species") +
+  theme(aspect.ratio=1) +
+  theme_cowplot() +
+  facet_wrap(~Wobble)
+
+s.hist
+
+```
+
+```{r}
+gettAI.relative.aa.2 <- function(tRNA,codon.order,s=NULL,sking=0,exclude.ctg=F)
+{
+  
+  if (is.null(s))
+  {
+    s <- c(0.0, 0.0, 0.0, 0.0, 0.41, 0.28, 0.9999, 0.68, 0.89)
+  }
+  
+  p = 1 - s
+
+  # initialise w vector
+  W = NULL  # don't confuse w (lowercase) and W (uppercase)
+
+  # obtain absolute adaptiveness values (Ws)
+  for (i in seq(1, 61, by=4))
+    W = c(W,
+      p[1]*tRNA[i]   + p[5]*tRNA[i+1],     # INN -> NNT, NNC, NNA
+      p[2]*tRNA[i+1] + p[6]*tRNA[i],       # GNN -> NNT, NNC
+      p[3]*tRNA[i+2] + p[7]*tRNA[i],       # TNN -> NNA, NNG
+      p[4]*tRNA[i+3] + p[8]*tRNA[i+2])     # CNN -> NNG
+
+  # check methionine
+  W[36] = p[4]*tRNA[36]
+  
+  # if bacteria, modify isoleucine ATA codon
+  if(sking == 1) W[35] = p[9]
+
+  # get rid of stop codons (11, 12, 15) and methionine (36)
+  W = W[-c(11,12,15,36)]
+  codon.order <- codon.order[-c(11,12,15,36)]
+  W <- data.frame(Codon=codon.order,W=W)
+  W <- W %>% 
+    mutate(AA = unlist(purrr::map(Codon, ~codonToAA(.x))))
+  if (exclude.ctg)
+  {
+    W <- W %>% 
+      mutate(AA = ifelse(Codon == "CTG","J",AA))
+  }
+  r.wi <- W %>% 
+    group_by(AA) %>%
+    mutate(Order=rank(Codon),
+           tAI = W[which.max(Order)]/W)
+  r.wi <- r.wi %>% 
+    ungroup() %>%
+    dplyr::select(AA,Codon,Order,W,tAI)
+  return(r.wi)
+}
+```
+
+
+```{r}
+species <- list.files("/data2/cope/Intragenomic_variation_mutation_bias/Data/Expression/",recursive = F,full.names = F,include.dirs = F)
+names(species) <- species
+
+compareDeta <- function(species,selection.matrix.long)
+{
+  s.values <- read_tsv("tai_s_weights_starting_scer_top_10_percent_genes.tsv",col_types = cols()) %>% 
+    dplyr::select(-s9)
+  
+  s.wobble <- s.values %>% 
+    filter(Species == species) %>%
+    dplyr::select(-Species,-starts_with("Performance")) %>% 
+    unname() %>%
+    unlist()
+  
+  s <- c(rep(0,4),s.wobble)
+  
+  ser.genomes <- readLines("~/Labella2019_scripts/ser_fungi.txt")
+  codon.order <- read.table("~/dos_reis_tai_codon_order.txt",header=F)[,1]
+  trna.count <- read_tsv("~/Labella2019_scripts/tRNA/tgcn_per_species.tsv",col_types = cols()) %>%
+      filter(Species == species)
+  trna <- trna.count[,c(codon.order)] %>%
+      unlist() %>%
+      as.vector()
+  
+  r_i <- gettAI.relative.aa.2(trna,codon.order,s=s,sking=0,exclude.ctg=ifelse(species %in% ser.genomes,T,F))
+  r_i <- r_i %>% mutate(tAI=log(tAI))
+  
+  deta <- selection.matrix.long %>% 
+    filter(Species == species) %>%
+    left_join(r_i,by="Codon",suffix=c("_Original","_Updated")) %>%
+    mutate(across(where(is.numeric),~na_if(.,Inf)))
+  return(deta)
+}
+
+deta <- lapply(species,compareDeta,selection.matrix.long) %>% 
+  bind_rows(.id="Species")
+```
+
+```{r,fig.width=9,fig.height=9,warning=F}
+compare.tai <- deta %>% group_by(Species) %>%
+  dplyr::select(-Order,-W) %>%
+  nest(AA,Codon,Selection,tAI_Original,tAI_Updated) %>% 
+  mutate(corr.otai = purrr::map(data,~cor.test(.x$tAI_Original,.x$Selection,method="spearman",use="complete.obs",alternative="greater") %>% tidy()),
+         corr.utai = purrr::map(data,~cor.test(.x$tAI_Updated,.x$Selection,method="spearman",use="complete.obs",alternative="greater") %>% tidy())
+         ) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_") 
+
+compare.tai <- compare.tai %>% 
+  mutate(
+    Label=ifelse(corr.utai_estimate - corr.otai_estimate > 0.05,Species,NA)
+    )
+
+p <- ggplot(compare.tai,aes(x=corr.otai_estimate,y=corr.utai_estimate,label=Label)) +
+  geom_point() +
+  geom_text_repel() +
+  geom_abline(intercept=0,slope=1,linetype="solid") +
+  geom_abline(intercept=0.05,slope=1,linetype="dashed") +
+  geom_abline(intercept=-0.05,slope=1,linetype="dashed") +
+  xlab("Original tAI") +
+  ylab("Updated tAI") +
+  ggtitle("Comparing selection coefficients to tAI") +
+  theme_cowplot() +
+  theme(aspect.ratio=1)+
+  stat_cor(method="spearman")
+p
+
+```
+
+
+
+### Shifts in $\Delta\eta$ between species are correlated with changes in expected elongation rates based on tRNA abundances
+How do shifts in expected elongation rates based on tRNA abundances across species compare with shifts in selection coefficients? We would expect a negative correlation on average, which is what is observed when looking across all genomes.
+
+```{r,fig.width=12,fig.height=12}
+
+deta.matrix.spec <- deta.matrix.t %>% rownames_to_column("Species")
+trna.matrix.spec <-  wi
+
+deta.matrix.long <- deta.matrix.spec %>% 
+  pivot_longer(-Species,names_to="Codon",values_to="Selection")
+
+trna.matrix.long <- trna.matrix.spec %>% 
+  pivot_longer(-Species,names_to="Codon",values_to="Elongation")
+
+deta.trna <- deta.matrix.long %>% inner_join(trna.matrix.long,by=c("Species","Codon"))
+
+deta.trna.pairwise <- deta.trna %>% group_by(Species) %>% 
+  nest() %>% 
+  ungroup() %>%
+  tidyr::expand(nesting(Species,data),nesting(Species.2=Species,data.2=data))
+
+
+deta.trna.pairwise <- deta.trna.pairwise %>% left_join(clades,by="Species")
+clades.2 <- clades %>% dplyr::rename(Species.2 = Species)
+deta.trna.pairwise <- deta.trna.pairwise %>% left_join(clades.2,by="Species.2",suffix=c(".1",".2"))
+
+deta.trna.pairwise <- deta.trna.pairwise %>% 
+                      #filter(Clade.1 == Clade.2) %>%
+                      filter(Species != Species.2) %>%
+                      arrange(Species,Species.2)
+
+c_sort_collapse <- function(...){
+  c(...) %>% 
+    sort() %>% 
+    str_c(collapse = ".")
+}
+
+deta.trna.pairwise <- deta.trna.pairwise %>% 
+  mutate(Species.comb = map2_chr(.x = Species, 
+                         .y = Species.2, 
+                         .f = c_sort_collapse)) %>%
+  distinct(Species.comb, .keep_all = TRUE)
+
+deta.trna.corr <- deta.trna.pairwise %>% mutate(corr.diff = purrr::map2(data,data.2,function(data.1,data.2){
+  sel.diff <- data.1$Selection - data.2$Selection
+  trna.diff <- data.1$Elongation - data.2$Elongation
+  cor.test(trna.diff,sel.diff,method="spearman",use="complete.obs",alternative="less")
+} %>% tidy())) %>% 
+  dplyr::select(-data,-data.2) %>% 
+  unnest() %>%
+  dplyr::select(-statistic,-method,-alternative,-Species.comb)
+
+
+
+write_tsv(deta.trna.corr,"selection_coefficients_trna_pool_shifts_pairwise.tsv")
+
+```
+
+```{r}
+
+deta.trna.corr <- read_tsv("selection_coefficients_trna_pool_shifts_pairwise.tsv")
+
+pairwise.hist.clade <- ggplot(deta.trna.corr,aes(x=estimate)) + 
+  geom_histogram(color="black",alpha=0.5) +
+  theme_cowplot() +
+  xlab("Pairwise-species Spearman Correlation") +
+  ylab("Count") +
+  ggtitle("Between-species Changes to Selection Coefficients\nReflect Changes to the tRNA Pool")
+  #facet_wrap(~Clade.1,scales="free_y")
+
+pairwise.hist.clade
+
+
+```
+
+
+
+```{r,fig.width=9,fig.height=9}
+identifyOptimalPerAA <- function(selection)
+{
+  aa <- aminoAcids()
+  for (a in aa)
+  {
+    codons <- AAToCodon(a,T)
+    sel.codons <- selection[codons]
+  }
+}
+
+deta.matrix.t.long <- deta.matrix.t.long %>% 
+  mutate(AA = unlist(purrr::map(Codon,~codonToAA(.x)))) %>%
+  filter(!is.na(Selection))
+
+optimal.per.species.per.codon <- deta.matrix.t.long %>% 
+  group_by(Species,AA) %>%
+  summarize(Minimum = min(c(Selection,0),na.rm = T))
+
+deta.w.optimal <- deta.matrix.t.long %>% 
+  left_join(optimal.per.species.per.codon,by=c("Species","AA")) %>%
+  mutate(Optimal = ifelse(Selection == Minimum,1,0))
+
+deta.optimal.matrix <- deta.w.optimal %>% 
+  pivot_wider(Species,names_from=Codon,values_from = Optimal)
+
+optimal.across.species <- colSums(deta.optimal.matrix[,2:41])
+optimal.df <- data.frame(Codon=names(optimal.across.species),Num.Optimal=unname(optimal.across.species))
+
+selection.raw.summary <- selection.raw %>% group_by(Codon) %>% 
+  summarize(Median.Sel=median(Selection,na.rm=T),
+            SD.Sel = sd(Selection,na.rm=T))
+
+cor.sum.stat <- all.cor.pic %>% left_join(trna.count.sum,by="Codon")
+cor.sum.stat <- cor.sum.stat %>% left_join(optimal.df,by="Codon")
+cor.sum.stat <- cor.sum.stat  %>% left_join(selection.raw.summary,by="Codon")
+cor.sum.stat <- cor.sum.stat %>% mutate(AA = purrr::map(Codon,~codonToAA(.x)),
+                                        AA.Codon = paste0(AA,"/",Codon))
+
+
+```
+
+
+```{r}
+met.ariz <- readDNAStringSet("/data2/Labella2019/Genomes/cds_cleaned/metschnikowia_arizonensis.max.cds")
+high.phi.genes <- phi.df %>% 
+  filter(Species == "metschnikowia_arizonensis.max.cds") %>% 
+  filter(Mean.log10 > 1) %>% 
+  dplyr::select(GeneID) %>% 
+  deframe()
+
+high.genes.index <- unlist(lapply(high.phi.genes,function(x) which(str_detect(names(met.ariz ),x))))
+as.character(met.ariz [high.genes.index])
+as.character(translate(met.ariz [high.genes.index]))
+
+```
+
+```{r}
+
+
+met.cont<- readDNAStringSet("/data2/Labella2019/Genomes/cds_cleaned/metschnikowia_continentalis.max.cds")
+phi.df %>% filter(Species == "metschnikowia_continentalis.max.cds") %>% filter(Mean == max(Mean)) %>% dplyr::select(GeneID) %>% deframe()
+met.cont[[which(str_detect(names(met.cont),"snap_masked-con_s128-processed-gene-0.11-mRNA-1"))]]
+translate(met.cont[[which(str_detect(names(met.cont),"snap_masked-con_s128-processed-gene-0.11-mRNA-1"))]])
+
+```
+
+
+```{r}
+
+
+sat.serr<- readDNAStringSet("/data2/Labella2019/Genomes/cds_cleaned/yHMPu5000034613_saturnispora_serradocipensis_160519.max.cds")
+high.phi.genes <- phi.df %>% 
+  filter(Species == "yHMPu5000034613_saturnispora_serradocipensis_160519.max.cds") %>% 
+  filter(Mean.log10 > 1) %>% 
+  dplyr::select(GeneID) %>% 
+  deframe()
+
+high.genes.index <- unlist(lapply(high.phi.genes,function(x) which(str_detect(names(sat.serr),x))))
+as.character(sat.serr[high.genes.index])
+as.character(translate(sat.serr[high.genes.index]))
+
+phi.df %>% filter(Species == "yHMPu5000034613_saturnispora_serradocipensis_160519.max.cds") %>%
+  filter(GeneID != "augustus_masked-flattened_line_1059-processed-gene-0.1-mRNA-1") %>%
+  summarize(Mean.Phi = mean(Mean))
+
+```
+
+```{r warning=F}
+library(broom.mixed)
+cor.sel.tai.pic <- selection.matrix.long %>% group_by(Codon) %>% 
+  nest(Species,Selection,tAI) %>% 
+  mutate(corr = purrr::map(data,function(x)
+    {
+      tmp <- x %>% column_to_rownames("Species") %>% 
+        dplyr::select(Selection,tAI) %>% 
+        dplyr::filter(!is.na(tAI) & !is.na(Selection) & is.finite(tAI) & is.finite(Selection)) %>%
+        as.matrix()
+      cleaned <- CleanData(tree.to.use,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      selection.values <- x[,"Selection"]
+      tai.values <- x[,"tAI"]
+      if (sd(tai.values,na.rm=T) > 0.05)
+      {
+        tai.pic <- calculatePIC(tai.values[tmp.tree$tip.label],tree=tmp.tree)
+        sel.pic <- calculatePIC(selection.values[tmp.tree$tip.label],tree=tmp.tree)
+        plot(tai.pic,sel.pic)
+        tmp.tree$edge.length <- tmp.tree$edge.length * 100
+        phylo.sig <- phylosig(tmp.tree,tai.values,method="lambda")
+        print(str_c(phylo.sig$lambda,sd(tai.values,na.rm=T),sep = " "))
+        if (phylo.sig$lambda > 1)
+        {
+          phylo.sig$lambda <- 1
+        }
+        result.bm <- gls(Selection~tAI,
+                    data=as.data.frame(x),
+                    correlation=corBrownian(phy=tmp.tree),
+                    method="ML")
+        result.lambda <- gls(Selection~tAI,
+                    data=as.data.frame(x),
+                    correlation=corPagel(value=phylo.sig$lambda,phy=tmp.tree,fixed=FALSE),
+                    method="ML")
+        result.ou <- gls(Selection~tAI,
+                    data=as.data.frame(x),
+                    correlation=corMartins(value=1,phy=tmp.tree,fixed=FALSE),
+                    method="ML",
+                    control=glsControl(maxIter = 200,msMaxIter = 200))
+        summary.bm <- summary(result.bm)
+        summary.lambda <- summary(result.lambda)
+        summary.ou <- summary(result.ou)
+        models <- list(result.bm,result.lambda,result.ou)
+        aic.m <- c(summary.bm$AIC,summary.lambda$AIC,summary.ou$AIC)
+        best.model <- which.min(aic.m)
+        
+        delta.aic <- summary.bm$AIC - summary.lambda$AIC
+        print(str_c("Difference in AIC ",delta.aic))
+        if (delta.aic < 2)
+        {
+          result <- result.bm
+        } else {
+          result <- result.lambda
+        }
+        test <- cor.test(tai.pic,sel.pic,method="pearson",alternative="greater")
+        test
+        #result
+      } 
+    } %>% broom::tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(c("corr"),names_sep = "_") #%>% 
+  #filter(corr_term == "tAI") %>%
+  #mutate(corr_p.value = corr_p.value/2)
+```
+
+
+```{r}
+csoj.full.fit <- read_csv("/data2/Labella2019/Final_runs/Results_k_1/candida_sojae.max.cds/run_2/Parameter_est/gene_expression.txt")
+csoj.full.fit.mix <- read_csv("/data2/Labella2019/Final_runs/Results_k_2_selectionShared/candida_sojae.max.cds/run_2/Parameter_est/gene_expression.txt")
+csoj.sub.fit <- read_csv("/data2/Labella2019/Candida_sojae/run_2/Parameter_est/gene_expression.txt")
+gc <- read_tsv("~/Labella2019_scripts/GC/candida_sojae.max.cds") %>% dplyr::rename(GeneID=Gene)
+cai <- read_csv("~/Labella2019_scripts/CAI/candida_sojae.max.cds")
+csoj.ana <- initializeGenomeObject("/data2/Labella2019/Genomes/cds_cleaned/candida_sojae.max.cds",codon_table = 12)
+csoj.scuo <- calculateSCUO(csoj.ana)
+
+
+csoj.fits <- csoj.full.fit %>% left_join(csoj.sub.fit,by=c("GeneID"),suffix=c("_Full","_Sub"))
+csoj.fits <- csoj.fits %>% left_join(csoj.full.fit.mix,by=c("GeneID"))
+csoj.fits <- csoj.fits %>% left_join(gc,by="GeneID")
+csoj.fits <- csoj.fits %>% left_join(cai,by="GeneID",suffix=c("_Mix","_CAI"))
+csoj.fits <- csoj.fits %>% left_join(csoj.scuo,by=c("GeneID"="ORF"))
+
+p <- ggplot(csoj.fits,aes(x=Mean_Full,y=SCUO,color=GC3)) +
+  geom_point() +
+  theme_cowplot() +
+  theme(aspect.ratio=1) +
+  geom_hline(yintercept = 1) +
+  geom_vline(xintercept = 1) +
+  stat_cor(method="spearman") +
+  scale_x_log10() 
+
+p
+
+p <- ggplot(csoj.fits,aes(x=Mean_CAI,y=SCUO,color=GC3)) +
+  geom_point() +
+  theme_cowplot() +
+  theme(aspect.ratio=1) +
+  geom_hline(yintercept = 1) +
+  geom_vline(xintercept = 1) +
+  stat_cor(method="spearman")
+
+p
+
+
+p <- ggplot(csoj.fits,aes(x=Mean_Sub,y=Mean_Mix,color=GC3)) +
+  geom_point() +
+  theme_cowplot() +
+  theme(aspect.ratio=1) +
+  geom_hline(yintercept = 1) +
+  geom_vline(xintercept = 1)
+
+
+p
+
+p <- ggplot(csoj.fits,aes(x=Mean_Mix,y=Mean_CAI,color=GC3)) +
+  geom_point() +
+  theme_cowplot() +
+  theme(aspect.ratio=1) 
+p
+
+csoj.cds <- readDNAStringSet("/data2/Labella2019/Genomes/cds_cleaned/candida_sojae.max.cds")
+csoj.cds.long <- csoj[which(width(csoj) > 100)]
+writeXStringSet(csoj.cds.long,"/data2/Labella2019/candida_sojae_long.max.cds")
+
+csoj.weird <- csoj.full.fit %>% filter(Mean > 3)
+gene.index <- unlist(lapply(csoj.weird$GeneID,function(x) which(str_detect(names(csoj.cds),x))))
+
+csoj.cds[gene.index]
+as.character(translate(csoj.cds[gene.index]))
+```
+
+
+```{r}
+candida.gc <- gc.clust.df %>% filter(Species %in% c("candida_sojae.max.cds","candida_tropicalis.max.cds"))
+
+ggplot(candida.gc,aes(x=GC3)) + geom_histogram(binwidth = 0.05) + facet_wrap(~Species)
+
+```
+
+```{r}
+csoj <- Biostrings::readDNAStringSet("/data2/Labella2019/Genomes/cds_cleaned/candida_sojae.max.cds")
+ctrop <- Biostrings::readDNAStringSet("/data2/Labella2019/Genomes/cds_cleaned/candida_tropicalis.max.cds")
+
+```
+
+```{r fig.width=12,fig.height=12}
+
+
+csoj.all <- compareGC3ToClusterFreq("~/Labella2019_scripts/Clara_k_2/candida_sojae.max.cds","~/Labella2019_scripts/GC/candida_sojae.max.cds","/data2/Labella2019/Genomes/gtf_sorted/candida_sojae.max.gtf",title="C. sojae")
+
+csoj.all
+
+ctrop.all <- compareGC3ToClusterFreq("~/Labella2019_scripts/Clara_k_2/candida_tropicalis.max.cds","~/Labella2019_scripts/GC/candida_tropicalis.max.cds","/data2/Labella2019/Genomes/gtf_sorted/candida_tropicalis.max.gtf",title="C. tropicalis")
+
+ctrop.all
+
+```
+
+
+
+```{r}
+csoj.cds <- readDNAStringSet("/data2/Labella2019/Genomes/cds_cleaned/candida_sojae.max.cds")
+csoj.cds.long <- csoj[which(width(csoj) > 2000)]
+writeXStringSet(csoj.cds.long,"/data2/Labella2019/candida_sojae_really_long.max.cds")
+
+
+cai <- read_csv("~/Labella2019_scripts/CAI/candida_sojae.max.cds")
+csoj.ana <- initializeGenomeObject("/data2/Labella2019/candida_sojae_really_long.max.cds",codon_table = 12)
+csoj.scuo <- calculateSCUO(csoj.ana)
+clust <- read_tsv("~/Labella2019_scripts/Clara_k_2/candida_sojae.max.cds") %>% dplyr::rename(GeneID=Gene)
+gc <- read_tsv("~/Labella2019_scripts/GC/candida_sojae.max.cds") %>% dplyr::rename(GeneID=Gene)
+cai <- cai %>% left_join(gc,by="GeneID") %>% left_join(clust,by="GeneID")
+csoj.index <- csoj.scuo %>% left_join(cai,by=c("ORF"="GeneID"))
+p <- ggplot(csoj.index,aes(x=Mean,y=SCUO,color=as.factor(Cluster))) +
+  geom_point(alpha=0.5) +
+  theme_cowplot() +
+  theme(aspect.ratio=1) +
+  geom_hline(yintercept = 1) +
+  geom_vline(xintercept = 1) +
+  stat_cor(method="spearman")
+
+p
+
+cai <- read_csv("~/Labella2019_scripts/CAI/candida_tropicalis.max.cds")
+csoj.ana <- initializeGenomeObject("/data2/Labella2019/Genomes/cds_cleaned/candida_tropicalis.max.cds",codon_table = 12)
+csoj.scuo <- calculateSCUO(csoj.ana)
+clust <- read_tsv("~/Labella2019_scripts/Clara_k_2/candida_tropicalis.max.cds") %>% dplyr::rename(GeneID=Gene)
+gc <- read_tsv("~/Labella2019_scripts/GC/candida_tropicalis.max.cds") %>% dplyr::rename(GeneID=Gene)
+cai <- cai %>% left_join(gc,by="GeneID") %>% left_join(clust,by="GeneID")
+
+csoj.index <- csoj.scuo %>% left_join(cai,by=c("ORF"="GeneID"))
+p <- ggplot(csoj.index,aes(x=Mean,y=SCUO,color=as.factor(Cluster))) +
+  geom_point(alpha=0.5) +
+  theme_cowplot() +
+  theme(aspect.ratio=1) +
+  geom_hline(yintercept = 1) +
+  geom_vline(xintercept = 1) +
+  stat_cor(method="spearman")
+
+p
+
+```
+
+
+
+
+
+
+
+
+```{r}
+cleanTree <- function(tree,target.species)
+{
+  tips.to.drop <- tree$tip.label[which(!(tree$tip.label %in% target.species))]
+  cleaned <- drop.tip(tree,tips.to.drop)
+  return(cleaned)
+}
+
+cleanColumnNames <- function(col_name,list_of_option)
+{
+  ## find potential column name from list of options
+  index <- unlist(purrr::map(col_name, 
+            function(x){
+              ## this species will match "metschnikowia_matae_maris.max.cds" and "metschnikowia_matae.max.cds", so force it to match the latter
+              if (x == "metschnikowia_matae")
+                {
+                  x <- paste0(x,".max.cds")
+                }
+              str_which(list_of_option,x)
+            }
+    ))
+  return(list_of_option[index])
+}
+
+comparePhiEmpAcrossSpecies <- function(target.species,k1.phi,k2.phi,orthogroups,empirical.data)
+{
+  dist.from.target <- dist.matrix[,target.species]
+  closest.species <- names(dist.from.target[which.min(dist.from.target)])
+  
+  k1.phi.target <- k1.phi %>% 
+    dplyr::select(Orthogroups,!!as.name(target.species)) %>%
+    dplyr::rename(Phi_K1 = !!as.name(target.species))
+  k2.phi.target <- k2.phi %>% 
+    dplyr::select(Orthogroups,!!as.name(target.species)) %>%
+    dplyr::rename(Phi_K2 = !!as.name(target.species))
+  
+  
+  ortho.species <- orthogroups %>% dplyr::select(Orthogroups,!!as.name(target.species),!!as.name(closest.species))
+  ortho.species <- ortho.species %>% 
+    left_join(empirical.data[[closest.species]],
+              by=setNames("GeneID",closest.species )
+              )
+  ortho.species <- ortho.species %>% 
+    left_join(k1.phi.target,by="Orthogroups") %>%
+    left_join(k2.phi.target,by="Orthogroups")
+  
+  
+  ortho.species.long <- ortho.species %>% pivot_longer(starts_with("Phi"),names_to = "Model",values_to="Phi")
+  
+  # p <- ggplot(ortho.species.long,aes(x=Empirical,y=Phi)) +
+  #   geom_point() +
+  #   xlab(paste0("Empirical\n",closest.species)) +
+  #   ylab(paste0("Predicted\n",target.species)) +
+  #   theme_cowplot() +
+  #   stat_cor(method="spearman",label.sep = "\n") +
+  #   scale_x_log10() +
+  #   scale_y_log10() +
+  #   theme(aspect.ratio=1) +
+  #   facet_wrap(~Model)
+  # p
+  # 
+  across.species.corr <- ortho.species.long %>% 
+    group_by(Model) %>% 
+    summarize(cor.test(Empirical,Phi,method="spearman",use="complete.obs") %>% tidy()) %>% 
+    dplyr::select(Model,estimate,p.value) %>%
+    pivot_wider(values_from = c(estimate,p.value),names_from = Model) %>%
+    mutate(Compared.to = closest.species,
+           Divergence = unname(dist.from.target[which.min(dist.from.target)]) )
+  return(across.species.corr)
+}
+
+
+fungi.tree <- read.tree("../tree_with_cds_labels.nwk")
+all.species <- readLines("~/Labella2019_scripts/all_fungi.txt")
+fungi.tree <- cleanTree(fungi.tree,all.species)
+dist.matrix <- cophenetic.phylo(fungi.tree)
+
+species.w.emp <- list.files("/data2/cope/Intragenomic_variation_mutation_bias/Data/Expression/",full.names = F,pattern=".max.cds")
+empirical.data.file <- list.files("/data2/cope/Intragenomic_variation_mutation_bias/Data/Expression/",full.names = T,include.dirs = F,pattern=".max.cds")
+names(empirical.data.file) <- species.w.emp
+
+
+dist.matrix <- dist.matrix[species.w.emp,]
+
+empirical.data <- purrr::map(empirical.data.file,function(x) {
+  read_csv(x,col_types = cols()) %>% 
+    mutate(across(contains("tpm_kallisto"),~na_if(., 0))) %>%
+    mutate(across(contains("tpm_kallisto"),log)) %>%
+    mutate(
+      Log.Mean.Expression=rowMeans(dplyr::select(.,contains("tpm_kallisto")),na.rm=T),
+      Empirical=exp(Log.Mean.Expression),
+      GeneID=str_remove(GeneID,"-mRNA-1")) %>% 
+      dplyr::select(-contains("tpm_kallisto"),-Log.Mean.Expression)
+}
+)
+
+k1.phi <- read_csv("~/Labella2019_scripts/phi_k1_shen_etal_ortholog_matrix_2022_07_08.tsv")  %>% 
+       column_to_rownames("Orthogroup") %>%
+       rename_with(~cleanColumnNames(.x,fungi.tree$tip.label)) %>%
+       rownames_to_column("Orthogroups")
+
+k2.phi <- read_csv("~/Labella2019_scripts/phi_k2_selectionShared_shen_etal_ortholog_matrix_2022_07_08.tsv")  %>% 
+       column_to_rownames("Orthogroup") %>%
+       rename_with(~cleanColumnNames(.x,fungi.tree$tip.label)) %>%
+       rownames_to_column("Orthogroups")
+
+
+orthogroups <- read_tsv("~/Labella2019_scripts/shen_etal_ortholog_matrix_2021_12_17.tsv")
+orthogroups <- orthogroups %>% 
+       column_to_rownames("Orthogroup") %>%
+       rename_with(~cleanColumnNames(.x,fungi.tree$tip.label)) %>%
+       rownames_to_column("Orthogroups")
+
+names(all.species) <- all.species
+
+
+compare.emp <- lapply(all.species,comparePhiEmpAcrossSpecies,
+                      k1.phi = k1.phi,
+                      k2.phi = k2.phi,
+                      orthogroups = orthogroups,
+                      empirical.data = empirical.data) %>% bind_rows(.id="Species")
+
+compare.emp.improved <- compare.emp %>% filter(estimate_Phi_K1 < (estimate_Phi_K2 - 0.1))
+
+```

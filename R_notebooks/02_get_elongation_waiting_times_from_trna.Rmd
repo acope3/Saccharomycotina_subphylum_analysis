@@ -1,0 +1,288 @@
+---
+title: "Calculate Elongation Waiting Times from tRNA"
+author: "Alex Cope"
+date: '2023-05-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(Biostrings)
+library(ape)
+library(AnaCoDa,lib.loc="~/R_dev")
+
+
+removeMitoContigs <- function(all.contigs.file,mito.contigs.file,all.input.dir = "/data2/Labella2019/Genomes/fas/",mito.input.dir = "/data2/Labella2019/Genomes/Mito_sequences_removed/",output.dir = "/data2/Labella2019/Genomes/fas_nuc/")
+{
+  all.contigs <- readDNAStringSet(file.path(all.input.dir,all.contigs.file))
+  mito.contigs <- readDNAStringSet(file.path(mito.input.dir,mito.contigs.file))
+  mito.id <- names(mito.contigs)
+  all.contigs.nuc <- all.contigs[!(names(all.contigs) %in% mito.id)]
+  writeXStringSet(all.contigs.nuc,file.path(output.dir,all.contigs.file))
+}
+
+
+gettAI <- function(tgcn,codon.order,sking)
+{
+  ws <- tAI::get.ws(tgcn,sking=sking)
+  tmp <- data.frame(Codon=codon.order,tAI=ws)
+  return(tmp)
+}
+
+get.ws.local <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0, 0.0, 0.41, 0.28, 0.9999, 0.68, 0.89), exclude.ctg=F)     # super kingdom: 0-eukaryota, 1-prokaryota
+{
+  p = 1 - s
+  # initialise w vector
+  W = NULL  # don't confuse w (lowercase) and W (uppercase)
+  
+  # obtain absolute adaptiveness values (Ws)
+  for (i in seq(1, 61, by=4))
+    W = c(W,
+          p[1]*tRNA[i]   + p[5]*tRNA[i+1],     # INN -> NNT, NNC, NNA
+          p[2]*tRNA[i+1] + p[6]*tRNA[i],       # GNN -> NNT, NNC
+          p[3]*tRNA[i+2] + p[7]*tRNA[i],       # TNN -> NNA, NNG
+          p[4]*tRNA[i+3] + p[8]*tRNA[i+2])     # CNN -> NNG
+  
+  # check methionine
+  W[36] = p[4]*tRNA[36]
+  
+  # if bacteria, modify isoleucine ATA codon
+  if(sking == 1) W[35] = p[9]
+  
+  # get rid of stop codons (11, 12, 15) and methionine (36)
+  if(exclude.ctg)
+  {
+    W = W[-c(11,12,15,20,36)] ## drop S-CTG (20) from consideration
+    codon.order <- codon.order[-c(11,12,15,20,36)]
+  } else {
+    W = W[-c(11,12,15,36)]
+    codon.order <- codon.order[-c(11,12,15,36)]
+  }
+  # get ws
+  w = W/max(W)
+  
+  if(sum(w == 0) > 0) {
+    ws <- w[w != 0] # zero-less ws
+    gm <- exp(sum(log(ws))/length(ws)) # geometric mean
+    w[w == 0] = gm # substitute 0-ws by gm
+  }
+  
+  w <- data.frame(Codon = codon.order, tAI = w)
+  
+  return(w)
+}
+
+
+
+gettAI.relative.aa <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0, 0.0, 0.41, 0.28, 0.9999, 0.68, 0.89), exclude.ctg=F,abs.diff=F)
+{
+
+  p = 1 - s
+
+  # initialise w vector
+  W = NULL  # don't confuse w (lowercase) and W (uppercase)
+
+  # obtain absolute adaptiveness values (Ws)
+  for (i in seq(1, 61, by=4))
+    W = c(W,
+      p[1]*tRNA[i]   + p[5]*tRNA[i+1],     # INN -> NNT, NNC, NNA
+      p[2]*tRNA[i+1] + p[6]*tRNA[i],       # GNN -> NNT, NNC
+      p[3]*tRNA[i+2] + p[7]*tRNA[i],       # TNN -> NNA, NNG
+      p[4]*tRNA[i+3] + p[8]*tRNA[i+2])     # CNN -> NNG
+
+  # check methionine
+  W[36] = p[4]*tRNA[36]
+  
+  # if bacteria, modify isoleucine ATA codon
+  if(sking == 1) W[35] = p[9]
+
+  # get rid of stop codons (11, 12, 15) and methionine (36)
+  W = W[-c(11,12,15,36)]
+
+  W <- data.frame(Codon=codon.order,W=W)
+  W <- W %>% 
+    mutate(AA = unlist(purrr::map(Codon, ~codonToAA(.x))))
+  if (exclude.ctg)
+  {
+    W <- W %>% 
+      mutate(AA = ifelse(Codon == "CTG","J",AA))
+  }
+  if (abs.diff == F)
+  {
+    r.wi <- W %>% 
+      mutate(W = W/max(W)) %>%
+      group_by(AA) %>%
+      mutate(Order=rank(Codon),
+             tAI = W[which.max(Order)]/W)
+             #tAI = (W[which.max(Order)] - W)/max(W),
+             #tAI = 1/W - 1/W[which.max(Order)]) ## will scale relative to alphabetically last codon, same as AnaCoDa
+  } else if (abs.diff == T) {
+    r.wi <- W %>% 
+      group_by(AA) %>%
+      mutate(Order=rank(Codon),
+             #tAI = 1/W - 1/W[which.max(Order)])
+             tAI = W[which.max(Order)] - W) ## will scale relative to alphabetically last codon, same as AnaCoDa
+  }
+  r.wi <- r.wi %>% 
+    ungroup() %>%
+    dplyr::select(AA,Codon,Order,W,tAI)
+  return(r.wi)
+}
+
+```
+
+# Get new tGCN estimates
+
+```{r}
+
+
+species <- readLines("~/Labella2019_scripts/all_fungi.txt") %>% 
+  str_remove(".max.cds") %>% sort()
+dir.create("/data2/Labella2019/Genomes/fas_nuc/")
+
+all.contig <- list.files("/data2/Labella2019/Genomes/fas/")
+all.contig.remove.fas <- all.contig %>% str_remove(".fas") %>% sort()
+mito.contig <- list.files("/data2/Labella2019/Genomes/Mito_sequences_removed/")
+mito.contig <- mito.contig %>% 
+  str_remove(".mito.fasta")
+missing.species <- all.contig[which(!all.contig %in% mito.contig)]
+all.contig <- all.contig[which(all.contig %in% mito.contig)]
+
+
+
+all.contig <-sort(all.contig)
+mito.contig <- sort(mito.contig)
+
+which(all.contig != mito.contig)
+
+mito.contig <- mito.contig %>% 
+  str_c(".mito.fasta",sep="")
+
+purrr::map2(as.list(all.contig),as.list(mito.contig),removeMitoContigs)
+
+lapply(missing.species,function(x) {
+  file.copy(from = file.path("/data2/Labella2019/Genomes/fas/",x), to = file.path("/data2/Labella2019/Genomes/fas_nuc/",x))
+})
+```
+
+
+```{r}
+all.genomes <- readLines("../all_fungi.txt")
+ser.genomes <- readLines("../ser_fungi.txt")
+fungi.tree <- read.tree("../tree_with_cds_labels.nwk")
+fungi.tree <- cleanTree(fungi.tree,all.genomes)
+
+trna.count <- read_tsv("../labella_trna.csv")
+trna.count <- trna.count %>%
+  dplyr::select(-c(`Species name`,`Major clade`,`Total_tRNA Counts`)) %>%
+  dplyr::rename(Species=file_name_id) %>%
+  mutate(Species = paste0(Species,".max.cds")) %>%
+  filter(Species %in% all.genomes)
+
+
+# codons <- as.character(
+#   reverseComplement(
+#     DNAStringSet(
+#       str_extract(colnames(trna.count)[2:ncol(trna.count)],"[ACTG]{3}"
+#                   ))))
+# colnames(trna.count)[2:ncol(trna.count)] <- codons
+
+# trna.count <- trna.count %>% 
+#   mutate(CTG=ifelse(is.na(CTG),0,CTG))
+
+trna.count.long <- trna.count %>% 
+  pivot_longer(-Species,names_to="Codon", values_to="tGCN")
+
+getNewTGCN <- function(species,old.trna.count)
+{
+  print(species)
+  species.fas <- str_replace(species,".max.cds",".fas")
+  trna.scan <- read_tsv(file.path("/data2/Labella2019/new_tGCN/",species.fas),skip = 1,col_types = cols()) %>%
+    filter(Codon != "-----") %>%
+    mutate(Note = ifelse(is.na(Note),"",Note)) %>%
+    filter(Note != "pseudo") %>%
+    mutate(Codon = paste(Codon,Type,sep="-")) %>%
+    group_by(Codon) %>%
+    summarize(tGCN=n()) %>%
+    ungroup() #%>%
+    #mutate(Codon = as.character(reverseComplement(DNAStringSet(Codon))))
+  
+  old.tgcn <- old.trna.count %>% 
+    filter(Species == species)
+  
+  new.tgcn <- old.tgcn %>% 
+    full_join(trna.scan,by="Codon",suffix=c("_Old","_New")) %>%
+    #filter(!Codon %in% c("TAA","TGA","TAG")) %>%
+    #mutate(Type = ifelse(is.na(Type),"",Type)) %>%
+    mutate(tGCN_New = ifelse(is.na(tGCN_New),0,tGCN_New)) %>%
+    filter(Codon != "CTG-Ser" & Codon != "CAT-iMet") %>%
+    dplyr::select(Species,Codon,tGCN_New) %>%
+    dplyr::rename(tGCN=tGCN_New)
+
+  return(new.tgcn)
+}
+
+tgcn.df <- lapply(all.genomes,getNewTGCN,old.trna.count=trna.count.long) %>% bind_rows()
+tgcn.df.filt <- tgcn.df %>% filter(!str_detect(Codon,"Sup") & !str_detect(Codon,"NNN") & !is.na(Species))
+tgcn.df.wide <- tgcn.df.filt %>% pivot_wider(id_cols = Species,names_from = "Codon",values_from="tGCN")
+write_csv(tgcn.df.wide,"~/Labella2019_scripts/cope_trna.csv")
+```
+
+
+```{r}
+all.genomes <- readLines("../all_fungi.txt")
+ser.genomes <- readLines("../ser_fungi.txt")
+fungi.tree <- read.tree("../tree_with_cds_labels.nwk")
+fungi.tree <- cleanTree(fungi.tree,all.genomes)
+
+trna.count <- read_csv("../cope_trna.csv")
+trna.count <- trna.count %>%
+  #dplyr::select(-c(`Species name`,`Major clade`,`Total_tRNA Counts`, `CAG-Ala`,`CAG-Ser`)) %>%
+  #dplyr::rename(Species=file_name_id) %>%
+  #mutate(Species = paste0(Species,".max.cds")) %>%
+  dplyr::select(-c(`CAG-Ala`,`CAG-Ser`)) %>%
+  filter(Species %in% all.genomes)
+
+
+codons <- as.character(
+  reverseComplement(
+    DNAStringSet(
+      str_extract(colnames(trna.count)[2:ncol(trna.count)],"[ACTG]{3}"
+                  ))))
+colnames(trna.count)[2:ncol(trna.count)] <- codons
+
+trna.count <- trna.count %>% 
+  mutate(CTG=ifelse(is.na(CTG),0,CTG))
+
+trna.count.long <- trna.count %>% 
+  pivot_longer(-Species,names_to="Codon", values_to="tGCN")
+
+codon.order <- readLines("~/dos_reis_tai_codon_order.txt")
+codon.order.sense <- codon.order[-c(11,12,15,36)]
+trna.count.long <- trna.count.long %>% 
+                    group_by(Species) %>% 
+                   dplyr::slice(match(codon.order,Codon))
+trna.count.long <- trna.count.long %>%
+  mutate(Exclude.CTG = ifelse(Species %in% ser.genomes,T,F))
+
+
+trna.count.long.split <- trna.count.long %>% 
+  group_by(Species) %>% 
+  group_split()
+names(trna.count.long.split) <- unique(trna.count.long$Species)
+
+weights <- read_tsv("~/Labella2019_scripts/tai_optimization_w_phi_2023_05_03_10_restarts_roc_phi_no_cutoff.tsv") %>%
+  dplyr::select(-starts_with("Performance"))
+
+tai.long <- trna.count.long.split %>%
+  purrr::map(~gettAI.relative.aa(.x$tGCN,codon.order.sense, s = c(0,0,0,0,weights %>% filter(Species %in% .x$Species) %>% dplyr::select(-Species) %>% unlist() %>% unname()), sking = 0, exclude.ctg = .x$Exclude.CTG[1], abs.diff = F)) %>% 
+  bind_rows(.id="Species")
+
+tai.wide <- tai.long %>% 
+  pivot_wider(Species,names_from=Codon,values_from = tAI)
+
+write_tsv(tai.wide,"~/Labella2019_scripts/tRNA/cope_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv")
+
+```
+

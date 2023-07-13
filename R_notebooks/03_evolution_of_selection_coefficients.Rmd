@@ -1,0 +1,1943 @@
+---
+title: "Evolution of parameters across species"
+author: "Alex Cope"
+date: '2023-05-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ape)
+library(phytools)
+library(phylogram)
+library(cluster)
+library(tidyverse)
+library(factoextra)
+library(dendextend)
+library(gplots)
+library(RColorBrewer)
+library(cowplot)
+library(reshape2)
+library(ggpubr)
+library(ggrepel)
+library(broom)
+library(AnaCoDa,lib.loc="~/AnaCoDa_installs/develop/")
+library(ggtree)
+library(patchwork)
+source("helperFunctions.R")
+
+
+
+CleanData <- function(phy, data) {
+  cleaned <- geiger::treedata(phy,data,warnings=T)
+  return(cleaned)
+}
+
+
+calculatePIC <- function(data,tree)
+{
+  
+  pic.value <- pic(data,tree,var.contrasts = T)
+  corr <- cor.test(pic.value[,1],sqrt(pic.value[,2]),method="spearman",use="complete.obs")
+  # if (corr$p.value < 0.05)
+  # {
+  #   phylo.sig <- phylosig(tree,data,method="lambda")
+  #   rescaled.tree <- geiger::rescale(tree, "lambda",phylo.sig$lambda)
+  #   pic.value <- pic(data,rescaled.tree,var.contrasts = T)
+  #   corr <- cor.test(abs(pic.value[,1]),sqrt(pic.value[,2]),method="spearman",use="complete.obs")
+  #   if (corr$p.value < 0.05 & corr$estimate < 0)
+  #   {
+  #     rescaled.tree <- tree
+  #     rescaled.tree$edge.length <- log(10 * rescaled.tree$edge.length)
+  #     counter <- 1
+  #     while(min(rescaled.tree$edge.length) < 0)
+  #     {
+  #       counter <- counter +1 
+  #       rescaled.tree <- tree
+  #       rescaled.tree$edge.length <- log((10^counter) * rescaled.tree$edge.length)
+  #     }
+  #     pic.value <- pic(data,rescaled.tree,var.contrasts = T)
+  #   } else if (corr$p.value < 0.05 & corr$estimate > 0)
+  #   {
+  #     rescaled.tree <- tree
+  #     rescaled.tree$edge.length <- rescaled.tree$edge.length^2
+  #     pic.value <- pic(data,rescaled.tree,var.contrasts = T)
+  #   }
+  # }
+
+  return(pic.value)
+}
+
+
+compareHClustToPhylo <- function(phylo.dendro,csp.matrix,hclust.method,title="",...)
+{
+  cormat <- cor(csp.matrix,use="pairwise.complete.obs",method="spearman")
+  hc <- hclust(as.dist(1-cormat),method = hclust.method)
+  hc.dendro <- as.dendrogram(hc)
+  dend.list <- dendlist(phylo.dendro,hc.dendro)
+  corr <- cor.dendlist(dend.list,method="cophenetic")
+  
+  tanglegram(dend.list,highlight_distinct_edges = FALSE, # Turn-off dashed lines
+             common_subtrees_color_lines = FALSE, # Turn-off line colors
+             common_subtrees_color_branches = TRUE, # Color common branches
+             main_left = paste(title,"\nCorrlelation =", round(corr[1,2], 2)),
+             tip_labels_cex = 0
+  )
+}
+
+leg <- function(){
+  plot.new()
+  par(margin=c(1,1,1,1))
+  legend(x = "topright",legend = unique(clade.colors$Clade), fill=unique(clade.colors$Color),ncol=4,cex=1.5,bty='n')
+}
+
+```
+
+# Setup
+
+
+```{r}
+results.dir <- "../Final_runs/Results_k_1/"
+
+all.genomes <- readLines("../Data/all_fungi.txt")
+ser.genomes <- readLines("../Data/ser_fungi.txt")
+fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
+fungi.tree <- cleanTree(fungi.tree,all.genomes)
+
+
+species.dend <- as.dendrogram(fungi.tree)
+
+clades <- read_tsv("../Data/clades.txt")
+clades <- clades %>% 
+  dplyr::slice(match(fungi.tree$tip.label,file_name_id)) %>%
+  dplyr::rename(Species=file_name_id,Clade=Major.clade)
+
+
+gc.files <- file.path("../Data/GC",all.genomes)
+names(gc.files) <- all.genomes
+gc.df <- purrr::map(gc.files,read_tsv,col_types = cols()) %>% bind_rows(.id="Species")
+gc.df <- gc.df %>% dplyr::rename(GeneID=Gene)
+
+clust.files <- paste0("../Data/Clara_k_2/",all.genomes)
+names(clust.files) <- all.genomes
+clust.df <- purrr::map(clust.files,read_tsv,col_types = cols()) %>% 
+  bind_rows(.id="Species")
+clust.df <- clust.df %>% dplyr::rename(GeneID=Gene)
+
+gc.clust.df <- clust.df %>% left_join(gc.df,by=c("Species","GeneID"))
+
+max.cluster <- gc.clust.df  %>% group_by(Species,Cluster) %>% 
+               summarize(Median.GC3 = median(GC3)) %>% 
+               top_n(1) %>%
+               dplyr::rename(Max.Cluster=Cluster) %>%
+               dplyr::select(-Median.GC3)
+
+gc.clust.df <- gc.clust.df %>% left_join(max.cluster,by="Species")
+gc.clust.df <- gc.clust.df %>% 
+              mutate(Cluster = case_when(Cluster == 1 & Max.Cluster == 1 ~ "Higher GC3",
+                                         Cluster == 2 & Max.Cluster == 1 ~ "Lower GC3",
+                                         Cluster == 1 & Max.Cluster == 2 ~ "Lower GC3",
+                                         Cluster == 2 & Max.Cluster == 2 ~ "Higher GC3")
+              )
+
+wi <- read_tsv("../Data/cope_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv") %>% 
+  dplyr::select(-c(TGG)) %>%
+  mutate(across(where(is.numeric),log)) %>%
+  dplyr::slice(match(fungi.tree$tip.label,Species))
+
+improved.fits.species <- readLines("../Data/improved_species_by_gene_expression_25_percent_2023_05_03.txt")
+compare.emp <- read_csv("../Data/2023-05-04_compare_phi_vs_empirical_k1_vs_k2_roc_fits_all_species.csv")
+
+lower.5.emp <- quantile(compare.emp$estimate_Phi,probs=0.05)
+bad.fits <- compare.emp %>% 
+  filter(estimate_Phi <= lower.5.emp) %>%
+  dplyr::select(Species) %>%
+  deframe()
+
+
+
+```
+
+
+
+```{r}
+deta.matrix.k1 <- read_tsv("../Post_analysis/selection_coefficients_k1.tsv",col_types = cols())
+deta.matrix.k2 <- read_tsv("../Post_analysis/selection_coefficients_k2.tsv",col_types = cols())
+
+deta.matrix.k1.rescaled <- read_tsv("../Post_analysis/selection_coefficients_k1_GC_rescaled.tsv",col_types = cols())
+deta.matrix.k2.rescaled <- read_tsv("../Post_analysis/selection_coefficients_k2_GC_rescaled.tsv",col_types = cols())
+
+dm.matrix.k1 <- read_tsv("../Post_analysis/mutation_bias_k1.tsv",col_types = cols())
+dm.matrix.k2.higher.gc <- read_tsv("../Post_analysis/mutation_bias_k2_higher_GC3.tsv",col_types = cols())
+dm.matrix.k2.lower.gc <- read_tsv("../Post_analysis/mutation_bias_k2_lower_GC3.tsv",col_types = cols())
+
+dm.matrix.k1.rescaled <- read_tsv("../Post_analysis/mutation_bias_k1_GC_rescaled.tsv",col_types = cols())
+dm.matrix.k2.higher.gc.rescaled <- read_tsv("../Post_analysis/mutation_bias_k2_higher_GC3_GC_rescaled.tsv",col_types = cols())
+dm.matrix.k2.lower.gc.rescaled <- read_tsv("../Post_analysis/mutation_bias_k2_lower_GC3_GC_rescaled.tsv",col_types = cols())
+
+
+```
+
+### Protein production rates $\phi$
+
+```{r}
+getPhi <- function(species,improved.fits.species)
+{
+  if (species %in% improved.fits.species){
+    phi.df <- read_csv(file.path("../Final_runs/Results_k_2_selectionShared/",species,"run_2/Parameter_est/gene_expression.txt"),col_types = cols()) 
+  } else{
+    phi.df <- read_csv(file.path("../Final_runs/Results_k_1/",species,"run_2/Parameter_est/gene_expression.txt"),col_types = cols()) 
+  }
+  return(phi.df)
+}
+
+
+species <- list.dirs(file.path("../Final_runs/Results_k_2_selectionShared/"),full.names = F,recursive = F)
+names(species) <- species
+
+phi.df <- purrr::map(species,getPhi,improved.fits.species) %>% 
+  bind_rows(.id="Species")
+
+phi.summary <- phi.df %>% 
+  group_by(Species) %>%
+  summarize(Mean.Phi = mean(Mean),
+            Sd.Phi = sd(Mean.log10),
+            Total = n(),
+            )
+
+mean.phi.dist <- ggplot(phi.summary,aes(x=Mean.Phi)) + 
+  geom_histogram(fill="white",color="black") +
+  theme_cowplot() +
+  ggtitle("Distribution of mean gene expression estimate across species")
+mean.phi.dist
+
+
+
+```
+
+## DO NOT NEED TO RUN THIS CHUNK AGAIN
+
+```{r}
+all.species <- readLines("../Data/all_fungi.txt")
+nonimproved.species <- setdiff(all.species,improved.fits.species)
+
+k1.phi <- paste0("../Final_runs/Results_k_1/",nonimproved.species,"/run_2/Parameter_est/gene_expression.txt")
+k2.phi <- paste0("../Final_runs/Results_k_2_selectionShared/",improved.fits.species,"/run_2/Parameter_est/gene_expression.txt")
+improved.species <- str_extract(improved.fits.species,"[A-Za-z0-9_]*[a-z]+_[a-z]+(_JCM[0-9]{4}){0,1}")
+nonimproved.species <- str_extract(nonimproved.species,"[A-Za-z0-9_]*[a-z]+_[a-z]+(_JCM[0-9]{4}){0,1}")
+
+
+names(k1.phi) <- nonimproved.species
+names(k2.phi) <- improved.species
+
+phi.files <- c(k1.phi,k2.phi)
+
+phi <- purrr::map(phi.files,read_csv,col_types = cols()) %>% bind_rows(.id="Species")
+
+seqid_index <- read_tsv("../Orthologs_Shen_etal/orthomcl_output/343taxa_protein_IDs_index.txt",col_names = F)
+seqid_index <- seqid_index %>% 
+               separate(col = X2,sep = "@",into=c("Species","Gene")) %>%
+               dplyr::select(-X1) %>% 
+               mutate(GeneID=str_extract(X3,"(?<=gene=)\\S+")) %>%
+               dplyr::select(GeneID,Species,Gene) %>% 
+               mutate(GeneID=ifelse(is.na(GeneID),Gene,GeneID))
+
+
+cluster <- read_tsv("../Orthologs_Shen_etal/orthomcl_output/343taxa_2408OGs_long_seqIDs.txt",col_names = F)
+cluster <- cluster %>% 
+  separate(col = X2,sep = "@",into=c("Species","Gene")) %>% 
+  dplyr::rename(Orthogroup=X1)
+
+cluster.seq <- cluster %>% inner_join(seqid_index,by=c("Species","Gene"))
+
+cluster.seq <- cluster.seq %>% 
+  mutate(Species = purrr::map_chr(Species,function(x){
+  tmp <- unlist(str_split(x,"_"))
+  if (length(tmp) > 2) {
+    if (str_detect(tmp[1],"yH[MABP]{2}"))
+    {
+      tmp[2] <- tolower(tmp[2])
+    } else{
+      tmp[1] <- tolower(tmp[1])
+    }
+  } else{
+    tmp[1] <- tolower(tmp[1]) 
+  }
+  paste(tmp,collapse="_")
+}))
+
+
+
+cluster.seq.filt <-  cluster.seq %>% 
+  filter(Species %in% names(phi.files))
+
+cluster.seq.filt.wide <-  cluster.seq.filt %>% 
+                      dplyr::select(Orthogroup,Species,GeneID) %>%
+                      pivot_wider(id_cols = Orthogroup,names_from="Species",values_from = "GeneID")
+                      
+
+phi <- phi %>%
+  mutate(GeneID=str_remove(GeneID,"-mRNA-1"))
+
+seqid_index_phi <- cluster.seq.filt %>%
+               left_join(phi,by=c("Species","GeneID")) %>%
+               dplyr::select(Orthogroup,Species,GeneID,Gene,Mean)
+
+seqid_index_phi_wide <- seqid_index_phi  %>%
+              dplyr::select(Orthogroup,Species,Mean) %>% 
+              pivot_wider(id_cols = Orthogroup,names_from="Species",values_from = "Mean")
+write_csv(seqid_index_phi_wide,"../Data/phi_shen_etal_ortholog_matrix_2023_05_01.csv")
+
+
+
+```
+
+
+```{r,echo=F}
+
+cleanColumnNames <- function(col_name,list_of_option)
+{
+  ## find potential column name from list of options
+  index <- unlist(purrr::map(col_name, 
+            function(x){
+              ## this species will match "metschnikowia_matae_maris.max.cds" and "metschnikowia_matae.max.cds", so force it to match the latter
+              if (x == "metschnikowia_matae")
+                {
+                  x <- paste0(x,".max.cds")
+                }
+              str_which(list_of_option,x)
+            }
+    ))
+  return(list_of_option[index])
+}
+
+phi <- read_csv("../Data/phi_shen_etal_ortholog_matrix_2023_05_01.csv")
+phi <- phi %>% column_to_rownames("Orthogroup") %>%
+       rename_with(~cleanColumnNames(.x,fungi.tree$tip.label))
+phi <- phi[,fungi.tree$tip.label]
+phi.log <- as.data.frame(phi) %>% 
+  mutate(across(where(is.numeric),log)) %>%
+  as.matrix()
+
+
+```
+
+
+# Create final parameter matrices dependent on improved species fits 
+
+```{r}
+deta.matrix <- deta.matrix.k1
+deta.matrix <- deta.matrix %>% 
+  column_to_rownames("Species")
+deta.matrix <- as.data.frame(t(deta.matrix))
+
+dm.matrix <- dm.matrix.k1
+dm.matrix <- dm.matrix %>% 
+  column_to_rownames("Species")
+dm.matrix <- as.data.frame(t(dm.matrix))
+
+
+deta.matrix.gc <- deta.matrix.k1.rescaled
+deta.matrix.gc <- deta.matrix.gc %>% 
+  column_to_rownames("Species")
+deta.matrix.gc <- as.data.frame(t(deta.matrix.gc))
+
+dm.matrix.gc <- dm.matrix.k1.rescaled
+dm.matrix.gc <- dm.matrix.gc %>% 
+  column_to_rownames("Species")
+dm.matrix.gc <- as.data.frame(t(dm.matrix.gc))
+
+
+
+for (i in improved.fits.species)
+{
+  deta.matrix <- deta.matrix %>%
+    mutate(!!as.name(i) := deta.matrix.k2 %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    )
+  deta.matrix.gc <- deta.matrix.gc %>% 
+    mutate(!!as.name(i) := deta.matrix.k2.rescaled %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    )
+  
+  dm.matrix <- dm.matrix %>% 
+    mutate(!!as.name(i) := dm.matrix.k2.higher.gc%>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist(),
+           !!as.name(paste0(i,"_Lower_GC3")) := dm.matrix.k2.lower.gc %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    ) %>%
+      dplyr::rename(!!as.name(paste0(i,"_Higher_GC3")) := !!as.name(i))
+  
+  dm.matrix.gc <- dm.matrix.gc %>% 
+    mutate(!!as.name(i) := dm.matrix.k2.higher.gc.rescaled%>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist(),
+           !!as.name(paste0(i,"_Lower_GC3")) := dm.matrix.k2.lower.gc.rescaled %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    ) %>%
+      dplyr::rename(!!as.name(paste0(i,"_Higher_GC3")) := !!as.name(i))
+}
+
+param.list <- list(deta.matrix,deta.matrix.gc,dm.matrix,dm.matrix.gc) %>%
+  purrr::map(~.x %>%
+              t() %>% 
+              as.data.frame() %>%
+              rownames_to_column("Species") %>%
+              as_tibble())
+
+deta.matrix <- param.list[[1]]
+deta.matrix.gc <- param.list[[2]]
+dm.matrix <- param.list[[3]]
+dm.matrix.gc <- param.list[[4]]
+
+
+```
+
+
+
+# Compare selection coefficients and waiting times within each species
+
+```{r fig.height=9,fig.width=9, warning = F}
+wi <- wi[,colnames(deta.matrix)]
+
+deta.matrix.long <- deta.matrix %>%
+  pivot_longer(-Species,names_to="Codon",values_to="Selection")
+
+wi.matrix.long <- wi %>% 
+  pivot_longer(-Species,names_to="Codon",values_to="tAI") %>%
+  mutate(tAI = ifelse(is.finite(tAI),tAI,NA))
+
+deta.wi.matrix.long <- deta.matrix.long %>% 
+  inner_join(wi.matrix.long,by=c("Species","Codon")) %>%
+  left_join(clades,by="Species")
+
+
+cor.df.tai <- deta.wi.matrix.long %>% 
+  group_by(Species) %>%
+  nest(Codon,Selection,tAI) %>% 
+  mutate(corr.tai = purrr::map(data,~cor.test(.x$tAI,.x$Selection,method="spearman",use="complete.obs",alternative="greater") %>% tidy())
+         ) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_") 
+
+cor.df.tai <- cor.df.tai %>% 
+  ungroup() %>% 
+  mutate(corr.tai_p.value.adjusted = p.adjust(corr.tai_p.value,method = "BH"))
+
+tree.plot <- ggtree(fungi.tree)
+
+tai.phylo <- treeTraitPlot(tree.plot,cor.df.tai,"corr.tai_estimate",significance="corr.tai_p.value",panel.name = "Correlation\nSelection Coefficients vs. Waiting Times")
+
+total.plot <- tai.phylo + 
+  theme_tree2() +
+  theme(legend.title = element_text(size=16),
+        legend.text = element_text(size=14),
+        plot.title = element_text(size=20,face = "bold")) +
+  ggtitle("Selection coefficients reflect translational selection\nacross the Saccharomycotina subphylum")
+total.plot
+
+```
+
+
+```{r}
+compare.emp.tai <- compare.emp %>% 
+  left_join(cor.df.tai,by=c("Species","Clade"))
+compare.emp.tai <- compare.emp.tai %>% 
+  dplyr::slice(match(fungi.tree$tip.label,Species))
+
+
+p <- ggplot(compare.emp.tai,aes(x=estimate_Phi,y=corr.tai_estimate)) +
+  geom_point(aes(color=Clade)) +
+  stat_cor(method="spearman",label.sep="\n") +
+  xlab("Spearman Correlation\nPhi vs. Empirical") +
+  ylab("Spearman Correlation\nSelection vs. tAI") +
+  geom_hline(yintercept=0,linetype="dashed") +
+  geom_vline(xintercept=0,linetype="dashed") +
+  theme_cowplot() +
+  theme(aspect.ratio=1)
+  
+
+p
+
+
+```
+
+
+```{r,fig.height=5,fig.width=10}
+calb.selection <- deta.wi.matrix.long %>% 
+  filter(Species == "candida_parapsilosis.max.cds")
+
+calb.waiting.times <- ggplot(calb.selection,aes(x=tAI,y=Selection)) +
+     geom_point() +
+     stat_cor(method="spearman",label.sep = "\n",alternative="greater") +
+     xlab("Waiting Time") +
+     ylab("Selection Coefficients") +
+     theme_cowplot() +
+     theme(aspect.ratio=1) +
+     ggtitle("Selection coefficients vs.elongation \nwaiting times: C. albicans")
+calb.waiting.times
+
+sameth.selection <- deta.wi.matrix.long %>% 
+  filter(Species == "yHMPu5000035658_starmera_amethionina_160613.max.cds")
+
+sameth.waiting.times <- ggplot(sameth.selection,aes(x=tAI,y=Selection)) +
+     geom_point() +
+     stat_cor(method="spearman",label.sep = "\n",alternative="greater") +
+     xlab("Waiting Time") +
+     ylab("Selection Coefficients") +
+     theme_cowplot() +
+     theme(aspect.ratio=1) +
+     ggtitle("Selection coefficients vs.elongation \nwaiting times: S. amethionina")
+sameth.waiting.times
+
+
+tmp <- calb.waiting.times / sameth.waiting.times
+sel.vs.trna <- (tmp | total.plot) + plot_annotation(tag_level="A")
+
+sel.vs.trna
+
+ggsave2("../Figures/All_species/02_intraspecies_sel_coef_wait_time.pdf",plot = sel.vs.trna,height=10,width=16)
+
+```
+
+
+
+```{r echo = F, fig.width=9,fig.height=9,warning=F}
+plotSelectionAndTAI <- function(codon.df,tree)
+{
+  codon.df <- codon.df %>% 
+    dplyr::slice(match(tree$tip.label,Species))
+  tree.plot <- ggtree(tree)
+
+  tree.plot <- treeTraitPlot(tree.plot,codon.df,"tAI",significance=NULL,panel.name = "tAI")
+  tree.plot <- treeTraitPlot(tree.plot,codon.df,"Selection",significance=NULL,panel.name = "Selection Coefficient")
+  total.plot <- tree.plot + 
+    theme_tree2() +
+    theme(legend.title = element_text(size=16),legend.text = element_text(size=14)) +
+    ggtitle(unique(codon.df$Codon))
+  total.plot
+}
+
+deta.wi.matrix.long.split <- deta.wi.matrix.long %>% 
+  group_by(Codon) %>%
+  group_split()
+
+lapply(deta.wi.matrix.long.split,plotSelectionAndTAI,tree=fungi.tree)
+```
+
+
+
+```{r echo = F,warning=F,fig.width=16,fig.height=16}
+
+codon.selection.long <-deta.wi.matrix.long %>%
+  pivot_longer(c(Selection,tAI),names_to="Parameter",values_to="Estimate")
+
+codon.dist <- ggplot(codon.selection.long,aes(x=Estimate,fill=Parameter)) +
+  geom_histogram(position = "identity",color="black",alpha=0.5) +
+  geom_vline(xintercept = 0,linetype="solid",color="black") +
+  theme_cowplot() +
+  theme(aspect.ratio=1) +
+  ggtitle("Distribution of selection coefficients and tAI") +
+  ylab("Count") +
+  facet_wrap(~Codon,scales = "free")
+codon.dist
+
+ggsave2("../Figures/All_species/S04_selection_and_tai_distributions.pdf",plot=codon.dist,height=16,width=16)
+
+```
+
+
+# Selection coefficients across the phylogeny
+
+
+
+```{r fig.height=10,fig.width=10}
+library(ComplexHeatmap)
+
+deta.matrix.for.heatmap <- deta.matrix
+deta.matrix.for.heatmap <- deta.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree$tip.label,Species)) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+deta.clust.all <- hclust(as.dist(1-cor(t(deta.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+deta.dend.all <- as.dendrogram(deta.clust.all)
+
+
+label.order <- rownames(deta.matrix.for.heatmap)
+
+
+clades <- clades %>% 
+  filter(Species %in% label.order) %>%
+  dplyr::slice(match(label.order, Species))
+  
+
+col.map <- colormap::colormap(colormap::colormaps$rainbow,
+                                                    nshades=length(unique(unlist(clades[,"Clade"]))))
+names(col.map) <- unlist(unique(clades$Clade))
+clade_annot <- rowAnnotation(Clade = clades$Clade,
+                           col = list(Clade = col.map))
+
+col_fun_phi <- circlize::colorRamp2(c(min(compare.emp$estimate_Phi) - 0.01,median(compare.emp$estimate_Phi), max(compare.emp$estimate_Phi) + 0.01), 
+                          c("purple", "white", "gold"))
+col_fun_tai <- circlize::colorRamp2(c(min(cor.df.tai$corr.tai_estimate) - 0.01,median(cor.df.tai$corr.tai_estimate), max(cor.df.tai$corr.tai_estimate) + 0.01),
+                          c("purple", "white", "gold"))
+
+compare.emp.ordered <- compare.emp %>% 
+  dplyr::slice(match(label.order, Species))
+cor.df.tai.ordered <- cor.df.tai %>% 
+  dplyr::slice(match(label.order, Species))
+
+row_annot <- rowAnnotation(Phi = compare.emp.ordered$estimate_Phi,
+                               tAI = cor.df.tai.ordered$corr.tai_estimate,
+                           col = list(Phi = col_fun_phi,
+                                      tAI = col_fun_tai))
+
+
+deta.phylo.hm <- Heatmap(deta.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = as.dendrogram(fungi.tree),
+        name = "Selection Coefficient", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        show_row_names = F)
+
+deta.clust.hm <- Heatmap(deta.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = deta.dend.all,
+        name = "Selection Coefficient", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        split = 3,
+        show_row_names = F)
+
+pdf("../Figures/All_species/S05_heatmap_selection_coefficients_phylogeny.pdf",width=10,height=7)
+draw(deta.phylo.hm)
+dev.off()
+
+pdf("../Figures/All_species/03_heatmap_selection_coefficients_clust.pdf",width=10,height=7)
+draw(deta.clust.hm)
+dev.off()
+
+deta.phylo.hm
+deta.clust.hm
+```
+
+
+
+```{r,fig.width=20,fig.height=20}
+
+deta.dend.list <- dendlist(deta.dend.filt,tree.dend)
+corr <- cor.dendlist(deta.dend.list,method="cophenetic")
+print(paste("Cophenetic correlation between Selection Coefficient Clustering and Phylogenetic Tree:",round(corr[1,2], 2)))
+
+compareHClustToPhylo(tree.dend,deta.matrix[,fungi.tree.deta.filt$tip.label],hclust.method = "complete")
+
+
+```
+
+
+# Mutation bias $\Delta\mathit{M}$
+
+
+```{r}
+fungi.tree.dm <- fungi.tree
+fungi.tree.dm.1 <- fungi.tree
+fungi.tree.dm.2 <- fungi.tree
+for (i in improved.fits.species)
+{
+  fungi.tree.dm <- bind.tip(fungi.tree.dm,tip.label=paste0(i,"_Higher_GC3"),
+                              where = which(fungi.tree.dm$tip.label == i))
+  fungi.tree.dm$tip.label[which(fungi.tree.dm$tip.label == i)] <- paste0(i,"_Lower_GC3")
+  fungi.tree.dm.1$tip.label[which(fungi.tree.dm.1$tip.label == i)] <- paste0(i,"_Lower_GC3")
+  fungi.tree.dm.2$tip.label[which(fungi.tree.dm.2$tip.label == i)] <- paste0(i,"_Higher_GC3")
+}
+
+```
+
+## Mutation bias clustering with lower GC3% estimates
+
+```{r fig.width=10,fig.height=10}
+dm.matrix.for.heatmap <- dm.matrix
+dm.matrix.for.heatmap <- dm.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.dm.1$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Lower_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+dm.clust.all <- hclust(as.dist(1-cor(t(dm.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+dm.dend.all <- as.dendrogram(dm.clust.all)
+
+
+label.order <- rownames(dm.matrix.for.heatmap)
+
+compare.emp.ordered <- compare.emp %>% 
+  dplyr::slice(match(label.order, Species))
+cor.df.tai.ordered <- cor.df.tai %>% 
+  dplyr::slice(match(label.order, Species))
+improved.ordered <- ifelse(label.order %in% improved.fits.species,"Yes","No")
+
+row_annot <- rowAnnotation(Phi = compare.emp.ordered$estimate_Phi,
+                               tAI = cor.df.tai.ordered$corr.tai_estimate,
+                               K2.fit = improved.ordered,
+                           col = list(Phi = col_fun_phi,
+                                      tAI = col_fun_tai,
+                                      K2.fit = c("Yes" = "black","No"="white")
+                           )
+                          )
+
+
+dm.phylo.hm <- Heatmap(dm.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = as.dendrogram(fungi.tree),
+        name = "Mutation Bias", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        show_row_names = F)
+
+dm.clust.hm <- Heatmap(dm.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = dm.dend.all,
+        name = "Mutation Bias", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        split = 3,
+        show_row_names = F)
+
+pdf("../Figures/All_species/S06_heatmap_mutation_bias_phylogeny.pdf",width=10,height=7)
+draw(dm.phylo.hm)
+dev.off()
+
+pdf("../Figures/All_species/05_heatmap_mutation_bias_clust.pdf",width=10,height=7)
+draw(dm.clust.hm)
+dev.off()
+
+
+dm.phylo.hm
+dm.clust.hm
+
+```
+## Mutation bias clustering with higher GC3% estimates
+
+```{r fig.width=10,fig.height=10}
+dm.matrix.for.heatmap <- dm.matrix
+dm.matrix.for.heatmap <- dm.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.dm.2$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Higher_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+dm.clust.all <- hclust(as.dist(1-cor(t(dm.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+dm.dend.all <- as.dendrogram(dm.clust.all)
+
+
+label.order <- rownames(dm.matrix.for.heatmap)
+
+compare.emp.ordered <- compare.emp %>% 
+  dplyr::slice(match(label.order, Species))
+cor.df.tai.ordered <- cor.df.tai %>% 
+  dplyr::slice(match(label.order, Species))
+improved.ordered <- ifelse(label.order %in% improved.fits.species,"Yes","No")
+
+row_annot <- rowAnnotation(Phi = compare.emp.ordered$estimate_Phi,
+                               tAI = cor.df.tai.ordered$corr.tai_estimate,
+                               K2.fit = improved.ordered,
+                           col = list(Phi = col_fun_phi,
+                                      tAI = col_fun_tai,
+                                      K2.fit = c("Yes" = "black","No"="white")
+                           )
+                          )
+
+
+dm.phylo.hm <- Heatmap(dm.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = as.dendrogram(fungi.tree),
+        name = "Mutation Bias", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        show_row_names = F)
+
+dm.clust.hm <- Heatmap(dm.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = dm.dend.all,
+        name = "Mutation Bias", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        split = 3,
+        show_row_names = F)
+
+pdf("../Figures/All_species/S07_heatmap_mutation_bias_higher_gc3_phylogeny.pdf",width=10,height=7)
+draw(dm.phylo.hm)
+dev.off()
+
+pdf("../Figures/All_species/S08_heatmap_mutation_bias_higher_gc3_clust.pdf",width=10,height=7)
+draw(dm.clust.hm)
+dev.off()
+
+
+dm.phylo.hm
+dm.clust.hm
+
+```
+
+
+```{r}
+deta.dend.clust <- cutree(deta.dend.all,k = 3)
+table(deta.dend.clust)
+questionable <- names(deta.dend.clust)[which(deta.dend.clust == 2 | deta.dend.clust == 3)]
+
+
+
+fungi.tree.deta.filt <- drop.tip(fungi.tree, questionable)
+fungi.tree.dm.filt <- drop.tip(fungi.tree.deta.filt,questionable)
+fungi.tree.dm.1.filt <- drop.tip(fungi.tree.deta.filt,questionable)
+fungi.tree.dm.2.filt <- drop.tip(fungi.tree.deta.filt,questionable)
+
+for (i in setdiff(improved.fits.species,questionable))
+{
+  fungi.tree.dm.filt <- bind.tip(fungi.tree.dm.filt,tip.label=paste0(i,"_Higher_GC3"),
+                              where = which(fungi.tree.dm.filt$tip.label == i))
+  fungi.tree.dm.filt$tip.label[which(fungi.tree.dm.filt$tip.label == i)] <- paste0(i,"_Lower_GC3")
+  fungi.tree.dm.1.filt$tip.label[which(fungi.tree.dm.1.filt$tip.label == i)] <- paste0(i,"_Lower_GC3")
+  fungi.tree.dm.2.filt$tip.label[which(fungi.tree.dm.2.filt$tip.label == i)] <- paste0(i,"_Higher_GC3")
+}
+
+```
+
+```{r,fig.width=20,fig.height=20}
+phy.tree.dend <- as.dendrogram(fungi.tree.deta.filt)
+
+deta.matrix.for.heatmap <- deta.matrix
+deta.matrix.for.heatmap <- deta.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.deta.filt$tip.label,Species)) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+deta.clust.filt <- hclust(as.dist(1-cor(t(deta.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+deta.dend.filt <- as.dendrogram(deta.clust.filt)
+
+
+
+
+
+dm.matrix.for.heatmap <- dm.matrix
+dm.matrix.for.heatmap <- dm.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.dm.1.filt$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Lower_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+dm.clust.filt <- hclust(as.dist(1-cor(t(dm.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+dm.dend.filt <- as.dendrogram(dm.clust.filt)
+
+
+
+
+deta.dend.list <- dendlist(deta.dend.filt,phy.tree.dend)
+corr <- cor.dendlist(deta.dend.list,method="baker")
+print(paste("Cophenetic correlation between Selection Coefficient Clustering and Phylogenetic Tree:",round(corr[1,2], 2)))
+
+
+dm.dend.list <- dendlist(dm.dend.filt,phy.tree.dend)
+corr <- cor.dendlist(dm.dend.list,method="cophenetic")
+print(paste("Cophenetic correlation between Mutation Bias (Lower GC3%) Clustering and Phylogenetic Tree:",round(corr[1,2], 2)))
+
+dm.matrix.for.heatmap <- dm.matrix
+dm.matrix.for.heatmap <- dm.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.dm.2.filt$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Higher_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+dm.clust.filt <- hclust(as.dist(1-cor(t(dm.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+dm.dend.filt <- as.dendrogram(dm.clust.filt)
+
+dm.dend.list <- dendlist(dm.dend.filt,phy.tree.dend)
+corr <- cor.dendlist(dm.dend.list,method="baker")
+print(paste("Cophenetic correlation between Mutation Bias (Higher GC3%) Clustering and Phylogenetic Tree:",round(corr[1,2], 2)))
+
+
+#compareHClustToPhylo(tree.dend,deta.matrix[,fungi.tree.deta.filt$tip.label],hclust.method = "complete")
+
+
+```
+
+
+# Compare selection coefficients and elongation waiting times across species
+
+```{r fig.width=12,fig.height=12,warning=F}
+
+tree.to.use <- fungi.tree.deta.filt
+
+deta.wi.matrix.long.split <- deta.wi.matrix.long %>% 
+  group_by(Codon) %>% 
+  group_split()
+
+codon.order <- lapply(deta.wi.matrix.long.split,function(x){
+  unique(x$Codon)
+}) %>% unlist()
+
+names(deta.wi.matrix.long.split) <- codon.order
+
+cor.sel.tai.pic <- lapply(deta.wi.matrix.long.split,function(x)
+    {
+      codon <- unique(x$Codon)
+      x <- x %>% mutate(tAI = ifelse(is.finite(tAI),tAI,NA))
+      tmp <- x %>% column_to_rownames("Species") %>% 
+          dplyr::select(Selection,tAI,Clade) %>% 
+          dplyr::filter(!is.na(tAI) & !is.na(Selection) & is.finite(tAI) & is.finite(Selection)) %>%
+          as.matrix()
+      
+      cleaned <- CleanData(tree.to.use,tmp)
+      cleaned.data <- cleaned$data
+      tmp.tree <- cleaned$phy
+      clade <- cleaned.data[,"Clade"]
+      selection.values <- as.numeric(cleaned.data[,"Selection"])
+      tai.values <- as.numeric(cleaned.data[,"tAI"])
+      names(selection.values) <- names(tai.values) <- rownames(cleaned.data)
+      tai.pic <- calculatePIC(tai.values[tmp.tree$tip.label],tree=tmp.tree)
+      sel.pic <- calculatePIC(selection.values[tmp.tree$tip.label],tree=tmp.tree)
+      df <- data.frame(Selection = selection.values,tAI = tai.values,Clade=clade,Species=rownames(cleaned.data))
+      # codon.raw <- ggplot(df,aes(x=tAI,y=Selection)) +
+      #     geom_point(aes(color=Clade)) +
+      #     stat_cor(method="spearman",label.sep="\n",alternative="greater") +
+      #     theme_cowplot() +
+      #     ggtitle(codon)
+      df.pic <- data.frame(Selection = sel.pic[,1],tAI = tai.pic[,1])
+        # qc.pic.sel <- data.frame(PIC = 1:length(sel.pic[,1]),
+        #                      Variable = "Selection",
+        #                      Abs.Contrasts = abs(sel.pic[,1]),
+        #                      Std = sqrt(sel.pic[,2])) 
+        # qc.pic.tai <- data.frame(PIC = 1:length(tai.pic[,1]),
+        #                      Variable = "tAI",
+        #                      Abs.Contrasts = abs(tai.pic[,1]),
+        #                     Std = sqrt(tai.pic[,2])) 
+        # qc.pic <- list(qc.pic.sel,qc.pic.tai) %>% bind_rows()
+        # qc.pic.p <- ggplot(qc.pic,aes(x=Abs.Contrasts,y=Std)) +
+        #   geom_point() +
+        #   stat_cor(method="spearman",label.x.npc = "center",label.sep="\n") +
+        #   ggtitle(paste(codon,"PIC Quality Check")) +
+        #   xlab("Abs(PIC)") +
+        #   ylab("Std. Dev") +
+        #   theme_cowplot() +
+        #   facet_wrap(~Variable,scales="free")
+        # codon.pic <- ggplot(df.pic,aes(x=tAI,y=Selection)) +
+        #   geom_point() +
+        #   stat_cor(method="spearman",label.sep="\n",alternative="greater") +
+        #   theme_cowplot() +
+        #   xlab("tAI PIC") +
+        #   ylab("Selection PIC") +
+        #   ggtitle(codon) 
+        # overall.plot <- plot_grid(codon.raw,codon.pic,qc.pic.p,nrow=2,ncol=2,align = "none")
+        # plot(overall.plot)
+        test <- cor.test(df.pic$tAI,df.pic$Selection,method="spearman",alternative="greater")
+        test <- test %>% broom::tidy()
+        test
+      
+    }) %>% bind_rows(.id="Codon")
+
+
+```
+
+```{r fig.width=14,fig.height=6}
+all.cor.pic <- cor.sel.tai.pic %>% 
+  mutate(adj_p.value = p.adjust(p.value,method="BH"),
+        Codon=factor(Codon,levels=AnaCoDa::codons()),
+        Significant=ifelse(adj_p.value < 0.05,"p < 0.05","Not significant"))
+
+bar.p.all <- ggplot(all.cor.pic) + 
+  geom_bar(aes(x=reorder(Codon, estimate),y=estimate,fill=Significant),stat="identity",position = position_dodge(),color="black") + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab("Spearman Correlation") +
+  labs(fill = "Selection coefficient\n-waiting time correlation") +
+  ggtitle("Shifts in selection coefficients across species reflect\nevolution of the tRNA pool") +
+  xlab("Codon")
+bar.p.all
+
+
+
+```
+
+
+
+
+```{r fig.width=8,fig.height=5}
+caa.selection <- deta.wi.matrix.long %>% 
+  filter(Codon == "CAA")
+
+tmp <- caa.selection %>% column_to_rownames("Species") %>% 
+        dplyr::select(Selection,tAI) %>% 
+        dplyr::filter(!is.na(tAI) & !is.na(Selection) & is.finite(tAI) & is.finite(Selection)) %>%
+        as.matrix()
+cleaned <- CleanData(tree.to.use,tmp)
+x <- cleaned$data
+tmp.tree <- cleaned$phy
+selection.values <- x[,"Selection"]
+tai.values <- x[,"tAI"]
+tai.pic <- calculatePIC(tai.values[tmp.tree$tip.label],tree=tmp.tree)
+sel.pic <- calculatePIC(selection.values[tmp.tree$tip.label],tree=tmp.tree)
+pic.matrix.codon <- data.frame(tAI = tai.pic[,1],Selection=sel.pic[,1])
+
+
+pic.plot.caa <- ggplot(pic.matrix.codon,aes(x=tAI,y=Selection)) + geom_point() +
+       theme_cowplot() +
+       theme(aspect.ratio = 1) +
+       stat_cor(method="spearman",label.sep="\n",alternative="greater",use="complete.obs") +
+       ggtitle("Selection coefficients vs. waiting\ntimes across species (codon CAA)") +
+       xlab("Waiting Time (PIC)") +
+       ylab("Selection Coefficient (PIC)")
+pic.plot.caa
+
+sel.across.species <-(pic.plot.caa | bar.p.all) + plot_annotation(tag_level = "A") + plot_layout(widths = c(1, 2))
+ggsave2("../Figures/All_species/04_sel_vs_tai_across_species.pdf",plot = sel.across.species,width=14,height = 5)
+
+```
+
+
+# Compare selection coefficients and mutation bias to GC% across species
+
+
+```{r echo = F, fig.width=9,fig.height=9}
+gc.cont <- read_tsv("../gc_content_by_genome.tsv") %>%
+           dplyr::rename(Species=Genome) %>%
+           dplyr::slice(match(fungi.tree$tip.label,Species)) %>%
+           left_join(clades,by="Species")
+
+tree.plot <- ggtree(fungi.tree)
+
+gc.phylo <- treeTraitPlot(tree.plot,gc.cont,"GC",significance=NULL,panel.name = "GC Content",xlim=c(0,1))
+
+total.plot <- gc.phylo + 
+  theme_tree2() +
+  theme(legend.title = element_text(size=16),legend.text = element_text(size=14)) +
+  ggtitle("GC frequency across Saccharomycotina")
+total.plot
+
+ggsave2("../Figures/All_species/gc_content.pdf",total.plot)
+
+```
+
+
+```{r fig.width=12, warning = F}
+library(tidytext)
+
+deta.tree.to.use <- fungi.tree.deta.filt
+dm.tree.to.use <- fungi.tree.dm.1.filt
+
+deta.matrix.t <- deta.matrix.gc %>%
+  filter(Species %in% deta.tree.to.use$tip.label)
+dm.matrix.t <- dm.matrix.gc %>%
+  filter(Species %in% dm.tree.to.use$tip.label)
+dm.matrix.t <- as.data.frame(dm.matrix.t)
+  
+
+deta.matrix.long <- deta.matrix.t %>%
+                 dplyr::slice(match(deta.tree.to.use$tip.label,Species)) %>%
+                 pivot_longer(-Species,names_to="Codon",values_to="Selection") 
+
+dm.matrix.long <- dm.matrix.t %>% 
+                 mutate(Species = str_remove(Species,"_Lower_GC3$")) %>%
+                 dplyr::slice(match(deta.tree.to.use$tip.label,Species)) %>%
+                 pivot_longer(-Species,names_to="Codon",values_to="Mutation") 
+
+
+
+deta.dm.gc <- deta.matrix.long %>%
+                 inner_join(dm.matrix.long,by=c("Species","Codon")) %>%
+                 inner_join(gc.cont,by="Species") %>%
+                 mutate(Codon=factor(Codon,levels=AnaCoDa::codons()))
+
+
+cor.gc <- deta.dm.gc %>% group_by(Codon,Species) %>% 
+  nest(Species,Selection,Mutation,GC,Clade) %>% 
+  mutate(Mutation = purrr::map(data,~cor.test(.x$GC,.x$Mutation,method="spearman",use="complete.obs",alternative="less") %>% tidy()),
+         Selection = purrr::map(data,~cor.test(.x$GC,.x$Selection,method="spearman",use="complete.obs",alternative="less") %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(c("Mutation","Selection"),names_sep="_")
+
+
+csp.corr <- deta.dm.gc %>% group_by(Codon,Species) %>% 
+  nest(Species,Selection,Mutation,GC,Clade) %>% 
+  mutate(CSP.Corr = purrr::map(data,~cor.test(.x$Selection,.x$Mutation,method="spearman",use="complete.obs") %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(CSP.Corr,names_sep="_") %>%
+  arrange(CSP.Corr_estimate)
+
+cor.gc.pic <- deta.dm.gc %>% 
+  group_by(Codon,Species) %>% 
+  nest(Species,Selection,Mutation,GC,Clade) %>% 
+  mutate(Mutation = purrr::map(data,function(x)
+    {
+      tmp <- x %>% 
+        column_to_rownames("Species") %>% 
+        dplyr::select(GC,Mutation) %>% 
+        dplyr::filter(!is.na(GC) & !is.na(Mutation)) %>%
+        as.matrix()
+      cleaned <- CleanData(deta.tree.to.use,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      gc.values <- x[,"GC"]
+      mutation.values <- x[,"Mutation"]
+      gc.pic <- calculatePIC(gc.values[tmp.tree$tip.label],tree = tmp.tree)
+      mut.pic <- calculatePIC(mutation.values[tmp.tree$tip.label],tree=tmp.tree)
+      cor.test(gc.pic[,1],mut.pic[,1],method="spearman")
+    } %>% tidy()
+    ),
+    Selection = purrr::map(data,function(x)
+    {
+      tmp <- x %>% column_to_rownames("Species") %>% 
+        dplyr::select(GC,Selection,Mutation) %>% 
+        dplyr::filter(!is.na(GC) & !is.na(Selection)) %>%
+        as.matrix()
+      cleaned <- CleanData(deta.tree.to.use,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      gc.values <- x[,"GC"]
+      selection.values <- x[,"Selection"]
+      mutation.values <- x[,"Mutation"]
+     
+      gc.pic <- calculatePIC(gc.values[tmp.tree$tip.label],tree = tmp.tree)
+      mut.pic <- calculatePIC(mutation.values[tmp.tree$tip.label],tree=tmp.tree)
+      sel.pic <- calculatePIC(selection.values[tmp.tree$tip.label],tree=tmp.tree)
+      cor.test(gc.pic[,1],sel.pic[,1],method="spearman") 
+    } %>% tidy()
+    )) %>% 
+  dplyr::select(-data) %>% 
+  unnest(c("Mutation","Selection"),names_sep = "_")
+
+csp.corr.pic <- deta.dm.gc %>% group_by(Codon,Species) %>% 
+  nest(Species,Selection,Mutation,GC,Clade) %>% 
+  mutate(CSP.Corr = purrr::map(data,function(x)
+    {
+      tmp <- x %>% column_to_rownames("Species") %>% 
+        dplyr::select(Mutation,Selection) %>% 
+        dplyr::filter(!is.na(Mutation) & !is.na(Selection)) %>%
+        as.matrix()
+      cleaned <- CleanData(deta.tree.to.use,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      mut.values <- x[,"Mutation"]
+      selection.values <- x[,"Selection"]
+      mut.pic <- calculatePIC(mut.values[tmp.tree$tip.label],tree = tmp.tree)
+      sel.pic <- calculatePIC(selection.values[tmp.tree$tip.label],tree=tmp.tree)
+      cor.test(mut.pic[,1],sel.pic[,1],method="spearman") 
+    } %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(CSP.Corr,names_sep="_") %>%
+  arrange(CSP.Corr_estimate)
+
+
+cor.gc.long <- cor.gc %>% dplyr::select(Codon,contains("estimate"),
+                                            contains("p.value")) %>%
+                              pivot_longer(-Codon,names_to = c("metric",".value"),
+                                           names_pattern = "(.*)_(.*)") %>%
+                              mutate(adj_p.value=p.adjust(p.value,method="BH"),
+                                     Significant = ifelse(adj_p.value < 0.05,"p < 0.05","Not Significant"))
+
+cor.gc.pic <- cor.gc.pic %>% dplyr::select(Codon,contains("estimate"),
+                                            contains("p.value")) %>%
+          ungroup() %>%
+          mutate(Selection_adj.p.value = p.adjust(Selection_p.value, method="BH"),
+                 Mutation_adj.p.value = p.adjust(Mutation_p.value,method="BH")
+                 ) %>%
+          mutate(Selection_Significant = ifelse(Selection_adj.p.value < 0.05,"p < 0.05","Not Significant"),
+                 Mutation_Significant = ifelse(Mutation_adj.p.value < 0.05,"p < 0.05","Not Significant"))
+
+
+
+cor.gc.pic.long <- cor.gc.pic %>%
+          pivot_longer(-Codon,names_to = c("metric",".value"),
+                                           names_pattern = "(.*)_(.*)")
+
+bar.p.gc.mut.sel <- ggplot(cor.gc.pic.long,aes(x=reorder_within(Codon,estimate,metric),y=estimate,fill=Significant)) + 
+  geom_bar(stat="identity",position = position_dodge(),color="black") + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  xlab("Codon") +
+  ylab("Spearman Correlation") +
+  ggtitle("Correlation between codon-specific parameters and\nGC% across species") +
+  scale_x_reordered() +
+  facet_wrap(~metric,scales="free_x") 
+bar.p.gc.mut.sel
+```
+
+
+```{r fig.width=12,fig.height=5}
+
+target.codon <- c("CAG")
+deta.dm.gc <- deta.dm.gc %>% mutate(Codon=as.character(Codon))
+test <- deta.dm.gc %>% 
+  split(f = ~as.factor(Codon)) %>%
+  purrr::map(function(x)
+    {
+      tmp <- x %>% column_to_rownames("Species") %>% 
+        dplyr::select(GC,Mutation) %>% 
+        dplyr::filter(!is.na(GC) & !is.na(Mutation)) %>%
+        as.matrix()
+      cleaned <- CleanData(fungi.tree.deta.filt,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      gc.values <- x[,"GC"]
+      mutation.values <- x[,"Mutation"]
+      gc.pic <- calculatePIC(gc.values[tmp.tree$tip.label],tree = tmp.tree)
+      mut.pic <- calculatePIC(mutation.values[tmp.tree$tip.label],tree=tmp.tree)
+      df <- data.frame(GC.pic = gc.pic[,1],Mutation.pic=mut.pic[,1])
+      df
+    }
+    ) %>% bind_rows(.id="Codon") 
+
+test.filt <- test %>% filter(Codon %in% target.codon)
+
+gc.mut <- ggplot(test.filt,aes(x=GC.pic,y=Mutation.pic)) +
+          geom_point() +
+          xlab("GC% (PIC)") +
+          ylab("Mutation Bias (PIC)") +
+          ggtitle("Mutation bias vs. GC%\nacross species (codon CAG)") +
+          stat_cor(method="spearman",label.sep="\n",alternative = "less") +
+          theme_cowplot() + 
+          theme(aspect.ratio=1)
+gc.mut
+
+
+bar.p.gc <- ggplot(cor.gc.pic) + 
+  geom_bar(aes(x=reorder(Codon,Mutation_estimate),y=Mutation_estimate,fill=Mutation_Significant),color="black",stat="identity",position = position_dodge()) + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  xlab("Codon") +
+  labs(fill = "Mutation bias\n-GC% correlation") +
+  ylab("Spearman Correlation") +
+  scale_fill_manual(values=c("Not Significant"="#F8766D","p < 0.05"="#00BFC4")) +
+  ggtitle("Shifts in mutation bias reflect changes\nto genome-wide GC%") +
+  ylim(c(-0.8,0.2)) +
+  geom_hline(yintercept = 0)
+bar.p.gc
+
+
+mut.plot <- (gc.mut | bar.p.gc) + plot_annotation(tag_levels = "A")
+mut.plot
+
+ggsave2("../Figures/All_species/mutation_bias_vs_gc_content.pdf",mut.plot,width=12,height=5)
+
+```
+
+
+
+```{r fig.width=12,fig.height=12}
+csp.corr.impact <- cor.gc.pic %>% 
+  left_join(csp.corr.pic,by="Codon")
+
+sel.gc.comp <- ggplot(csp.corr.impact,aes(x=CSP.Corr_estimate,y=Selection_estimate)) +
+     geom_point() +
+     theme_cowplot() +
+     #theme(aspect.ratio = 1) +
+     stat_cor(method="spearman",label.sep="\n",label.x.npc = "center") +
+     xlab("Spearman Correlation (PIC)\nSelection Coefficients vs. Mutation Bias") +
+     ylab("Spearman Correlation (PIC)\nGC vs. Selection Coefficients")
+
+
+mut.gc.comp <- ggplot(csp.corr.impact,aes(x=CSP.Corr_estimate,y=Mutation_estimate)) +
+     geom_point() +
+     theme_cowplot() +
+     #theme(aspect.ratio = 1) +
+     stat_cor(method="spearman",label.sep="\n",label.x.npc = "center") +
+     xlab("Spearman Correlation (PIC)\nSelection Coefficients vs. Mutation Bias") +
+     ylab("Spearman Correlation (PIC)\nGC vs. Mutation Bias")
+
+
+
+mut.sel.vs.gc <- bar.p.gc.mut.sel / (mut.gc.comp | sel.gc.comp) + plot_annotation(tag_levels = "A")
+
+ggsave2("../Figures/All_species/mutation_bias_and_selection_vs_gc.pdf",width=11,height = 11)
+
+
+```
+
+
+
+# Coevolution of mutation bias and selection coefficients
+
+
+```{r}
+deta.tree.to.use <- fungi.tree.deta.filt
+dm.tree.to.use <- fungi.tree.dm.1.filt
+
+
+deta.matrix.long <- deta.matrix %>% 
+                 filter(Species %in% deta.tree.to.use$tip.label) %>%
+                 dplyr::slice(match(deta.tree.to.use$tip.label,Species)) %>%
+                 pivot_longer(-Species,names_to="Codon",values_to="Selection") 
+
+dm.matrix.long <- dm.matrix %>% 
+                 filter(Species %in% dm.tree.to.use$tip.label) %>%
+                 mutate(Species = str_remove(Species,"_Lower_GC3$")) %>%
+                 dplyr::slice(match(deta.tree.to.use$tip.label,Species)) %>%
+                 pivot_longer(-Species,names_to="Codon",values_to="Mutation") 
+
+
+
+deta.dm <- deta.matrix.long %>% inner_join(dm.matrix.long,by=c("Species","Codon")) %>%
+                 mutate(Codon=factor(Codon,levels=AnaCoDa::codons()))
+deta.dm.split <- deta.dm %>%
+  group_by(Codon) %>%
+  group_split()
+```
+
+
+```{r warning = F}
+
+PIC <- function(df,tree,rowname.column,columns.of.interest)
+{
+  tmp <- df %>% 
+        column_to_rownames(rowname.column) %>% 
+        dplyr::select(any_of(columns.of.interest)) %>% 
+        drop_na(any_of(columns.of.interest)) %>%
+        as.matrix()
+  cleaned <- CleanData(tree,tmp)
+  df <- cleaned$data
+  tmp.tree <- cleaned$phy
+  pic.df <- purrr::map_dfc(columns.of.interest,function(target.column)
+    {
+      pic.tmp <- calculatePIC(df[tmp.tree$tip.label,target.column],tree = tmp.tree)
+      colnames(pic.tmp) <- paste0(target.column,c("_PIC","_Variance"))
+      pic.tmp
+  })
+  return(pic.df)
+}
+test<-PIC(deta.dm.split[[1]],deta.tree.to.use,"Species",c("Mutation","Selection"))
+
+csp.corr <- deta.dm %>% 
+  group_by(Codon,Species) %>% 
+  nest(Species,Selection,Mutation) %>% 
+  mutate(CSP.Corr = purrr::map(data,~cor.test(.x$Selection,.x$Mutation,method="spearman",use="complete.obs") %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(CSP.Corr,names_sep="_")
+
+csp.corr.pic <- deta.dm %>% 
+  group_by(Codon,Species) %>% 
+  nest(Species,Selection,Mutation) %>% 
+  mutate(CSP.Corr = purrr::map(data,function(x)
+    {
+      tmp <- x %>% 
+        column_to_rownames("Species") %>% 
+        dplyr::select(Mutation,Selection) %>% 
+        dplyr::filter(!is.na(Mutation) & !is.na(Selection)) %>%
+        as.matrix()
+      cleaned <- CleanData(deta.tree.to.use,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      mut.values <- x[,"Mutation"]
+      selection.values <- x[,"Selection"]
+      mut.pic <- calculatePIC(mut.values[tmp.tree$tip.label],tree = tmp.tree)
+      sel.pic <- calculatePIC(selection.values[tmp.tree$tip.label],tree=tmp.tree)
+      cor.test(mut.pic[,1],sel.pic[,1],method="spearman") 
+    } %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(CSP.Corr,names_sep="_")
+
+```
+
+
+
+
+
+
+## Effects of changes to tRNA modification enzyme expression
+
+```{r echo=F}
+
+tree.to.use <- fungi.tree.deta.filt
+
+trna <- read_tsv("../trna_modification_enzymes.tsv")
+orthogroups <- read_tsv("../shen_etal_ortholog_matrix_2021_12_17.tsv")
+orthogroups <- orthogroups %>% 
+       column_to_rownames("Orthogroup") %>%
+       rename_with(~cleanColumnNames(.x,fungi.tree$tip.label))
+scer <- orthogroups$saccharomyces_cerevisiae.max.cds
+
+trna.ortho <- unlist(lapply(trna$Locus,function(x){which(x==scer)}))
+trna.ortho <- rownames(orthogroups)[trna.ortho]
+
+scer.ortho.to.locus <- orthogroups[trna.ortho,"saccharomyces_cerevisiae.max.cds"]
+
+
+tmp <- data.frame(Locus=scer.ortho.to.locus,Orthogroup=trna.ortho)
+
+trna.w.ortho <- merge(trna,tmp,by="Locus")
+
+
+deta.matrix <- deta.matrix %>%
+  dplyr::slice(match(fungi.tree$tip.label,Species)) 
+
+phi <- read_csv("../phi_shen_etal_ortholog_matrix_2023_05_01.csv")
+phi <- phi %>% 
+  column_to_rownames("Orthogroup") %>%
+  rename_with(~cleanColumnNames(.x,fungi.tree$tip.label))
+phi <- phi[,fungi.tree$tip.label]
+
+phi.transform <- phi %>% 
+  mutate(across(where(is.numeric),log)#,
+         #across(where(is.numeric),~(.x - mean(.x,na.rm=T)))
+         )
+phi.filt <- phi.transform[which(rowSums(is.na(phi.transform)) < 120),]
+phi <- t(phi.filt)
+
+
+```
+
+```{r,warning=F}
+library(ppcor)
+trna.phi <- as.data.frame(phi[,trna.ortho]) %>% 
+  rownames_to_column("Species")
+trna.phi.long <- trna.phi %>% 
+                  dplyr::slice(match(tree.to.use$tip.label,Species)) %>%
+                  pivot_longer(-Species,names_to="Orthogroup",values_to="Phi") %>%
+                  left_join(trna.w.ortho,by="Orthogroup")
+                 
+
+deta.matrix.long <- deta.matrix %>%
+                 dplyr::slice(match(tree.to.use$tip.label,Species)) %>%
+                 pivot_longer(-Species,names_to="Codon",values_to="Selection") 
+
+trna.phi.deta <- trna.phi.long %>% 
+  full_join(deta.matrix.long,by="Species")
+
+target.genes <- c("IKI3","ELP2","ELP3")
+
+trna.phi.deta <- trna.phi.deta %>% 
+  filter(Gene %in% target.genes)
+trna.phi.deta <- trna.phi.deta %>% 
+  left_join(gc.cont,by="Species")
+```
+
+
+```{r warning = F}
+cor.phi.deta <- trna.phi.deta %>% 
+  group_by(Codon,Gene) %>% 
+  nest(Clade,Species,Gene,Selection,Phi,GC) %>% 
+  mutate(corr = purrr::map(data,function(x)
+  {
+      tmp <- x %>% 
+        column_to_rownames("Species") %>% 
+        dplyr::select(Phi,Selection,GC) %>% 
+        dplyr::filter(!is.na(Phi) & !is.na(Selection))
+      pcor.test(tmp$Phi,tmp$Selection,tmp$GC,method="spearman")
+  })) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_")
+
+cor.phi.deta.pic <- trna.phi.deta %>% 
+  group_by(Codon,Gene) %>% 
+  nest(Clade,Species,Gene,Selection,Phi,GC) %>% 
+  mutate(corr = purrr::map(data,function(x)
+    {
+      tmp <- x %>% column_to_rownames("Species") %>% 
+        dplyr::select(Phi,Selection,GC) %>% 
+        dplyr::filter(!is.na(Phi) & !is.na(Selection)) %>%
+        as.matrix()
+      cleaned <- CleanData(tree.to.use,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      phi.values <- x[,"Phi"]
+      selection.values <- x[,"Selection"]
+      gc.values <- x[,"GC"]
+      phi.pic <- calculatePIC(phi.values[tmp.tree$tip.label],tree = tmp.tree)
+      sel.pic <- calculatePIC(selection.values[tmp.tree$tip.label],tree=tmp.tree)
+      gc.pic <- calculatePIC(gc.values[tmp.tree$tip.label],tree=tmp.tree)
+      #cor.test(phi.pic[,1],sel.pic[,1],method="spearman") 
+      pcor.test(sel.pic[,1],phi.pic[,1],gc.pic[,1],method="spearman")
+    })) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_")
+
+trna.scer.gene <- trna %>% dplyr::select(Locus,Gene)
+
+cor.phi.deta.pic <- cor.phi.deta.pic %>% 
+                      left_join(trna.scer.gene,by="Locus")
+
+```
+
+
+
+```{r fig.width=7,fig.height=7}
+target.codons <- c("CAA","AAA","GAA")
+trna.phi.deta.target <- trna.phi.deta %>% 
+  filter(Codon %in% target.codons)
+
+test <- trna.phi.deta.target %>% 
+  split(f = ~Gene + Codon) %>%
+  purrr::map(function(x)
+    {
+      tmp <- x %>% column_to_rownames("Species") %>% 
+        dplyr::select(Phi,Selection,GC) %>% 
+        dplyr::filter(!is.na(Phi) & !is.na(Selection)) %>%
+        as.matrix()
+      cleaned <- CleanData(tree.to.use,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      phi.values <- x[,"Phi"]
+      selection.values <- x[,"Selection"]
+      gc.values <- x[,"GC"]
+      phi.pic <- calculatePIC(phi.values[tmp.tree$tip.label],tree = tmp.tree)
+      sel.pic <- calculatePIC(selection.values[tmp.tree$tip.label],tree=tmp.tree)
+      gc.pic <- calculatePIC(gc.values[tmp.tree$tip.label],tree=tmp.tree)
+      df <- data.frame(Phi.pic = phi.pic[,1],Selection.pic=sel.pic[,1],GC.pic=gc.pic[,1])
+      df
+    }
+    ) %>% bind_rows(.id="Gene.Codon") %>%
+   separate(Gene.Codon,into = c("Gene","Codon"),sep="\\.")
+
+test <- test %>%
+  mutate(Gene=fct_relevel(Gene,c("IKI3","ELP2","ELP3")))
+
+mod.sel <- ggplot(test,aes(x=Phi.pic,y=Selection.pic)) +
+           geom_point(alpha=0.5) +
+           ylab("GC content (PIC)") +
+           xlab("ROC-SEMPPR Gene Expression Estimate (PIC)") +
+           theme_cowplot() +
+           theme(aspect.ratio = 1) +
+           scale_color_viridis_d() +
+           stat_cor(method="spearman",label.sep="\n",show.legend = F) +
+           facet_grid(Codon~Gene,scales="free") +
+           ggtitle("Increased expression of tRNA modifier Elongator Complex\ncorrelates with changes to selection coefficients")
+           
+mod.sel
+
+
+ggsave2("../Figures/All_species/sel_vs_trna_mod_expression.pdf",plot=mod.sel,width=8,height = 8)
+
+
+test.split <- test %>% 
+  split(f = ~Gene + Codon)
+
+
+partial.cor <-test.split %>%
+  purrr::map(~ppcor::pcor.test(.x$Phi.pic,.x$Selection.pic,.x$GC.pic,method="spearman")) %>%
+  bind_rows(.id="Gene.Codon") %>%
+  separate(col = Gene.Codon,into=c("Gene","Codon"),sep="\\.")
+
+
+
+```
+
+
+```{r}
+test.gc <- test %>%
+  filter(Codon == "GAA")
+
+mod.gc <- ggplot(test.gc,aes(x=Phi.pic,y=GC.pic)) +
+           geom_point(alpha=0.5) +
+           ylab("Selection Coefficients (PIC)") +
+           xlab("ROC-SEMPPR Gene Expression Estimate (PIC)") +
+           theme_cowplot() +
+           scale_color_viridis_d() +
+           stat_cor(method="spearman",label.sep="\n",show.legend = F) +
+           facet_grid(~Gene,scales="free") +
+           ggtitle("Increased expression of tRNA modifier Elongator Complex\ncorrelates with changes to GC%")
+           
+mod.gc
+
+ggsave2("../Figures/All_species/gc_vs_trna_mod_expression.pdf",plot=mod.gc,width=8,height=4)
+
+
+
+```
+
+```{r}
+
+target.codons <- c("AAA","GAA","CAA")
+cor.phi.deta.pic.target <- partial.cor %>%
+           mutate(adj_p.value = p.adjust(p.value,method="BH"),
+                  corr_estimate_sig = ifelse(p.value < 0.05,estimate,NA))
+           
+                 
+  
+correlations.phi.wide <- cor.phi.deta.pic.target %>% 
+  dplyr::select(Gene,Codon,corr_estimate_sig) %>%
+                      pivot_wider(id_cols=Gene,names_from=Codon,values_from=corr_estimate_sig) %>%
+                      column_to_rownames("Gene")
+
+pal <- colorRampPalette(c("blue","white","red"))(30)
+
+trna.present <- trna[which(trna$Gene %in% rownames(correlations.phi.wide)),c("Gene","Modification")]
+correlations.phi.wide <- correlations.phi.wide[trna.present$Gene,]
+
+mod.colors <- data.frame(Modification=unique(trna.present$Modification),
+                         Color=colormap::colormap(colormap::colormaps$rainbow,nshades=length(unique(trna.present$Modification))),stringsAsFactors = F,row.names = "Modification")
+mod.colors <- mod.colors[trna.present$Modification,"Color"]
+
+col.fun <- circlize::colorRamp2(c(min(correlations.phi.wide,na.rm=T),0, -min(correlations.phi.wide,na.rm=T)), 
+                          c("blue", "white", "red"))
+
+trna.mod.partial <- Heatmap(correlations.phi.wide,
+        col=col.fun,
+        na_col = "black",
+        cluster_rows = F,
+        cluster_columns = F,
+        name = "Parital Correlation", 
+        row_title = "Codon",
+        column_title = "Gene",
+        show_row_names = T)
+trna.mod.partial
+
+
+pdf("../Figures/All_species/sel_vs_trna_mod_expression_control_gc.pdf",width=7,height=5)
+draw(trna.mod.partial)
+dev.off()
+
+```
+
+
+# Correlation between mutation bias and shifts in mismatch repair gene expression
+
+```{r}
+cleanSpeciesLabels <- function(x)
+{
+   y <- x %>% str_remove(".max.cds") %>% 
+          str_extract("[a-z]+_[a-z]+(_maris)*") %>%
+          str_split("_") %>% 
+          lapply(function(x){
+            if (length(x) == 2)
+            {
+              paste0(str_to_sentence(x[1]),"_",x[2])
+            } else {
+              paste0(str_to_sentence(x[1]),"_",x[2],"_",x[3])
+            }
+            }
+            )
+          
+  unlist(y)
+}
+
+mmr <- read_tsv("../mmr_matrix.tsv")
+species <- cleanSpeciesLabels(fungi.tree.deta.filt$tip.label)
+mmr.sacch <- mmr %>% 
+  filter(Species %in% species) %>%
+  mutate(Missing = 52 - rowSums(across(where(is.numeric))))
+fungi.tree.cleaned <- fungi.tree.deta.filt
+fungi.tree.cleaned$tip.label <- species
+missing.species <- fungi.tree.cleaned$tip.label[which(!fungi.tree.cleaned$tip.label %in% mmr.sacch$Species)]
+fungi.tree.cleaned <- drop.tip(fungi.tree.cleaned,missing.species)
+gc.cont.clean <- gc.cont %>%
+  mutate(Species = cleanSpeciesLabels(Species))
+mmr.sacch <- mmr.sacch %>%
+  left_join(gc.cont.clean,by="Species") %>%
+  dplyr::slice(match(fungi.tree.cleaned$tip.label,Species))
+mmr.sacch <- mmr.sacch %>%
+  mutate(Group=factor(ifelse(Missing <= median(Missing),"LLT","HLT")),
+         Group=fct_relevel(Group,"LLT"))
+
+gc.comp <- ggplot(mmr.sacch,aes(x=Group,y=GC)) +
+  geom_boxplot(fill = "blue",color="black") +
+  geom_jitter(color="black", size=0.4, alpha=0.9) +
+  xlab("") +
+  ggtitle("Impact of missing MMRs on GC%") +
+  theme_cowplot() +
+  theme(aspect.ratio=1)
+gc.comp 
+
+gc.comp.all <- ggplot(mmr.sacch,aes(x=as.factor(Missing),y=GC)) +
+  geom_boxplot(fill = "blue",color="black") +
+  geom_jitter(color="black", size=0.4, alpha=0.9) +
+  xlab("Number of missing MMR genes") +
+  ggtitle("Impact of missing MMRs on GC%") +
+  theme_cowplot() +
+  theme(aspect.ratio=1)
+gc.comp.all 
+ggsave2("../Figures/All_species/gc_missing.pdf",plot=gc.comp.all)
+
+phy.reg <- nlme::gls(GC ~ Group,data=mmr.sacch,correlation = corBrownian(phy=fungi.tree.cleaned))
+
+summary(phy.reg)
+
+```
+
+
+```{r}
+
+yeast_orthologs <- read_delim("../mmr_gene_ids.csv",delim=" ") %>% 
+                    filter(reason == "MATCH" | reason == "OTHER") %>%
+                    dplyr::select(input,secondaryIdentifier) %>%
+                    distinct(secondaryIdentifier,.keep_all = T)
+
+orthogroups <- read_tsv("../shen_etal_ortholog_matrix_2021_12_17.tsv")
+orthogroups <- orthogroups %>% 
+       column_to_rownames("Orthogroup") %>%
+       rename_with(~cleanColumnNames(.x,fungi.tree$tip.label))
+
+
+orthogroups<- orthogroups %>% 
+  rownames_to_column("Orthogroup")
+
+mmr.ortho <- yeast_orthologs %>% 
+  left_join(orthogroups,by=c("secondaryIdentifier" = "saccharomyces_cerevisiae.max.cds")) %>%
+  dplyr::select(input,secondaryIdentifier,Orthogroup) 
+
+mmr.ortho.genes <- mmr.ortho %>%
+  filter(!is.na(Orthogroup)) %>%
+  dplyr::select(Orthogroup) %>%
+  deframe()
+
+mmr.ortho.matrix <- orthogroups %>% 
+  filter(Orthogroup %in% mmr.ortho.genes)
+
+```
+
+
+
+
+```{r,warning=FALSE}
+mmr.phi <- as.data.frame(phi[,which(colnames(phi) %in% mmr.ortho.genes)]) %>% 
+  rownames_to_column("Species")
+mmr.phi.long <- mmr.phi %>% 
+                  dplyr::slice(match(fungi.tree.deta.filt$tip.label,Species)) %>%
+                  pivot_longer(-Species,names_to="Orthogroup",values_to="Phi") 
+                 
+dm.matrix.t <- dm.matrix.gc %>%
+  dplyr::slice(match(fungi.tree.dm.1.filt$tip.label,Species))
+
+dm.matrix.long <- dm.matrix.t %>%
+                 mutate(Species = str_remove(Species,"_Lower_GC3$")) %>%
+                 dplyr::slice(match(fungi.tree.deta.filt$tip.label,Species)) %>%
+                 pivot_longer(-Species,names_to="Codon",values_to="Mutation") 
+
+mmr.phi.dm <- mmr.phi.long %>% 
+  full_join(dm.matrix.long,by="Species")
+
+cor.phi.dm <- mmr.phi.dm %>% 
+  group_by(Orthogroup,Codon) %>% 
+  nest(Species,Mutation,Phi) %>% 
+  mutate(corr = purrr::map(data,~cor.test(.x$Phi,.x$Mutation,method="spearman",use="complete.obs") %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_")
+
+cor.phi.dm.pic <- mmr.phi.dm %>% 
+  group_by(Orthogroup,Codon) %>% 
+  nest(Species,Mutation,Phi) %>% 
+  mutate(corr = purrr::map(data, function(x)
+    {
+      tmp <- x %>% 
+        dplyr::select(Species,Phi,Mutation) %>% 
+        dplyr::filter(!is.na(Phi) & !is.na(Mutation)) %>%
+        column_to_rownames("Species") %>%
+        as.matrix()
+      cleaned <- CleanData(fungi.tree.deta.filt,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      phi.values <- x[,"Phi"]
+      mutation.values <- x[,"Mutation"]
+      phi.pic <- calculatePIC(phi.values[tmp.tree$tip.label],tree = tmp.tree)
+      mut.pic <- calculatePIC(mutation.values[tmp.tree$tip.label],tree=tmp.tree)
+      cor.test(phi.pic[,1],mut.pic[,1],method="spearman") 
+
+    } %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_")
+
+cor.phi.dm.pic <- cor.phi.dm.pic %>% 
+  ungroup() %>% 
+  group_by(Orthogroup) %>% # how do we correct for multiple hypothesis testing
+  mutate(adj_p.value = p.adjust(corr_p.value,method="BH"))
+
+
+```
+
+
+```{r ,fig.width=9,fig.height=9}
+
+correlations.phi.wide <- cor.phi.dm.pic%>% 
+                      left_join(mmr.ortho,by="Orthogroup") %>%
+                      mutate(corr_estimate= ifelse(corr_p.value < 0.05,
+                         corr_estimate,
+                        NA)) %>%
+                      dplyr::select(input,Codon,corr_estimate) %>%
+                      pivot_wider(id_cols=input,names_from=Codon,values_from=corr_estimate) %>%
+                      #filter(str_starts(input,"RF",negate=T)) %>%
+                      column_to_rownames("input")
+
+dm.phi.hm <- Heatmap(as.matrix(correlations.phi.wide),
+        na_col = "black",
+        cluster_rows = F,
+        cluster_columns = F,
+        name = "Mutation Bias",
+        show_row_names = T)
+
+dm.phi.hm
+
+correlations.phi.wide.filt <- correlations.phi.wide[which(rowSums(!is.na(correlations.phi.wide)) >5),]
+
+dm.phi.hm <- Heatmap(as.matrix(correlations.phi.wide.filt),
+        na_col = "black",
+        cluster_rows = F,
+        cluster_columns = F,
+        name = "Mutation Bias",
+        show_row_names = T)
+
+dm.phi.hm
+
+```
+
+
+
+
+```{r warning = F}
+mmr.phi.long <- mmr.phi %>% 
+                  dplyr::slice(match(fungi.tree.deta.filt$tip.label,Species)) %>%
+                  pivot_longer(-Species,names_to="Orthogroup",values_to="Phi") %>%
+               left_join(gc.cont,by="Species")
+                 
+
+cor.phi.gc <- mmr.phi.long %>% 
+  group_by(Orthogroup) %>% 
+  nest(Species,GC,Phi,Clade) %>% 
+  mutate(corr = purrr::map(data,~cor.test(.x$Phi,.x$GC,method="spearman",use="complete.obs") %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_")
+
+cor.phi.gc.pic <- mmr.phi.long %>% 
+  group_by(Orthogroup) %>% 
+  nest(Species,GC,Phi,Clade) %>% 
+  mutate(corr = purrr::map(data, function(x)
+    {
+      tmp <- x %>% 
+        dplyr::select(Species,Phi,GC) %>% 
+        dplyr::filter(!is.na(Phi) & !is.na(GC)) %>%
+        column_to_rownames("Species") %>%
+        as.matrix()
+      cleaned <- CleanData(fungi.tree.deta.filt,tmp)
+      x <- cleaned$data
+      tmp.tree <- cleaned$phy
+      phi.values <- x[,"Phi"]
+      gc.values <- x[,"GC"]
+      phi.pic <- calculatePIC(phi.values[tmp.tree$tip.label],tree = tmp.tree)
+      gc.pic <- calculatePIC(gc.values[tmp.tree$tip.label],tree=tmp.tree)
+      cor.test(phi.pic[,1],gc.pic[,1],method="spearman") 
+      
+    } %>% tidy())) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_")
+
+cor.phi.gc.pic <- cor.phi.gc.pic %>% 
+  ungroup() %>% 
+  group_by(Orthogroup) %>% # how do we correct of multiple hypothesis testing
+  mutate(adj_p.value = p.adjust(corr_p.value,method="BH"))
+
+
+```
+
+
+
+```{r fig.width=12,fig.height=6}
+correlations.phi.wide <- cor.phi.gc.pic %>% 
+                      left_join(mmr.ortho,by="Orthogroup") %>%
+                      mutate(Significant=ifelse(adj_p.value < 0.05,"p < 0.05","Not significant"))
+
+bar.p.all <- ggplot(correlations.phi.wide) + 
+  geom_bar(aes(x=input,y=corr_estimate,fill=Significant),stat="identity",position = position_dodge(),color="black") + 
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab("Spearman Correlation (PIC)") +
+  xlab("Gene") +
+  labs(fill = "Gene Expression-\nGC correlation") +
+  ggtitle("Correlation between GC% and MMR gene expression")
+bar.p.all
+
+```
+
+
+```{r}
+mmr.phi.mat <- mmr.phi %>%
+  dplyr::slice(match(fungi.tree.deta.filt$tip.label, Species)) %>%
+  column_to_rownames("Species") %>%
+  as.matrix()
+
+gc.ordered <- gc.cont %>% 
+  dplyr::slice(match(rownames(mmr.phi.mat), Species))
+
+col_fun_gc <- circlize::colorRamp2(c(min(gc.ordered$GC) - 0.01,median(gc.ordered$GC), max(gc.ordered$GC) + 0.01),c("purple", "white", "gold"))
+
+row_annot <- rowAnnotation(GC = gc.ordered$GC, 
+                           col = list(GC = col_fun_gc)
+                          )
+
+
+mmr.phi.heatmap <- Heatmap(mmr.phi.mat,
+        na_col = "black",
+        name = "MMR Expression",
+        show_row_names = F,
+        right_annotation = row_annot,
+        show_column_names = F)
+
+pdf("../Figures/All_species/mmr_expression_heatmap.pdf")
+draw(mmr.phi.heatmap)
+dev.off()
+
+```
+
+
+```{r}
+mmr.phi.mat.norm <- apply(mmr.phi.mat,2,function(x){(x - mean(x,na.rm=T))/sd(x,na.rm = T)})
+mmr.phi.mat.norm[is.na(mmr.phi.mat.norm)] <- 0
+
+ppca <- phyl.pca(fungi.tree.deta.filt,mmr.phi.mat.norm)
+
+mmr.scores <-scores(ppca)
+mmr.scores <- mmr.scores %>%
+  as.data.frame() %>%
+  rownames_to_column("Species") %>%
+  left_join(gc.ordered)
+
+
+mmr.phi.heatmap <- Heatmap(mmr.phi.mat.norm,
+        na_col = "black",
+        name = "MMR Expression\nZ-scores",
+        show_row_names = F,
+        right_annotation = row_annot,
+        show_column_names = F)
+
+mmr.phi.heatmap
+
+
+
+```
+
+
+```{r fig.width=6,fig.height=6}
+
+gc.p <- ggplot(mmr.scores,aes(x=PC1,y=GC)) +
+  geom_point() +
+  stat_cor(method="spearman") +
+  xlab(paste0("Principal Component 1\n",round(100*ppca$Eval[1,1]),"%")) +
+  ggtitle("GC% vs. principal component 1 of\nphylogenetic-PCA") +
+  theme_cowplot()
+
+load.df <- ppca$L %>%
+  as.data.frame() %>%
+  rownames_to_column("Orthogroup") %>%
+  left_join(mmr.ortho,by="Orthogroup")
+
+load.plot <- ggplot(load.df,aes(x=reorder(input,PC1),y=PC1)) +
+  geom_col() +
+  theme_cowplot() +
+  xlab("Gene") +
+  ylab("Principal Component 1 Loadings\n") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  ggtitle("Principal component loadings for MMR genes")
+
+gc.mmr.phi <- (gc.comp | bar.p.all) / (gc.p | load.plot) + plot_annotation(tag_levels = "A")
+gc.mmr.phi
+
+ggsave2("../Figures/All_species/gc_content_vs_mmr_expression.pdf",plot=gc.mmr.phi,width=12,height=12)
+
+```
