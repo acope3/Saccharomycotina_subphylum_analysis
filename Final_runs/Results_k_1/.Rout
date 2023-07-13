@@ -1,0 +1,77 @@
+$adapt
+[1] 20
+
+$codon_table
+[1] 1
+
+$dEta
+NULL
+
+$dM
+NULL
+
+$development
+[1] FALSE
+
+$div
+[1] 20
+
+$est_csp
+[1] TRUE
+
+$est_hyp
+[1] TRUE
+
+$est_mix
+[1] FALSE
+
+$est_phi
+[1] TRUE
+
+$fix_dEta
+[1] FALSE
+
+$fix_dM
+[1] FALSE
+
+$input
+[1] "Data/FASTA/"
+
+$max_num_runs
+[1] 2
+
+$mixture_assignment
+NULL
+
+$obs_phi
+NULL
+
+$output
+[1] "Results/Ncrassa/k_1"
+
+$phi
+NULL
+
+$prior_from_gc
+NULL
+
+$restart_file
+NULL
+
+$samp
+[1] 20000
+
+$thin
+[1] 10
+
+$threads
+[1] 8
+
+$with_phi
+[1] FALSE
+
+Loading required package: Rcpp
+Loading required package: VGAM
+Loading required package: stats4
+Loading required package: splines
+Loading required package: mvtnorm
