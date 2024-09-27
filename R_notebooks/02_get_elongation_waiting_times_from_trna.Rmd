@@ -11,6 +11,7 @@ library(tidyverse)
 library(Biostrings)
 library(ape)
 library(AnaCoDa,lib.loc="~/R_dev")
+source("helperFunctions.R")
 
 
 removeMitoContigs <- function(all.contigs.file,mito.contigs.file,all.input.dir = "/data2/Labella2019/Genomes/fas/",mito.input.dir = "/data2/Labella2019/Genomes/Mito_sequences_removed/",output.dir = "/data2/Labella2019/Genomes/fas_nuc/")
@@ -75,7 +76,7 @@ get.ws.local <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0, 0.0,
 
 
 
-gettAI.relative.aa <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0, 0.0, 0.41, 0.28, 0.9999, 0.68, 0.89), exclude.ctg=F,abs.diff=F)
+gettAI.relative.aa <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0, 0.0, 0.41, 0.28, 0.9999, 0.68, 0.89), exclude.ctg=F,rank.by.alphabet=T)
 {
 
   p = 1 - s
@@ -106,23 +107,21 @@ gettAI.relative.aa <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0
   if (exclude.ctg)
   {
     W <- W %>% 
-      mutate(AA = ifelse(Codon == "CTG","J",AA))
+      mutate(AA = ifelse(Codon == "CTG","J",AA),
+             W = ifelse(Codon == "CTG",NA,W))
   }
-  if (abs.diff == F)
+  if (rank.by.alphabet)
   {
-    r.wi <- W %>% 
-      mutate(W = W/max(W)) %>%
-      group_by(AA) %>%
-      mutate(Order=rank(Codon),
-             tAI = W[which.max(Order)]/W)
-             #tAI = (W[which.max(Order)] - W)/max(W),
-             #tAI = 1/W - 1/W[which.max(Order)]) ## will scale relative to alphabetically last codon, same as AnaCoDa
-  } else if (abs.diff == T) {
-    r.wi <- W %>% 
-      group_by(AA) %>%
-      mutate(Order=rank(Codon),
-             #tAI = 1/W - 1/W[which.max(Order)])
-             tAI = W[which.max(Order)] - W) ## will scale relative to alphabetically last codon, same as AnaCoDa
+    r.wi <- W %>%
+        group_by(AA) %>%
+        mutate(Order=rank(Codon),
+               tAI = W[which.max(Order)]/W) ## will scale relative to alphabetically last codon, same as AnaCoDa
+  } else 
+  {
+     r.wi <- W %>%
+        group_by(AA) %>%
+        mutate(Order=rank(W,na.last=F,ties.method="random"),
+               tAI = W[which.max(Order)]/W)
   }
   r.wi <- r.wi %>% 
     ungroup() %>%
@@ -162,7 +161,7 @@ mito.contig <- mito.contig %>%
 purrr::map2(as.list(all.contig),as.list(mito.contig),removeMitoContigs)
 
 lapply(missing.species,function(x) {
-  file.copy(from = file.path("/data2/Labella2019/Genomes/fas/",x), to = file.path("/data2/Labella2019/Genomes/fas_nuc/",x))
+  file.copy(from = file.path("../Data/Genomes/fas/",x), to = file.path("/data2/Labella2019/Genomes/fas_nuc/",x))
 })
 ```
 
@@ -198,7 +197,7 @@ getNewTGCN <- function(species,old.trna.count)
 {
   print(species)
   species.fas <- str_replace(species,".max.cds",".fas")
-  trna.scan <- read_tsv(file.path("/data2/Labella2019/new_tGCN/",species.fas),skip = 1,col_types = cols()) %>%
+  trna.scan <- read_tsv(file.path("../Data//",species.fas),skip = 1,col_types = cols()) %>%
     filter(Codon != "-----") %>%
     mutate(Note = ifelse(is.na(Note),"",Note)) %>%
     filter(Note != "pseudo") %>%
@@ -223,24 +222,24 @@ getNewTGCN <- function(species,old.trna.count)
   return(new.tgcn)
 }
 
-tgcn.df <- lapply(all.genomes,getNewTGCN,old.trna.count=trna.count.long) %>% bind_rows()
-tgcn.df.filt <- tgcn.df %>% filter(!str_detect(Codon,"Sup") & !str_detect(Codon,"NNN") & !is.na(Species))
-tgcn.df.wide <- tgcn.df.filt %>% pivot_wider(id_cols = Species,names_from = "Codon",values_from="tGCN")
-write_csv(tgcn.df.wide,"~/Labella2019_scripts/cope_trna.csv")
+tgcn.df <- lapply(all.genomes,getNewTGCN,old.trna.count=trna.count.long) %>% 
+  bind_rows()
+tgcn.df.filt <- tgcn.df %>%
+  filter(!str_detect(Codon,"Sup") & !str_detect(Codon,"NNN") & !is.na(Species))
+tgcn.df.wide <- tgcn.df.filt %>% 
+  pivot_wider(id_cols = Species,names_from = "Codon",values_from="tGCN")
+write_csv(tgcn.df.wide,"../Data/cope_trna.csv")
 ```
 
 
 ```{r}
-all.genomes <- readLines("../all_fungi.txt")
-ser.genomes <- readLines("../ser_fungi.txt")
-fungi.tree <- read.tree("../tree_with_cds_labels.nwk")
+all.genomes <- readLines("../Data/all_fungi.txt")
+ser.genomes <- readLines("../Data/ser_fungi.txt")
+fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
 fungi.tree <- cleanTree(fungi.tree,all.genomes)
 
-trna.count <- read_csv("../cope_trna.csv")
+trna.count <- read_csv("../Data/cope_trna.csv")
 trna.count <- trna.count %>%
-  #dplyr::select(-c(`Species name`,`Major clade`,`Total_tRNA Counts`, `CAG-Ala`,`CAG-Ser`)) %>%
-  #dplyr::rename(Species=file_name_id) %>%
-  #mutate(Species = paste0(Species,".max.cds")) %>%
   dplyr::select(-c(`CAG-Ala`,`CAG-Ser`)) %>%
   filter(Species %in% all.genomes)
 
@@ -258,7 +257,7 @@ trna.count <- trna.count %>%
 trna.count.long <- trna.count %>% 
   pivot_longer(-Species,names_to="Codon", values_to="tGCN")
 
-codon.order <- readLines("~/dos_reis_tai_codon_order.txt")
+codon.order <- readLines("../Data/dos_reis_tai_codon_order.txt")
 codon.order.sense <- codon.order[-c(11,12,15,36)]
 trna.count.long <- trna.count.long %>% 
                     group_by(Species) %>% 
@@ -272,17 +271,23 @@ trna.count.long.split <- trna.count.long %>%
   group_split()
 names(trna.count.long.split) <- unique(trna.count.long$Species)
 
-weights <- read_tsv("~/Labella2019_scripts/tai_optimization_w_phi_2023_05_03_10_restarts_roc_phi_no_cutoff.tsv") %>%
+weights <- read_tsv("../Data/tai_optimization_w_phi_2023_05_03_10_restarts_roc_phi_no_cutoff.tsv") %>%
   dplyr::select(-starts_with("Performance"))
 
 tai.long <- trna.count.long.split %>%
-  purrr::map(~gettAI.relative.aa(.x$tGCN,codon.order.sense, s = c(0,0,0,0,weights %>% filter(Species %in% .x$Species) %>% dplyr::select(-Species) %>% unlist() %>% unname()), sking = 0, exclude.ctg = .x$Exclude.CTG[1], abs.diff = F)) %>% 
+  purrr::map(~gettAI.relative.aa(.x$tGCN,codon.order.sense, s = c(0,0,0,0,weights %>% filter(Species %in% .x$Species) %>% dplyr::select(-Species,-Num.Genes) %>% unlist() %>% unname()), sking = 0, exclude.ctg = .x$Exclude.CTG[1],rank.by.alphabet=T)) %>% 
   bind_rows(.id="Species")
 
 tai.wide <- tai.long %>% 
-  pivot_wider(Species,names_from=Codon,values_from = tAI)
+  pivot_wider(id_cols=Species,names_from=Codon,values_from = tAI)
 
-write_tsv(tai.wide,"~/Labella2019_scripts/tRNA/cope_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv")
+raw.weights <- tai.long %>% 
+  pivot_wider(id_cols=Species,names_from=Codon,values_from = W)
+
+write_tsv(tai.wide,"../Data/cope_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv")
+
+
+write_tsv(raw.weights,"../Data/cope_unnormalized_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv")
 
 ```
 

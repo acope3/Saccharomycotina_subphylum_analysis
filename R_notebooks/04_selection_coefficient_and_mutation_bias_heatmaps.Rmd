@@ -1,0 +1,815 @@
+---
+title: "Compare Selection and Mutation to Phylogeny"
+author: "Anonymous"
+date: "1/25/2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ape)
+library(phytools)
+library(phylogram)
+library(cluster)
+library(tidyverse)
+library(factoextra)
+library(dendextend)
+library(RColorBrewer)
+library(cowplot)
+library(reshape2)
+library(geiger)
+library(ggpubr)
+library(ggrepel)
+library(broom)
+library(AnaCoDa)
+library(ggtree)
+library(patchwork)
+library(scales)
+library(ComplexHeatmap)
+source("helperFunctions.R")
+
+cleanSpeciesLabelsForPlots <- function(x)
+{
+   y <- x %>% str_remove(".max.cds") %>% 
+          str_extract("[a-z]+_[a-z]+") %>%
+          str_split("_") %>% 
+          lapply(function(x){paste0(toupper(substring(x[1],1,1)),". ",x[2])})
+          #lapply(function(x){paste(str_to_sentence(x[1]),x[2])})
+  unlist(y)
+}
+
+```
+
+
+# Read in relevant data
+
+## Phylogeny
+
+
+```{r}
+all.genomes <- readLines("../Data/all_fungi.txt")
+fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
+fungi.tree <- cleanTree(fungi.tree,all.genomes)
+
+clades <- read_tsv("../Data/clades.txt")
+clades <- clades %>% 
+  dplyr::slice(match(fungi.tree$tip.label,file_name_id)) %>%
+  dplyr::rename(Species=file_name_id,Clade=Major.clade)
+
+
+```
+
+
+## Selection coefficients and mutation bias estimates across 327 yeasts
+```{r}
+deta.matrix.k1 <- read_tsv("../Post_analysis/selection_coefficients_k1.tsv",col_types = cols())
+deta.matrix.k2 <- read_tsv("../Post_analysis/selection_coefficients_k2.tsv",col_types = cols())
+sd.deta.matrix.k1 <- read_tsv("../Post_analysis/std_selection_coefficients_k1.tsv",col_types = cols())
+sd.deta.matrix.k2 <- read_tsv("../Post_analysis/std_selection_coefficients_k2.tsv",col_types = cols())
+
+
+deta.matrix.k1.rescaled <- read_tsv("../Post_analysis/selection_coefficients_k1_GC_rescaled.tsv",col_types = cols())
+deta.matrix.k2.rescaled <- read_tsv("../Post_analysis/selection_coefficients_k2_GC_rescaled.tsv",col_types = cols())
+
+dm.matrix.k1 <- read_tsv("../Post_analysis/mutation_bias_k1.tsv",col_types = cols())
+dm.matrix.k2.higher.gc <- read_tsv("../Post_analysis/mutation_bias_k2_higher_GC3.tsv",col_types = cols())
+dm.matrix.k2.lower.gc <- read_tsv("../Post_analysis/mutation_bias_k2_lower_GC3.tsv",col_types = cols())
+sd.dm.matrix.k1 <- read_tsv("../Post_analysis/std_mutation_bias_k1.tsv",col_types = cols())
+sd.dm.matrix.k2.higher.gc <- read_tsv("../Post_analysis/std_mutation_bias_k2_higher_GC3.tsv",col_types = cols())
+sd.dm.matrix.k2.lower.gc <- read_tsv("../Post_analysis/std_mutation_bias_k2_lower_GC3.tsv",col_types = cols())
+
+
+
+dm.matrix.k1.rescaled <- read_tsv("../Post_analysis/mutation_bias_k1_GC_rescaled.tsv",col_types = cols())
+dm.matrix.k2.higher.gc.rescaled <- read_tsv("../Post_analysis/mutation_bias_k2_higher_GC3_GC_rescaled.tsv",col_types = cols())
+dm.matrix.k2.lower.gc.rescaled <- read_tsv("../Post_analysis/mutation_bias_k2_lower_GC3_GC_rescaled.tsv",col_types = cols())
+```
+
+## Species better fit by VarMut model than ConstMut model based on comparisons with empirical gene expression
+```{r}
+improved.fits.species <- readLines("../Data/improved_species_by_gene_expression_25_percent_2023_05_03.txt")
+```
+
+## Create final parameter matrices dependent on improved species fits 
+
+```{r}
+
+deta.matrix <- deta.matrix.k1
+deta.matrix <- deta.matrix %>% 
+  column_to_rownames("Species")
+deta.matrix <- as.data.frame(t(deta.matrix))
+
+sd.deta.matrix <- sd.deta.matrix.k1
+sd.deta.matrix <- sd.deta.matrix %>% 
+  column_to_rownames("Species")
+sd.deta.matrix <- as.data.frame(t(sd.deta.matrix))
+
+
+dm.matrix <- dm.matrix.k1
+dm.matrix <- dm.matrix %>% 
+  column_to_rownames("Species")
+dm.matrix <- as.data.frame(t(dm.matrix))
+
+sd.dm.matrix <- sd.dm.matrix.k1
+sd.dm.matrix <- sd.dm.matrix %>% 
+  column_to_rownames("Species")
+sd.dm.matrix <- as.data.frame(t(sd.dm.matrix))
+
+deta.matrix.gc <- deta.matrix.k1.rescaled
+deta.matrix.gc <- deta.matrix.gc %>% 
+  column_to_rownames("Species")
+deta.matrix.gc <- as.data.frame(t(deta.matrix.gc))
+
+dm.matrix.gc <- dm.matrix.k1.rescaled
+dm.matrix.gc <- dm.matrix.gc %>% 
+  column_to_rownames("Species")
+dm.matrix.gc <- as.data.frame(t(dm.matrix.gc))
+
+
+
+for (i in improved.fits.species)
+{
+  deta.matrix <- deta.matrix %>%
+    mutate(!!as.name(i) := deta.matrix.k2 %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    )
+  
+  sd.deta.matrix <- sd.deta.matrix %>%
+    mutate(!!as.name(i) := sd.deta.matrix.k2 %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    )
+  
+  deta.matrix.gc <- deta.matrix.gc %>% 
+    mutate(!!as.name(i) := deta.matrix.k2.rescaled %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    )
+  
+  dm.matrix <- dm.matrix %>% 
+    mutate(!!as.name(i) := dm.matrix.k2.higher.gc%>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist(),
+           !!as.name(paste0(i,"_Lower_GC3")) := dm.matrix.k2.lower.gc %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    ) %>%
+      dplyr::rename(!!as.name(paste0(i,"_Higher_GC3")) := !!as.name(i))
+  
+  sd.dm.matrix <- sd.dm.matrix %>% 
+    mutate(!!as.name(i) := sd.dm.matrix.k2.higher.gc%>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist(),
+           !!as.name(paste0(i,"_Lower_GC3")) := sd.dm.matrix.k2.lower.gc %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    ) %>%
+      dplyr::rename(!!as.name(paste0(i,"_Higher_GC3")) := !!as.name(i))
+  
+  dm.matrix.gc <- dm.matrix.gc %>% 
+    mutate(!!as.name(i) := dm.matrix.k2.higher.gc.rescaled%>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist(),
+           !!as.name(paste0(i,"_Lower_GC3")) := dm.matrix.k2.lower.gc.rescaled %>% 
+            filter(Species == i) %>% 
+            dplyr::select(-Species) %>%
+            unlist()
+    ) %>%
+      dplyr::rename(!!as.name(paste0(i,"_Higher_GC3")) := !!as.name(i))
+}
+
+param.list <- list(deta.matrix,deta.matrix.gc,dm.matrix,dm.matrix.gc,sd.deta.matrix,sd.dm.matrix) %>%
+  purrr::map(~.x %>%
+              t() %>% 
+              as.data.frame() %>%
+              rownames_to_column("Species") %>%
+              as_tibble())
+
+deta.matrix <- param.list[[1]]
+deta.matrix.gc <- param.list[[2]]
+dm.matrix <- param.list[[3]]
+dm.matrix.gc <- param.list[[4]]
+sd.deta.matrix <- param.list[[5]]
+sd.dm.matrix <- param.list[[6]]
+
+
+```
+
+## Selection coefficients vs tAI for all species
+
+```{r}
+deta.vs.wi <- read_tsv("../Post_analysis/roc_sel_coef_vs_tAI_for_all_327_yeasts.tsv") 
+```
+
+
+## ROC $\phi$ vs. empirical gene expression for all species
+
+```{r}
+phi.vs.emp <- read_tsv("../Post_analysis/roc_phi_vs_empirical_for_all_327_yeasts_based_on_shen_etal_2018_one_to_one_orthologs.tsv") 
+```
+
+## Selection coefficient vs. tAI and ROC $\phi$ vs. empirical gene expression correlations
+
+```{r}
+
+corr.df <- read_tsv("../Post_analysis/within_species_correlaitons_gene_expression_vs_phi_and_tAI_vs_sel_coeff.tsv")
+
+```
+
+
+# Comparing codon-specific parameters across species
+
+## Setting up for plotting heatmaps
+
+```{r}
+
+
+label.order <- fungi.tree$tip.label
+
+clades <- clades %>% 
+  filter(Species %in% label.order) %>%
+  dplyr::slice(match(label.order, Species))
+  
+col.map <- colormap::colormap(colormap::colormaps$rainbow,
+                                                    nshades=length(unique(unlist(clades[,"Clade"]))))
+names(col.map) <- unlist(unique(clades$Clade))
+clade_annot <- rowAnnotation(Clade = clades$Clade,
+                           col = list(Clade = col.map))
+
+col_fun_phi <- circlize::colorRamp2(c(min(corr.df$Corr.Gene.Exp.vs.Phi) - 0.01,median(corr.df$Corr.Gene.Exp.vs.Phi), 
+                                      max(corr.df$Corr.Gene.Exp.vs.Phi) + 0.01), 
+                                    c("purple", "white", "gold"))
+#col_fun_tai <- circlize::colorRamp2(c(min(corr.df$Corr.tAI.vs.Sel.Coef) - 0.01,median(corr.df$Corr.tAI.vs.Sel.Coef), max(corr.df$Corr.tAI.vs.Sel.Coef) + 0.01),
+#                          c("purple", "white", "gold"))
+
+corr.df.ordered <- corr.df %>% 
+  dplyr::slice(match(label.order, Species)) 
+improved.ordered <- ifelse(label.order %in% improved.fits.species,"Yes","No")
+
+row_annot <- rowAnnotation(`Obs. vs. Pred. Gene Expr.` = corr.df.ordered$Corr.Gene.Exp.vs.Phi,
+                              #`Cor. tAI vs. Sel. Coef.` = corr.df.ordered$Corr.tAI.vs.Sel.Coef,
+                               `VarMut fit` = improved.ordered,
+                           col = list(`Obs. vs. Pred. Gene Expr.` = col_fun_phi,
+                                      #`Cor. tAI vs. Sel. Coef.` = col_fun_tai,
+                                      `VarMut fit` = c("Yes" = "black","No"="white")
+                           ),
+                          annotation_label = c("Obs. vs. Pred. Gene Expr.",
+                                               #"Cor. tAI vs. Sel. Coef. \u0394\u03B7",
+                                               "VarMut Fit")
+                          )
+
+
+```
+
+
+# Selection coefficients across the phylogeny
+
+
+
+```{r fig.height=7,fig.width=7}
+deta.matrix.for.heatmap <- deta.matrix
+deta.matrix.for.heatmap <- deta.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree$tip.label,Species)) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+deta.clust.all <- hclust(as.dist(1-cor(t(deta.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+deta.dend.all <- as.dendrogram(deta.clust.all)
+
+
+deta.phylo.hm <- Heatmap(deta.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = as.dendrogram(fungi.tree),
+        name = "Selection Coefficient \u0394\u03B7", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        show_row_names = F)
+
+deta.clust.hm <- Heatmap(deta.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = deta.dend.all,
+        name = "Selection Coefficient \u0394\u03B7", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        split = 3,
+        show_row_names = F)
+
+deta.phylo.hm
+deta.clust.hm
+```
+
+
+
+```{r fig.width=10,fig.height=12}
+deta.dend.clust <- cutree(deta.dend.all,k = 3)
+table(deta.dend.clust)
+
+ex.species <- c("saccharomyces_cerevisiae.max.cds","yHMPu5000034637_ogataea_populiabae_160519.max.cds","candida_sojae.max.cds")
+# Note the ordering is reversed from the labeling in the ComplexHeatmap, so cluster 1 in cutree result is ComplexHeatmap cluster 3
+phi.vs.emp.examples <- phi.vs.emp %>% 
+  filter(Species %in% ex.species) %>%
+  mutate(HClust = case_when(
+    Species == ex.species[1] ~ "3",
+    Species == ex.species[2] ~ "2",
+    Species == ex.species[3] ~ "1"
+    
+  ),
+  Species = cleanSpeciesLabelsForPlots(Species))
+
+emp.vs.phi.p <- ggplot(phi.vs.emp.examples,aes(x=Empirical,y=Phi)) +
+  geom_point(aes(color=HClust)) +
+  theme_cowplot() +
+  scale_x_log10(labels = trans_format("log10", math_format(10^.x))) + 
+  scale_y_log10(labels = trans_format("log10", math_format(10^.x))) +
+  stat_cor(method="spearman",label.sep="\n") +
+  scale_color_viridis_d() +
+  labs(color="Hierarchical\ncluster") +
+  ylab(expression("Scaled Predicted Expression ("*phi*")")) +
+  xlab("Empirical Expression (RNA TPM)") +
+  facet_wrap(~Species,nrow=3) + 
+  theme(aspect.ratio=1)
+
+
+deta.vs.wi.examples <-  deta.vs.wi %>% 
+  filter(Species %in% ex.species) %>%
+  mutate(HClust = case_when(
+    Species == ex.species[1] ~ "3",
+    Species == ex.species[2] ~ "2",
+    Species == ex.species[3] ~ "1"
+    
+  ),
+  Species = cleanSpeciesLabelsForPlots(Species))
+
+
+# wi.vs.deta.p <- ggplot(deta.vs.wi.examples,aes(x=tAI,y=Selection)) +
+#   geom_point(aes(color=HClust)) +
+#   scale_color_viridis_d() +
+#   theme_cowplot() +
+#   stat_cor(method="spearman",label.sep="\n") +
+#   labs(color="Hierarchical\ncluster") +
+#   xlab("Relative Waiting Time (tAI)") +
+#   ylab(expression("Selection Coefficients ("*Delta*eta*")")) +
+#   facet_wrap(~Species)
+
+p <- ((plot_spacer() | grid.grabExpr(draw(deta.clust.hm),wrap = T,wrap.grobs = T)) | (emp.vs.phi.p))  +
+  plot_annotation(tag_levels = "A") + 
+  plot_layout(widths = c(0,4,1),guides = "collect") 
+p
+
+savePlot("../Figures/All_species/03_heatmap_selection_coefficients_clust.pdf",
+       plot = p,
+       height=9,
+       width=14)
+
+cairo_pdf("../Figures/All_species/S05_heatmap_selection_coefficients_phylogeny.pdf",width=10,height=7,family = "Arial Unicode MS")
+draw(deta.phylo.hm)
+dev.off()
+
+
+```
+
+## Compare correlations for clusters
+
+```{r}
+compare.hclust <- deta.dend.clust %>% 
+  as.data.frame() %>% 
+  rownames_to_column("Species") %>% 
+  left_join(corr.df.ordered) %>% 
+  dplyr::rename(HClust=".") %>% 
+  mutate(HClust = ifelse(HClust == 1,1,2)) %>% 
+  group_by(HClust) %>% 
+  group_split()
+
+t.test(compare.hclust[[1]]$Corr.Gene.Exp.vs.Phi,compare.hclust[[2]]$Corr.Gene.Exp.vs.Phi)
+t.test(compare.hclust[[1]]$Corr.tAI.vs.Sel.Coef,compare.hclust[[2]]$Corr.tAI.vs.Sel.Coef)
+
+
+```
+
+
+# Mutation bias $\Delta\mathit{M}$
+
+
+```{r}
+#fungi.tree.dm <- fungi.tree
+fungi.tree.lower.gc3 <- fungi.tree
+fungi.tree.higher.gc3 <- fungi.tree
+for (i in improved.fits.species)
+{
+  #fungi.tree.dm <- bind.tip(fungi.tree.dm,tip.label=paste0(i,"_Higher_GC3"),
+  #                            where = which(fungi.tree.dm$tip.label == i))
+  #fungi.tree.dm$tip.label[which(fungi.tree.dm$tip.label == i)] <- paste0(i,"_Lower_GC3")
+  fungi.tree.lower.gc3$tip.label[which(fungi.tree.lower.gc3$tip.label == i)] <- paste0(i,"_Lower_GC3")
+  fungi.tree.higher.gc3$tip.label[which(fungi.tree.higher.gc3$tip.label == i)] <- paste0(i,"_Higher_GC3")
+}
+
+```
+
+## Mutation bias clustering with lower GC3% estimates
+
+```{r fig.width=10,fig.height=10}
+dm.matrix.for.heatmap <- dm.matrix
+dm.matrix.for.heatmap <- dm.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.lower.gc3$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Lower_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+dm.clust.all <- hclust(as.dist(1-cor(t(dm.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+dm.dend.all <- as.dendrogram(dm.clust.all)
+
+
+dm.phylo.hm <- Heatmap(dm.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = as.dendrogram(fungi.tree),
+        name = "Mutation Bias \u0394M", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        show_row_names = F)
+
+dm.clust.hm <- Heatmap(dm.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = dm.dend.all,
+        name = "Mutation Bias \u0394M", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        split = 3,
+        show_row_names = F)
+
+cairo_pdf("../Figures/All_species/S06_heatmap_mutation_bias_phylogeny.pdf",width=10,height=7,family = "Arial Unicode MS")
+draw(dm.phylo.hm)
+dev.off()
+
+cairo_pdf("../Figures/All_species/05_heatmap_mutation_bias_clust.pdf",width=10,height=7,family = "Arial Unicode MS")
+draw(dm.clust.hm)
+dev.off()
+
+
+dm.phylo.hm
+dm.clust.hm
+
+```
+
+
+
+## Mutation bias clustering with higher GC3% estimates
+
+```{r fig.width=10,fig.height=10}
+dm.matrix.for.heatmap <- dm.matrix
+dm.matrix.for.heatmap <- dm.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.higher.gc3$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Higher_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+dm.clust.all <- hclust(as.dist(1-cor(t(dm.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+dm.dend.all <- as.dendrogram(dm.clust.all)
+
+dm.phylo.hm <- Heatmap(dm.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = as.dendrogram(fungi.tree),
+        name = "Mutation Bias", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        show_row_names = F)
+
+dm.clust.hm <- Heatmap(dm.matrix.for.heatmap,
+        na_col = "black",
+        cluster_rows = dm.dend.all,
+        name = "Mutation Bias", 
+        right_annotation = row_annot,
+        left_annotation = clade_annot,
+        split = 3,
+        show_row_names = F)
+
+cairo_pdf("../Figures/All_species/S07_heatmap_mutation_bias_higher_gc3_phylogeny.pdf",width=10,height=7,family="Arial Unicode MS")
+draw(dm.phylo.hm)
+dev.off()
+
+cairo_pdf("../Figures/All_species/S08_heatmap_mutation_bias_higher_gc3_clust.pdf",width=10,height=7,family="Arial Unicode MS")
+draw(dm.clust.hm)
+dev.off()
+
+
+dm.phylo.hm
+dm.clust.hm
+
+```
+
+
+```{r}
+deta.dend.clust <- cutree(deta.dend.all,k = 3)
+table(deta.dend.clust)
+questionable <- names(deta.dend.clust)[which(deta.dend.clust == 2 | deta.dend.clust == 3)]
+write(questionable,"../Post_analysis/poor_roc_fits_based_on_hierarchical_clustering.txt",ncolumns = 1)
+
+
+fungi.tree.deta.filt <- drop.tip(fungi.tree, questionable)
+fungi.tree.dm.filt <- drop.tip(fungi.tree.deta.filt,questionable)
+fungi.tree.dm.1.filt <- drop.tip(fungi.tree.deta.filt,questionable)
+fungi.tree.dm.2.filt <- drop.tip(fungi.tree.deta.filt,questionable)
+
+for (i in setdiff(improved.fits.species,questionable))
+{
+  fungi.tree.dm.filt <- bind.tip(fungi.tree.dm.filt,tip.label=paste0(i,"_Higher_GC3"),
+                              where = which(fungi.tree.dm.filt$tip.label == i))
+  fungi.tree.dm.filt$tip.label[which(fungi.tree.dm.filt$tip.label == i)] <- paste0(i,"_Lower_GC3")
+  fungi.tree.dm.1.filt$tip.label[which(fungi.tree.dm.1.filt$tip.label == i)] <- paste0(i,"_Lower_GC3")
+  fungi.tree.dm.2.filt$tip.label[which(fungi.tree.dm.2.filt$tip.label == i)] <- paste0(i,"_Higher_GC3")
+}
+
+```
+
+
+
+# Compare hierarchical clustering of selection coefficients and mutation biases to phylogeny
+
+```{r,fig.width=20,fig.height=20}
+phy.tree.dend <- as.dendrogram(fungi.tree.deta.filt)
+
+deta.matrix.for.heatmap <- deta.matrix
+deta.matrix.for.heatmap <- deta.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.deta.filt$tip.label,Species)) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+sd.deta.matrix.for.heatmap <- sd.deta.matrix
+sd.deta.matrix.for.heatmap <- sd.deta.matrix.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.deta.filt$tip.label,Species)) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+deta.clust.filt <- hclust(as.dist(1-cor(t(deta.matrix.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+deta.dend.filt <- as.dendrogram(deta.clust.filt)
+
+
+dm.matrix.low.gc.for.heatmap <- dm.matrix
+dm.matrix.low.gc.for.heatmap <- dm.matrix.low.gc.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.dm.1.filt$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Lower_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+sd.dm.matrix.low.gc.for.heatmap <- sd.dm.matrix
+sd.dm.matrix.low.gc.for.heatmap <- sd.dm.matrix.low.gc.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.dm.1.filt$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Lower_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+dm.clust.filt <- hclust(as.dist(1-cor(t(dm.matrix.low.gc.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+dm.dend.filt <- as.dendrogram(dm.clust.filt)
+
+
+deta.dend.list <- dendlist(deta.dend.filt,phy.tree.dend)
+corr <- cor.dendlist(deta.dend.list,method="cophenetic")
+print(paste("Cophenetic correlation between Selection Coefficient Clustering and Phylogenetic Tree:",round(corr[1,2], 2)))
+
+
+dm.dend.list <- dendlist(dm.dend.filt,phy.tree.dend)
+corr <- cor.dendlist(dm.dend.list,method="cophenetic")
+print(paste("Cophenetic correlation between Mutation Bias (Lower GC3%) Clustering and Phylogenetic Tree:",round(corr[1,2], 2)))
+
+dm.matrix.high.gc.for.heatmap <- dm.matrix
+dm.matrix.high.gc.for.heatmap <- dm.matrix.high.gc.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.dm.2.filt$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Higher_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+sd.dm.matrix.high.gc.for.heatmap <- sd.dm.matrix
+sd.dm.matrix.high.gc.for.heatmap <- sd.dm.matrix.high.gc.for.heatmap %>%
+  dplyr::slice(match(fungi.tree.dm.2.filt$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Higher_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  as.matrix()
+
+dm.clust.filt <- hclust(as.dist(1-cor(t(dm.matrix.high.gc.for.heatmap),method="spearman",use="pairwise.complete.obs")),method="complete")
+dm.dend.filt <- as.dendrogram(dm.clust.filt)
+
+dm.dend.list <- dendlist(dm.dend.filt,phy.tree.dend)
+corr <- cor.dendlist(dm.dend.list,method="cophenetic")
+print(paste("Cophenetic correlation between Mutation Bias (Higher GC3%) Clustering and Phylogenetic Tree:",round(corr[1,2], 2)))
+
+
+```
+
+
+Here, we calculate Blomberg's $K$ using the `phylosig` function from `phytools` for individual codons. This analysis is superseded by the multivariate Blomberg's $K$ analysis below.
+
+```{r}
+
+codon.vec <- colnames(deta.matrix.for.heatmap)
+
+deta.k.dist <- codon.vec %>% 
+  purrr::map(~phylosig(tree = fungi.tree.deta.filt,
+                       x=deta.matrix.for.heatmap[,.x],
+                       se = sd.deta.matrix.for.heatmap[,.x],
+                       method="K")
+  
+) %>% purrr::map(~.x$K) %>%
+  unlist()
+
+
+dm.low.gc.k.dist <- codon.vec %>% 
+  purrr::map(~phylosig(tree = fungi.tree.deta.filt,
+                       x= dm.matrix.low.gc.for.heatmap[,.x],
+                       se = sd.dm.matrix.low.gc.for.heatmap[,.x],
+                       method="K")
+  
+) %>% purrr::map(~.x$K) %>%
+  unlist()
+
+
+dm.high.gc.k.dist <- codon.vec %>% 
+  purrr::map(~phylosig(tree = fungi.tree.deta.filt,
+                       x= dm.matrix.high.gc.for.heatmap[,.x],
+                       se = sd.dm.matrix.high.gc.for.heatmap[,.x],
+                       method="K")
+  
+) %>% purrr::map(~.x$K) %>%
+  unlist()
+
+
+k.df <- data.frame(Codon = codon.vec, 
+                   Selection = deta.k.dist, 
+                   Mutation.Lower.GC3 = dm.low.gc.k.dist, 
+                   Mutation.Higher.GC3 = dm.high.gc.k.dist)
+
+k.comp <- ggplot(k.df,aes(x=Selection,y=Mutation.Lower.GC3,label=Codon)) +
+  geom_point() +
+  geom_text_repel() +
+  geom_abline(intercept=0,slope=1,linetype="dashed") +
+  stat_smooth(formula = y ~ x,method="lm") +
+  stat_cor(method="spearman",label.sep="\n") +
+  xlab("Blomberg's K\nSelection Coefficient") +
+  ylab("Blomberg's K\nMutation Bias (Lower GC3% Set)") +
+  theme_cowplot() +
+  theme(aspect.ratio = 1)
+
+
+k.comp
+
+
+```
+
+
+```{r}
+deta.matrix.for.geomorph <- deta.matrix
+deta.matrix.for.geomorph <- deta.matrix.for.geomorph %>%
+  dplyr::slice(match(fungi.tree.deta.filt$tip.label,Species)) %>%
+  column_to_rownames("Species") %>% 
+  dplyr::select(-CTG) %>%
+  as.matrix()
+
+
+deta.k.multi <- geomorph::physignal(deta.matrix.for.geomorph,phy=fungi.tree.deta.filt)
+
+dm.matrix.for.geomorph <- dm.matrix
+dm.matrix.for.geomorph <- dm.matrix.for.geomorph %>%
+  dplyr::slice(match(fungi.tree.dm.1.filt$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Lower_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  dplyr::select(-CTG) %>%
+  as.matrix()
+
+dm.lower.gc3.k.multi <- geomorph::physignal(dm.matrix.for.geomorph,phy=fungi.tree.deta.filt)
+
+
+dm.matrix.for.geomorph <- dm.matrix
+dm.matrix.for.geomorph  <- dm.matrix.for.geomorph  %>%
+  dplyr::slice(match(fungi.tree.dm.2.filt$tip.label,Species)) %>%
+  mutate(Species = str_remove(Species,"_Higher_GC3")) %>%
+  column_to_rownames("Species") %>% 
+  dplyr::select(-CTG) %>%
+  as.matrix()
+
+dm.higher.gc3.k.multi <- geomorph::physignal(dm.matrix.for.geomorph,phy=fungi.tree.deta.filt)
+
+deta.k.multi
+dm.lower.gc3.k.multi
+dm.higher.gc3.k.multi
+
+
+```
+
+
+
+
+```{r}
+codon.vec <- colnames(deta.matrix.for.heatmap)
+
+names(codon.vec) <- codon.vec
+
+fitContinuousWrapper <- function(phy,dat,...)
+{
+  dat.no.na <- dat[which(!is.na(dat))]
+  cleaned <- cleanData(phy,dat.no.na)
+  phy.clean <- cleaned$phy
+  dat.clean <- cleaned$dat
+  fitContinuous(phy.clean,dat.clean,...)
+}
+
+
+deta.evo.rate <- codon.vec %>% 
+  purrr::map(~fitContinuousWrapper(phy = fungi.tree.deta.filt,
+                       dat = deta.matrix.for.heatmap[,.x],
+                       SE = sd.deta.matrix.for.heatmap[,.x],
+                       model = "OU",
+                       control=list(hessian=T))
+) %>% purrr::map(~data.frame(Alpha=.x$opt$alpha,
+                             Alpha.CI.LB = .x$opt$CI[1,"alpha"],
+                             Alpha.CI.UB = .x$opt$CI[2,"alpha"],
+                             SigSq=.x$opt$sigsq,
+                             SigSq.CI.LB = .x$opt$CI[1,"sigsq"],
+                             SigSq.CI.UB = .x$opt$CI[2,"sigsq"])) %>%
+  bind_rows(.id="Codon")
+
+
+dm.low.gc.evo.rate  <- codon.vec %>% 
+  purrr::map(~fitContinuousWrapper(phy = fungi.tree.deta.filt,
+                       dat = dm.matrix.low.gc.for.heatmap[,.x],
+                       SE = sd.dm.matrix.low.gc.for.heatmap[,.x],
+                       model = "OU",
+                       control=list(hessian=T))
+)  %>% purrr::map(~data.frame(Alpha=.x$opt$alpha,
+                             Alpha.CI.LB = .x$opt$CI[1,"alpha"],
+                             Alpha.CI.UB = .x$opt$CI[2,"alpha"],
+                             SigSq=.x$opt$sigsq,
+                             SigSq.CI.LB = .x$opt$CI[1,"sigsq"],
+                             SigSq.CI.UB = .x$opt$CI[2,"sigsq"])) %>%
+  bind_rows(.id="Codon")
+
+dm.high.gc.evo.rate <- codon.vec %>% 
+  purrr::map(~fitContinuousWrapper(phy = fungi.tree.deta.filt,
+                       dat = dm.matrix.high.gc.for.heatmap[,.x],
+                       SE = sd.dm.matrix.high.gc.for.heatmap[,.x],
+                       model = "OU",
+                       control=list(hessian=T))
+) %>% purrr::map(~data.frame(Alpha=.x$opt$alpha,
+                             Alpha.CI.LB = .x$opt$CI[1,"alpha"],
+                             Alpha.CI.UB = .x$opt$CI[2,"alpha"],
+                             SigSq=.x$opt$sigsq,
+                             SigSq.CI.LB = .x$opt$CI[1,"sigsq"],
+                             SigSq.CI.UB = .x$opt$CI[2,"sigsq"])) %>%
+  bind_rows(.id="Codon")
+
+
+
+ou.list <- list(deta.evo.rate,
+              dm.low.gc.evo.rate,
+              dm.high.gc.evo.rate)
+parameter.names <- list("Selection","Mutation.Lower.GC3","Mutation.Higher.GC3")
+
+ou.df <- purrr::map2(ou.list,parameter.names,function(x,y) 
+  {
+    x %>% rename_with(.fn = ~paste(.,y,sep="."), .cols = -Codon)
+  }
+)
+
+
+ou.df <- ou.df %>%
+  purrr::reduce(left_join,by="Codon")
+```
+
+
+```{r}
+alpha.deta.vs.dm.low.gc <- ggplot(ou.df,aes(x=Alpha.Selection,y=Alpha.Mutation.Lower.GC3)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=Alpha.CI.LB.Mutation.Lower.GC3,ymax=Alpha.CI.UB.Mutation.Lower.GC3),alpha=0.5) +
+  geom_errorbarh(aes(xmin=Alpha.CI.LB.Selection,xmax=Alpha.CI.UB.Selection),alpha=0.5) +
+  geom_abline(intercept=0,slope=1) +
+  xlab("Stabilizing Selection Strength\nSelection Coefficients") +
+  ylab("Stabilizing Selection Strength\nMutation Bias (Lower GC3% Set)") +
+  stat_cor(method="spearman",label.sep="\n",label.x.npc = "center",label.y.npc = "bottom") +
+  theme_cowplot() +
+  theme(aspect.ratio=1)
+alpha.deta.vs.dm.low.gc
+
+alpha.deta.vs.dm.high.gc <- ggplot(ou.df,aes(x=Alpha.Selection,y=Alpha.Mutation.Higher.GC3)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=Alpha.CI.LB.Mutation.Higher.GC3,ymax=Alpha.CI.UB.Mutation.Higher.GC3),alpha=0.5) +
+  geom_errorbarh(aes(xmin=Alpha.CI.LB.Selection,xmax=Alpha.CI.UB.Selection),alpha=0.5) +
+  geom_abline(intercept=0,slope=1) +
+  xlab("Stabilizing Selection Strength\nSelection Coefficient") +
+  ylab("Stabilizing Selection Strength\nMutation Bias (Higher GC3% Set)") +
+  stat_cor(method="spearman",label.sep="\n",label.x.npc = "center",label.y.npc = "bottom") +
+  theme_cowplot() +
+  theme(aspect.ratio=1)
+alpha.deta.vs.dm.high.gc
+  
+
+alpha.comp <- (alpha.deta.vs.dm.low.gc | alpha.deta.vs.dm.high.gc) + plot_annotation(tag_levels = "A")
+alpha.comp
+
+ggsave2("../Figures/All_species/ou_alpha_comparisons.pdf",width=8,height=5)
+```

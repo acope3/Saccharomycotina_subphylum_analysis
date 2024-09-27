@@ -145,13 +145,13 @@ boot.cor.diff.test <- function(method,data,indices)
 
 ```{r warning = F}
 
-fungi.tree <- read.tree("~/Labella2019_scripts//tree_with_cds_labels.nwk")
-all.species <- readLines("~/Labella2019_scripts/all_fungi.txt")
+fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
+all.species <- readLines("../Data/all_fungi.txt")
 fungi.tree <- cleanTree(fungi.tree,all.species)
 dist.matrix <- cophenetic.phylo(fungi.tree)
 
-species.w.emp <- list.files("/data2/cope/Intragenomic_variation_mutation_bias/Data/Expression/",full.names = F,pattern=".max.cds")
-empirical.data.file <- list.files("/data2/cope/Intragenomic_variation_mutation_bias/Data/Expression/",full.names = T,include.dirs = F,pattern=".max.cds")
+species.w.emp <- list.files("../Data/Expression/",full.names = F,pattern=".max.cds")
+empirical.data.file <- list.files("../Data/Expression/",full.names = T,include.dirs = F,pattern=".max.cds")
 names(empirical.data.file) <- species.w.emp
 
 
@@ -168,18 +168,18 @@ empirical.data <- purrr::map(empirical.data.file,function(x) {
       dplyr::select(-contains("tpm_kallisto"),-Log.Mean.Expression)
     })
 
-k1.phi <- read_csv("~/Labella2019_scripts/phi_k1_shen_etal_ortholog_matrix_2022_07_08.tsv",col_types = cols())  %>% 
+k1.phi <- read_csv("../Post_analysis/phi_k1_shen_etal_ortholog_matrix_2022_07_08.tsv",col_types = cols())  %>% 
        column_to_rownames("Orthogroup") %>%
        rename_with(~cleanColumnNames(.x,fungi.tree$tip.label)) %>%
        rownames_to_column("Orthogroups")
 
-k2.phi <- read_csv("~/Labella2019_scripts/phi_k2_selectionShared_shen_etal_ortholog_matrix_2022_07_08.tsv",col_types = cols())  %>% 
+k2.phi <- read_csv("../Post_analysis/phi_k2_selectionShared_shen_etal_ortholog_matrix_2022_07_08.tsv",col_types = cols())  %>% 
        column_to_rownames("Orthogroup") %>%
        rename_with(~cleanColumnNames(.x,fungi.tree$tip.label)) %>%
        rownames_to_column("Orthogroups")
 
 
-orthogroups <- read_tsv("~/Labella2019_scripts/shen_etal_ortholog_matrix_2021_12_17.tsv",col_types = cols())
+orthogroups <- read_tsv("../Data/shen_etal_ortholog_matrix_2021_12_17.tsv",col_types = cols())
 orthogroups <- orthogroups %>% 
        column_to_rownames("Orthogroup") %>%
        rename_with(~cleanColumnNames(.x,fungi.tree$tip.label)) %>%
@@ -205,7 +205,7 @@ compare.emp <- lapply(all.species,comparePhiEmpAcrossSpecies,
                       empirical.data = empirical.data) %>% 
   bind_rows(.id="Species")
 
-clades <- read_tsv("../clades.txt")
+clades <- read_tsv("../Data/clades.txt")
 clades <- clades %>% 
   dplyr::slice(match(fungi.tree$tip.label,file_name_id)) %>%
   dplyr::rename(Species=file_name_id,Clade=Major.clade)
@@ -219,46 +219,6 @@ compare.emp <- compare.emp %>%
 
 
 
-
-
-```{r}
-library(boot)
-library(parallel)
-roc.emp.df.split <- roc.emp.df %>% 
-  split(f=roc.emp.df$Species)
-
-boot.diff <- mclapply(roc.emp.df.split,
-                    function(gene.expr.df)
-                    {
-                      result <- boot(data=gene.expr.df,statistic = boot.cor.diff.test,R = 500,method="spearman")
-                    },
-                    mc.cores = 4
-)
-boot.ci.species <- lapply(boot.diff,
-                         function(boot.result)
-                         {
-                            ci <- boot.ci(boot.result,type="norm")
-                            t.test.res <- t.test(boot.result$t)
-                            ci.df <- data.frame(Obs.Diff= boot.result$t0,
-                                                Mean.Boot.Diff = mean(boot.result$t),
-                                                Lower.95.CI = unname(ci$normal[1,2]),
-                                                Upper.95.CI = unname(ci$normal[1,3]),
-                                                p.value = t.test.res$p.value)
-                         }) %>%
-  bind_rows(.id="Species")
-improved.fits.species <- boot.ci.species %>% 
-  filter(Lower.95.CI > 0) %>%
-  dplyr::select(Species) %>%
-  deframe()
-
-write(improved.fits.species,file = "improved_species_by_gene_expression_bootstrap_2023_03_23.txt",ncolumns = 1)
-
-
-
-
-```
-
-
 ```{r}
 
 compare.emp <- compare.emp %>%
@@ -270,7 +230,7 @@ improved.fits.species <- compare.emp.improved %>%
   dplyr::select(Species) %>%
   deframe()
 
-write(improved.fits.species,"../improved_species_by_gene_expression_25_percent_2023_05_03.txt",ncolumns = 1)
+write(improved.fits.species,"../Data/improved_species_by_gene_expression_25_percent_2023_05_03.txt",ncolumns = 1)
 
 compare.emp.unimproved <- compare.emp %>%
   filter(Improvement < 0.25 | (Improvement >= 0.25 & estimate_Phi_K2 < 0))
@@ -296,25 +256,25 @@ compare.emp <- compare.emp %>%
   left_join(compare.emp %>% dplyr::select(Species,estimate_Phi),by=c("Compared.to"="Species"),suffix=c("","_Reference"))
 compare.emp <- compare.emp %>%
   mutate(Corr.Diff = estimate_Phi - estimate_Phi_Reference)
-compare.emp.non.ref <- compare.emp %>% filter(Corr.Diff != 0)
+compare.emp.non.ref <- compare.emp %>% 
+  filter(Corr.Diff != 0)
 
 compare.emp.grouped <- compare.emp.non.ref %>% 
   group_by(Compared.to,Divergence) %>%
   summarize(Mean.Corr.Diff=mean(Corr.Diff),
             Total=n())
 
-corr.diff.plot <- ggplot(compare.emp,aes(x=Divergence,y=Corr.Diff)) +
+corr.diff.plot <- ggplot(compare.emp.non.ref,aes(x=Divergence,y=Corr.Diff)) +
   geom_point(aes(color=Compared.to),show.legend =F) +
-  stat_cor(aes(x=Divergence,y=Corr.Diff),method="spearman",label.sep="\n",inherit.aes = F) +
+  stat_cor(aes(x=Divergence,y=Corr.Diff),method="spearman",label.sep="\n",inherit.aes = F,label.x.npc = "center",label.y = -0.5) +
   theme_cowplot() +
-  scale_x_log10() +
   ylab("Difference in Spearman Correlation") +
   xlab("Divergence time (MYA)") +
-  ggtitle("Correlation between ROC and RNA-Seq\nRelative to Reference Species") +
+  #ggtitle("Correlation between ROC and RNA-Seq\nRelative to Reference Species") +
   theme(aspect.ratio=1)
 corr.diff.plot
 
-ggsave2("../Figures/All_species/S01_phi_relative_to_refence_species.pdf",plot=corr.diff.plot)
+ggsave2("../Figures/All_species/S01_phi_relative_to_refence_species.pdf",plot=corr.diff.plot,height=5,width=5)
 
 ```
 
@@ -324,7 +284,6 @@ ggsave2("../Figures/All_species/S01_phi_relative_to_refence_species.pdf",plot=co
 roc.emp.df.long <- roc.emp.df %>%
   pivot_longer(contains("Phi"),names_to="CUB",values_to="Predicted") %>%
   dplyr::rename(GeneID=Orthogroups) %>%
-  filter(Species %in% "yHMPu5000034632_candida_athensensis_160519.max.cds") %>%
   group_by(Species) %>%
   group_split()
 
@@ -332,14 +291,17 @@ roc.emp.df.long <- roc.emp.df %>%
 purrr::map(roc.emp.df.long,plotSpecies,cub=c("Phi_K1","Phi_K2"))
 
 ```
+
+
+
 ```{r}
 
 species <- improved.fits.species
-deta.k1.files <- file.path("/data2/Labella2019/Final_runs/Results_k_1/",species,"run_2","Parameter_est",paste0(species,"_Selection.csv"))
-dm.k1.files <- file.path("/data2/Labella2019/Final_runs/Results_k_1/",species,"run_2","Parameter_est",paste0(species,"_Mutation.csv"))
-deta.k2.files <- file.path("/data2/Labella2019/Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","1_Selection.csv")
-dm.k2.1.files <- file.path("/data2/Labella2019/Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","1_Mutation.csv")
-dm.k2.2.files <- file.path("/data2/Labella2019/Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","2_Mutation.csv")
+deta.k1.files <- file.path("../Final_runs/Results_k_1/",species,"run_2","Parameter_est",paste0(species,"_Selection.csv"))
+dm.k1.files <- file.path("../Final_runs/Results_k_1/",species,"run_2","Parameter_est",paste0(species,"_Mutation.csv"))
+deta.k2.files <- file.path("../Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","1_Selection.csv")
+dm.k2.1.files <- file.path("../Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","1_Mutation.csv")
+dm.k2.2.files <- file.path("../Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","2_Mutation.csv")
 
 names(deta.k1.files) <- species
 names(dm.k1.files) <- species
@@ -426,8 +388,8 @@ const.tree.plot <- treeTraitPlot(tree.plot,compare.emp,"estimate_Phi_K1","Spearm
 var.tree.plot <- treeTraitPlot(const.tree.plot,compare.emp,"estimate_Phi_K2","Spearman correlation\nVarMut")
 var.tree.plot <- treeTraitPlot(var.tree.plot,compare.emp,"Diff","Difference\nVarMut - ConstMut")
 var.tree.plot <- var.tree.plot + theme_tree2()
-
-cor.tree.plot <- treeTraitPlot(tree.plot,compare.emp,"estimate_Phi","Spearman correlation\nRNA-seq vs. ROC")
+var.tree.plot
+cor.tree.plot <- treeTraitPlot(tree.plot,compare.emp,"estimate_Phi","Spearman correlation\nObs. vs. Pred. Gene Expr.")
 cor.tree.plot <- cor.tree.plot + theme_tree2()
 cor.tree.plot
 ggsave2("../Figures/All_species/S02_constmut_vs_varmut.pdf",plot = var.tree.plot,width=9)
