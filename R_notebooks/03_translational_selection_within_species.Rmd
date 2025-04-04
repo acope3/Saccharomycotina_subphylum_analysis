@@ -25,6 +25,7 @@ library(ggtree)
 library(patchwork)
 library(scales)
 library(ComplexHeatmap)
+library(ggmagnify)
 source("helperFunctions.R")
 
 
@@ -54,6 +55,34 @@ leg <- function(){
 
 
 
+```
+
+# Set up color schemes
+
+```{r}
+scale_colour_brewer_d <- function(..., palette = "Set3") {
+  scale_colour_brewer(..., palette = palette )
+}
+
+scale_fill_brewer_d <- function(..., palette = "Set1") {
+  scale_fill_brewer(..., palette = palette)
+  
+}
+
+scale_colour_brewer_c <- function(..., palette = "BuGn") {
+  scale_colour_distiller(..., palette = palette )
+}
+
+scale_fill_brewer_c <- function(..., palette = "BuGn") {
+  scale_fill_distiller(..., palette = palette)
+}
+
+options(
+  ggplot2.discrete.colour = scale_colour_brewer_d,
+  ggplot2.discrete.fill = scale_fill_brewer_d,
+  ggplot2.continuous.colour = scale_colour_brewer_c,
+  ggplot2.continuous.fill = scale_fill_brewer_c
+)
 ```
 
 # Setup
@@ -103,10 +132,17 @@ gc.clust.df <- gc.clust.df %>%
                                          Cluster == 2 & Max.Cluster == 2 ~ "Higher GC3")
               )
 
-wi <- read_tsv("../Data/cope_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv") %>% 
+
+
+otai <- read_tsv("../Data/cope_wi_otAI_inverse.tsv") %>%
   dplyr::select(-c(TGG)) %>%
-  mutate(across(where(is.numeric),log)) %>%
   dplyr::slice(match(fungi.tree$tip.label,Species))
+
+
+tgcn <- read_tsv("../Data/cope_wi_tGCN_inverse.tsv") %>%
+  dplyr::select(-c(TGG)) %>%
+  dplyr::slice(match(fungi.tree$tip.label,Species))
+
 
 improved.fits.species <- readLines("../Data/improved_species_by_gene_expression_25_percent_2023_05_03.txt")
 compare.emp <- read_csv("../Data/2023-05-04_compare_phi_vs_empirical_k1_vs_k2_roc_fits_all_species.csv")
@@ -262,6 +298,34 @@ phi.log <- as.data.frame(phi) %>%
 
 ```
 
+```{r fig.height=8,fig.width=8}
+cor.roc.emp <- roc.emp.df %>% 
+  group_by(Species) %>%
+  nest(data=c(Orthogroups,Empirical,Phi)) %>% 
+  mutate(corr.roc.emp = purrr::map(data,~cor.test(.x$Empirical,.x$Phi,method="spearman",use="complete.obs") %>% tidy())
+         ) %>% 
+  dplyr::select(-data) %>% 
+  unnest(starts_with("corr"),names_sep = "_") 
+
+cor.roc.emp <- cor.roc.emp %>% 
+  ungroup() %>% 
+  mutate(corr.roc.emp_p.value.adjusted = p.adjust(corr.roc.emp_p.value,method = "BH")) %>%
+  left_join(clades,by="Species")
+
+
+roc.vs.emp.box <- ggplot(cor.roc.emp,aes(x=Clade,y=corr.roc.emp_estimate)) + 
+  geom_boxplot() +
+  geom_point(position="jitter",aes(color=Clade),size=2,show.legend = F) +
+  theme_cowplot() + 
+  scale_color_brewer(palette="Set3") +
+  ylab("Spearman correlation\nPredicted vs. empirical expression") +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1, hjust=1),
+        axis.title.x = element_blank())
+
+roc.vs.emp.box
+```
+
+
 
 # Create final parameter matrices dependent on improved species fits 
 
@@ -344,24 +408,29 @@ dm.matrix.gc <- param.list[[4]]
 
 ```
 
-# Waiting time across species
+# tGCN across species
+
+Here, we calculate codon-specific weights based on the original tAI.
 
 ```{r fig.height=7,fig.width=12}
 
-raw.weights <- read_tsv("../Data/cope_unnormalized_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv") %>% 
+raw.weights <- read_tsv("../Data/cope_unnormalized_wi.tsv") %>% 
   dplyr::select(-c(TGG)) %>%
   mutate(across(where(is.numeric),log)) %>%
   dplyr::slice(match(fungi.tree$tip.label,Species))
 
+
+clades <- clades %>%
+  dplyr::slice(match(fungi.tree$tip.label,Species))
+
 label.order <- fungi.tree$tip.label
 
-clades <- clades %>% 
-  filter(Species %in% label.order) %>%
-  dplyr::slice(match(label.order, Species))
-  
-col.map <- colormap::colormap(colormap::colormaps$rainbow,
-                                                    nshades=length(unique(unlist(clades[,"Clade"]))))
-names(col.map) <- unlist(unique(clades$Clade))
+
+major.clade.names <- sort(unique(unlist(clades[,"Clade"])))
+
+col.map <- brewer.pal(n=length(major.clade.names),name = "Set3")
+
+names(col.map) <- unlist(major.clade.names)
 clade_annot <- rowAnnotation(Clade = clades$Clade,
                            col = list(Clade = col.map))
 
@@ -376,7 +445,15 @@ tai.matrix.for.heatmap <- tai.matrix.for.heatmap %>%
   dplyr::slice(match(fungi.tree$tip.label,Species)) %>%
   column_to_rownames("Species") %>% 
   as.matrix()
+
+
+col_fun_tai <- circlize::colorRamp2(c(min(tai.matrix.for.heatmap,na.rm=T) - 0.01,0,
+                                      max(tai.matrix.for.heatmap,na.rm=T) + 0.01),
+                                    c("#e41a1c", "white", "#377eb8")
+                                    )
+
 tai.phylo.hm <- Heatmap(tai.matrix.for.heatmap,
+        col = col_fun_tai,
         na_col = "black",
         cluster_rows = as.dendrogram(fungi.tree),
         name = "Unnormalized tAI weights",
@@ -397,50 +474,66 @@ dev.off()
 
 
 
-
 # Compare selection coefficients and waiting times within each species
 
 ```{r fig.height=9,fig.width=9, warning = F}
-wi <- wi[,colnames(deta.matrix)]
+otai <- otai[,colnames(deta.matrix)]
+tgcn <- tgcn[,colnames(deta.matrix)]
 
 deta.matrix.long <- deta.matrix %>%
   pivot_longer(-Species,names_to="Codon",values_to="Selection")
 
-wi.matrix.long <- wi %>% 
-  pivot_longer(-Species,names_to="Codon",values_to="tAI") %>%
-  mutate(tAI = ifelse(is.finite(tAI),tAI,NA))
+tai.matrix.long <- otai %>% 
+  pivot_longer(-Species,names_to="Codon",values_to="otAI") %>%
+  left_join(tgcn %>% pivot_longer(-Species,names_to="Codon",values_to="tGCN"),by=c("Species","Codon")) %>%
+  mutate(otAI = ifelse(is.finite(otAI),otAI,NA),
+         tGCN = ifelse(is.finite(tGCN) & tGCN != 0,tGCN,NA))
 
-deta.wi.matrix.long <- deta.matrix.long %>% 
-  inner_join(wi.matrix.long,by=c("Species","Codon")) %>%
+deta.tai.matrix.long <- deta.matrix.long %>% 
+  inner_join(tai.matrix.long,by=c("Species","Codon")) %>%
   left_join(clades,by="Species")
 
-write_tsv(deta.wi.matrix.long,"../Post_analysis/roc_sel_coef_vs_tAI_for_all_327_yeasts.tsv")
+write_tsv(deta.tai.matrix.long,"../Post_analysis/roc_sel_coef_vs_tAI_for_all_327_yeasts.tsv")
 
-cor.df.tai <- deta.wi.matrix.long %>% 
+cor.df.tai <- deta.tai.matrix.long %>% 
   group_by(Species) %>%
-  nest(Codon,Selection,tAI) %>% 
-  mutate(corr.tai = purrr::map(data,~cor.test(.x$tAI,.x$Selection,method="spearman",use="complete.obs",alternative="greater") %>% tidy())
+  nest(Codon,Selection,otAI,tGCN) %>% 
+  mutate(corr.otai = purrr::map(data,~cor.test(.x$otAI,.x$Selection,method="spearman",use="complete.obs") %>% tidy()),
+         corr.tgcn = purrr::map(data,~cor.test(.x$tGCN,.x$Selection,method="spearman",use="complete.obs") %>% tidy())
+         
          ) %>% 
   dplyr::select(-data) %>% 
   unnest(starts_with("corr"),names_sep = "_") 
 
 cor.df.tai <- cor.df.tai %>% 
   ungroup() %>% 
-  mutate(corr.tai_p.value.adjusted = p.adjust(corr.tai_p.value,method = "BH"))
+  mutate(corr.otai_p.value.adjusted = p.adjust(corr.otai_p.value,method = "BH"),
+         corr.tgcn_p.value.adjusted = p.adjust(corr.tgcn_p.value,method = "BH"))
 
 tree.plot <- ggtree(fungi.tree)
 
-tai.phylo <- treeTraitPlot(tree.plot,cor.df.tai,"corr.tai_estimate",significance="corr.tai_p.value",panel.name = "Spearman Correlation\nSelection Coefficients vs. Waiting Times")
+tai.phylo <- treeTraitPlot(tree.plot,cor.df.tai,"corr.otai_estimate",significance="corr.otai_p.value",panel.name = "Spearman Correlation\nSelection Coefficients vs. otAI")
 
 total.plot <- tai.phylo + 
   theme_tree2() +
   theme(legend.title = element_text(size=16),
         legend.text = element_text(size=14))
-  #ggtitle("Selection coefficients reflect translational selection\nacross the Saccharomycotina subphylum")
 total.plot
 
-```
 
+sel.vs.tai.box <- ggplot(cor.df.tai,aes(x=Clade,y=corr.otai_estimate)) + 
+  geom_boxplot() +
+  geom_point(position="jitter",aes(color=Clade),size=2,show.legend = F) +
+  theme_cowplot() + 
+  scale_color_brewer(palette="Set3") +
+  ylab("Spearman correlation\nSelection coefficient vs. relative tAI") +
+  theme(axis.text.x = element_text(angle = 25, vjust = 1, hjust=1),
+        axis.title.x = element_blank())
+
+sel.vs.tai.box 
+
+
+```
 
 ```{r}
 compare.emp.tai <- compare.emp %>% 
@@ -449,70 +542,92 @@ compare.emp.tai <- compare.emp.tai %>%
   dplyr::slice(match(fungi.tree$tip.label,Species))
 
 
-p <- ggplot(compare.emp.tai,aes(x=estimate_Phi,y=corr.tai_estimate)) +
+tai.vs.phi.cor <- ggplot(compare.emp.tai,aes(x=estimate_Phi,y=corr.otai_estimate)) +
   geom_point(aes(color=Clade)) +
-  stat_cor(method="spearman",label.sep="\n") +
-  xlab("Spearman Correlation\nPhi vs. Empirical") +
-  ylab("Spearman Correlation\nSelection vs. tAI") +
+  stat_cor(method="spearman",label.sep="\n",cor.coef.name = "rho") +
+  xlab("Spearman correlation\nPredicted vs. empirical expression") +
+  ylab("Spearman correlation\nSelection coefficient vs. relative tAI") +
   geom_hline(yintercept=0,linetype="dashed") +
   geom_vline(xintercept=0,linetype="dashed") +
   theme_cowplot() +
+  scale_fill_brewer(palette="Set3") +
   theme(aspect.ratio=1)
-  
 
-p
+tai.vs.phi.cor 
+
+ggsave2("../Figures/All_species/tai_vs_phi_cor.pdf",plot=tai.vs.phi.cor)
 
 
-compare.emp.tai <- compare.emp.tai %>% 
-  dplyr::select(Species,estimate_Phi,corr.tai_estimate) %>% 
+
+write_tsv(compare.emp.tai %>% 
+  dplyr::select(Species,estimate_Phi,corr.otai_estimate) %>% 
   dplyr::rename(Corr.Gene.Exp.vs.Phi = estimate_Phi, 
-                Corr.tAI.vs.Sel.Coef = corr.tai_estimate
-                )
-
-write_tsv(compare.emp.tai,"../Post_analysis/within_species_correlaitons_gene_expression_vs_phi_and_tAI_vs_sel_coeff.tsv")
+                Corr.tAI.vs.Sel.Coef = corr.otai_estimate),"../Post_analysis/within_species_correlaitons_gene_expression_vs_phi_and_otAI_vs_sel_coeff.tsv")
 
 
 ```
 
 
-```{r,fig.height=5,fig.width=10}
-calb.selection <- deta.wi.matrix.long %>% 
+```{r,fig.height=10,fig.width=10}
+calb.selection <- deta.tai.matrix.long %>% 
+  filter(Species == "candida_albicans.max.cds") %>%
+  rowwise() %>%
+  mutate(AA = codonToAA(Codon),
+         AA.Codon = paste(AA,Codon,sep="-")) %>%
+  ungroup() %>%
+  mutate(Label=ifelse(otAI > 10,AA.Codon,NA))
+
+calb.sel.vs.tai <- ggplot(calb.selection,aes(x=otAI,y=Selection,label=Label)) +
+  geom_point() +
+  geom_text(nudge_y=0.1,nudge_x=-300) +
+  theme_cowplot() +
+  geom_magnify(aes(from = otAI < 2),to = c(1000,4250,-0.5,1.0),axes="xy") +
+  stat_cor(aes(x=otAI,y=Selection),method="spearman",label.sep = "\n",label.x=500,label.y=1.75,cor.coef.name = "rho") +
+  ylab(expression("Selection coefficient"~Delta*eta)) +
+  xlab(expression("Relative "~Delta*"1/tAI")) +
+  ggtitle(expression(italic("C. albicans")))
+calb.sel.vs.tai
+
+calb.phi <-  roc.emp.df%>% 
   filter(Species == "candida_albicans.max.cds")
 
-calb.waiting.times <- ggplot(calb.selection,aes(x=tAI,y=Selection)) +
-     geom_point() +
-     stat_cor(method="spearman",label.sep = "\n",alternative="greater") +
-     xlab("Waiting Time") +
-     ylab("Selection Coefficient") +
-     ggtitle("C. albicans") +
-     theme_cowplot()
-     
-calb.waiting.times
+calb.phi.vs.emp <- ggplot(calb.phi,aes(x=Empirical,y=Phi)) +
+  geom_point() +
+  theme_cowplot() +
+  scale_x_log10(labels = trans_format("log10", math_format(10^.x))) + 
+               scale_y_log10(labels = trans_format("log10", math_format(10^.x))) +
+  stat_cor(method="spearman",label.sep = "\n",cor.coef.name = "rho") +
+  ylab("Scaled predicted expression") +
+  xlab("Empirical expression (RNA TPM)") +
+  ggtitle(expression(italic("C. albicans")))
 
-sameth.selection <- deta.wi.matrix.long %>% 
-  filter(Species == "yHMPu5000035658_starmera_amethionina_160613.max.cds")
-
-sameth.waiting.times <- ggplot(sameth.selection,aes(x=tAI,y=Selection)) +
-     geom_point() +
-     stat_cor(method="spearman",label.sep = "\n",alternative="greater") +
-     xlab("Waiting Time") +
-     ylab("Selection Coefficient") +
-     ggtitle("S. amethionina") +
-     theme_cowplot()
      
-sameth.waiting.times
+calb.phi.vs.emp
+
+# layout<-"
+# AAEBBBB
+# AAEBBBB
+# CCEDDDD
+# CCEDDDD
+# "
+# sel.vs.trna <- (calb.phi.vs.emp + theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))) + roc.vs.emp.box  + (calb.sel.vs.tai + theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))) + sel.vs.tai.box + plot_spacer() +
+#   plot_annotation(tag_level="A") + 
+#   plot_layout(design = layout)
 
 layout<-"
-AACCCC
-AACCCC
-BBCCCC
-BBCCCC
+AABBBB
+AABBBB
+CCDDDD
+CCDDDD
 "
-sel.vs.trna <- calb.waiting.times + sameth.waiting.times + total.plot + plot_annotation(tag_level="A") + plot_layout(design = layout)
+
+sel.vs.trna <- (calb.phi.vs.emp + theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))) + roc.vs.emp.box  + (calb.sel.vs.tai + theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))) + sel.vs.tai.box +
+  plot_annotation(tag_level="A") + 
+  plot_layout(design = layout)
 
 sel.vs.trna
 
-savePlot("../Figures/All_species/02_intraspecies_sel_coef_wait_time.pdf",plot = sel.vs.trna,height=10,width=14)
+savePlot("../Figures/All_species/intraspecies_translational_selection.pdf",plot = sel.vs.trna,height=10,width=12)
 
 
 
@@ -527,7 +642,7 @@ plotSelectionAndTAI <- function(codon.df,tree)
     dplyr::slice(match(tree$tip.label,Species))
   tree.plot <- ggtree(tree)
 
-  tree.plot <- treeTraitPlot(tree.plot,codon.df,"tAI",significance=NULL,panel.name = "tAI")
+  tree.plot <- treeTraitPlot(tree.plot,codon.df,"otAI",significance=NULL,panel.name = "tAI")
   tree.plot <- treeTraitPlot(tree.plot,codon.df,"Selection",significance=NULL,panel.name = "Selection Coefficient")
   total.plot <- tree.plot + 
     theme_tree2() +
@@ -536,19 +651,19 @@ plotSelectionAndTAI <- function(codon.df,tree)
   total.plot
 }
 
-deta.wi.matrix.long.split <- deta.wi.matrix.long %>% 
+deta.tai.matrix.long.split <- deta.tai.matrix.long %>% 
   group_by(Codon) %>%
   group_split()
 
-lapply(deta.wi.matrix.long.split,plotSelectionAndTAI,tree=fungi.tree)
+lapply(deta.tai.matrix.long.split,plotSelectionAndTAI,tree=fungi.tree)
 ```
 
 
 
 ```{r echo = F,warning=F,fig.width=16,fig.height=16}
 
-codon.selection.long <-deta.wi.matrix.long %>%
-  pivot_longer(c(Selection,tAI),names_to="Parameter",values_to="Estimate")
+codon.selection.long <- deta.tai.matrix.long %>%
+  pivot_longer(c(Selection,otAI),names_to="Parameter",values_to="Estimate")
 
 codon.dist <- ggplot(codon.selection.long,aes(x=Estimate,fill=Parameter)) +
   geom_histogram(position = "identity",color="black",alpha=0.5) +
@@ -563,6 +678,5 @@ codon.dist
 savePlot("../Figures/All_species/S04_selection_and_tai_distributions.pdf",plot=codon.dist,height=16,width=16)
 
 ```
-
 
 

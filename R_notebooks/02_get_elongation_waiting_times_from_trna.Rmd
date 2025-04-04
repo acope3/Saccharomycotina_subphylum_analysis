@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(Biostrings)
 library(ape)
-library(AnaCoDa,lib.loc="~/R_dev")
+library(AnaCoDa)
 source("helperFunctions.R")
 
 
@@ -76,7 +76,7 @@ get.ws.local <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0, 0.0,
 
 
 
-gettAI.relative.aa <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0, 0.0, 0.41, 0.28, 0.9999, 0.68, 0.89), exclude.ctg=F,rank.by.alphabet=T)
+gettAI.relative.aa <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0, 0.0, 0.41, 0.28, 0.9999, 0.68, 0.89), exclude.ctg=F)
 {
 
   p = 1 - s
@@ -110,25 +110,45 @@ gettAI.relative.aa <- function(tRNA, codon.order, sking = 0, s = c(0.0, 0.0, 0.0
       mutate(AA = ifelse(Codon == "CTG","J",AA),
              W = ifelse(Codon == "CTG",NA,W))
   }
-  if (rank.by.alphabet)
-  {
-    r.wi <- W %>%
+    
+  r.wi <- W %>%
         group_by(AA) %>%
         mutate(Order=rank(Codon),
-               tAI = W[which.max(Order)]/W) ## will scale relative to alphabetically last codon, same as AnaCoDa
-  } else 
-  {
-     r.wi <- W %>%
-        group_by(AA) %>%
-        mutate(Order=rank(W,na.last=F,ties.method="random"),
-               tAI = W[which.max(Order)]/W)
-  }
+              tAI = 1/W - 1/W[which.max(Order)])
   r.wi <- r.wi %>% 
     ungroup() %>%
     dplyr::select(AA,Codon,Order,W,tAI)
   return(r.wi)
 }
 
+```
+
+# Set up color schemes
+
+```{r}
+scale_colour_brewer_d <- function(..., palette = "Set3") {
+  scale_colour_brewer(..., palette = palette )
+}
+
+scale_fill_brewer_d <- function(..., palette = "Set1") {
+  scale_fill_brewer(..., palette = palette)
+  
+}
+
+scale_colour_brewer_c <- function(..., palette = "BuGn") {
+  scale_colour_distiller(..., palette = palette )
+}
+
+scale_fill_brewer_c <- function(..., palette = "BuGn") {
+  scale_fill_distiller(..., palette = palette)
+}
+
+options(
+  ggplot2.discrete.colour = scale_colour_brewer_d,
+  ggplot2.discrete.fill = scale_fill_brewer_d,
+  ggplot2.continuous.colour = scale_colour_brewer_c,
+  ggplot2.continuous.fill = scale_fill_brewer_c
+)
 ```
 
 # Get new tGCN estimates
@@ -167,9 +187,9 @@ lapply(missing.species,function(x) {
 
 
 ```{r}
-all.genomes <- readLines("../all_fungi.txt")
-ser.genomes <- readLines("../ser_fungi.txt")
-fungi.tree <- read.tree("../tree_with_cds_labels.nwk")
+all.genomes <- readLines("../Data/all_fungi.txt")
+ser.genomes <- readLines("../Data/ser_fungi.txt")
+fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
 fungi.tree <- cleanTree(fungi.tree,all.genomes)
 
 trna.count <- read_tsv("../labella_trna.csv")
@@ -197,15 +217,14 @@ getNewTGCN <- function(species,old.trna.count)
 {
   print(species)
   species.fas <- str_replace(species,".max.cds",".fas")
-  trna.scan <- read_tsv(file.path("../Data//",species.fas),skip = 1,col_types = cols()) %>%
+  trna.scan <- read_tsv(file.path("../Data/new_tGCN/",species.fas),skip = 1,col_types = cols()) %>%
     filter(Codon != "-----") %>%
     mutate(Note = ifelse(is.na(Note),"",Note)) %>%
     filter(Note != "pseudo") %>%
     mutate(Codon = paste(Codon,Type,sep="-")) %>%
     group_by(Codon) %>%
     summarize(tGCN=n()) %>%
-    ungroup() #%>%
-    #mutate(Codon = as.character(reverseComplement(DNAStringSet(Codon))))
+    ungroup()
   
   old.tgcn <- old.trna.count %>% 
     filter(Species == species)
@@ -230,6 +249,45 @@ tgcn.df.wide <- tgcn.df.filt %>%
   pivot_wider(id_cols = Species,names_from = "Codon",values_from="tGCN")
 write_csv(tgcn.df.wide,"../Data/cope_trna.csv")
 ```
+```{r}
+lab.trna.count <- read_tsv("../Data/labella_trna.tsv")
+lab.trna.count <- lab.trna.count %>%
+  dplyr::select(-c(`Species name`,`Major clade`,`Total_tRNA Counts`,`CAG-Ala`,`CAG-Ser`)) %>%
+  dplyr::rename(Species = file_name_id) %>%
+  mutate(Species = paste0(Species,".max.cds")) %>%
+  filter(Species %in% all.genomes)
+codons <- as.character(
+  reverseComplement(
+    DNAStringSet(
+      str_extract(colnames(lab.trna.count)[2:ncol(lab.trna.count)],"[ACTG]{3}"
+                  ))))
+colnames(lab.trna.count)[2:ncol(lab.trna.count)] <- codons
+
+
+```
+```{r}
+cope.long <- trna.count %>%
+ pivot_longer(-Species,names_to="Codon",values_to="tGCN")
+
+lab.long <- lab.trna.count %>%
+ pivot_longer(-Species,names_to="Codon",values_to="tGCN")
+
+compare.tgcn <- cope.long %>%
+  left_join(lab.long,by=c("Species","Codon"),suffix=c("_Cope","_LaBella")) %>%
+  mutate(Diff = tGCN_Cope - tGCN_LaBella)
+
+
+ggplot(compare.tgcn,aes(x=tGCN_Cope,y=tGCN_LaBella)) +
+  geom_point() +
+  stat_cor(method="spearman",label.sep="\n") +
+  xlab("tGCN per codon\nThis study")+
+  ylab("tGCN per codon\nLaBella et a.") +
+  geom_abline(intercept=0,slope=1,linetype="dashed") +
+  theme_cowplot()
+
+
+
+```
 
 
 ```{r}
@@ -239,8 +297,12 @@ fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
 fungi.tree <- cleanTree(fungi.tree,all.genomes)
 
 trna.count <- read_csv("../Data/cope_trna.csv")
+#trna.count <- read_tsv("../Data/labella_trna.tsv")
 trna.count <- trna.count %>%
+  #dplyr::select(-c(`Species name`,`Major clade`,`Total_tRNA Counts`,`CAG-Ala`,`CAG-Ser`)) %>%
   dplyr::select(-c(`CAG-Ala`,`CAG-Ser`)) %>%
+  #dplyr::rename(Species = file_name_id) %>%
+  #mutate(Species = paste0(Species,".max.cds")) %>%
   filter(Species %in% all.genomes)
 
 
@@ -271,23 +333,152 @@ trna.count.long.split <- trna.count.long %>%
   group_split()
 names(trna.count.long.split) <- unique(trna.count.long$Species)
 
-weights <- read_tsv("../Data/tai_optimization_w_phi_2023_05_03_10_restarts_roc_phi_no_cutoff.tsv") %>%
+rtai.weights <- read_tsv("../Data/tai_optimization_w_phi_2023_05_03_10_restarts_roc_phi_no_cutoff.tsv") %>%
   dplyr::select(-starts_with("Performance"))
 
-tai.long <- trna.count.long.split %>%
-  purrr::map(~gettAI.relative.aa(.x$tGCN,codon.order.sense, s = c(0,0,0,0,weights %>% filter(Species %in% .x$Species) %>% dplyr::select(-Species,-Num.Genes) %>% unlist() %>% unname()), sking = 0, exclude.ctg = .x$Exclude.CTG[1],rank.by.alphabet=T)) %>% 
-  bind_rows(.id="Species")
+otai.long <- trna.count.long.split %>%
+  purrr::map(~gettAI.relative.aa(.x$tGCN,
+                                 codon.order.sense, 
+                                 sking = 0, 
+                                 exclude.ctg = .x$Exclude.CTG[1])) %>%
+  bind_rows(.id="Species")  %>%
+  dplyr::rename(otAI = tAI)
 
-tai.wide <- tai.long %>% 
-  pivot_wider(id_cols=Species,names_from=Codon,values_from = tAI)
+# rtai.long <- trna.count.long.split %>%
+#   purrr::map(~gettAI.relative.aa(.x$tGCN,
+#                                  codon.order.sense,
+#                                  s = c(0,0,0,0,rtai.weights %>% filter(Species %in% .x$Species) %>% dplyr::select(-Species,-Num.Genes) %>% unlist() %>% unname()), 
+#                                  sking = 0, 
+#                                  exclude.ctg = .x$Exclude.CTG[1])) %>%
+#   bind_rows(.id="Species")  %>%
+#   dplyr::rename(rtAI = tAI)
+# 
 
-raw.weights <- tai.long %>% 
+tgcn.long <- trna.count.long.split %>%
+  purrr::map(~gettAI.relative.aa(.x$tGCN,
+                                 codon.order.sense, 
+                                 s = c(0,0,0,0,rep(0,5)), 
+                                 sking = 0, 
+                                 exclude.ctg = .x$Exclude.CTG[1])) %>%
+  bind_rows(.id="Species") %>%
+  dplyr::rename(tGCN = tAI)
+
+otai.wide <- otai.long %>% 
+  pivot_wider(id_cols=Species,names_from=Codon,values_from = otAI)
+
+write_tsv(otai.wide,"../Data/cope_wi_otAI_inverse.tsv")
+
+# rtai.wide <- rtai.long %>% 
+#   pivot_wider(id_cols=Species,names_from=Codon,values_from = rtAI)
+# 
+# write_tsv(rtai.wide,"../Data/cope_wi_rtAI_inverse.tsv")
+
+
+
+tgcn.wide <- tgcn.long %>% 
+  pivot_wider(id_cols=Species,names_from=Codon,values_from = tGCN)
+
+write_tsv(tgcn.wide,"../Data/cope_wi_tGCN_inverse.tsv")
+
+raw.weights <- otai.long %>% 
   pivot_wider(id_cols=Species,names_from=Codon,values_from = W)
 
-write_tsv(tai.wide,"../Data/cope_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv")
 
 
-write_tsv(raw.weights,"../Data/cope_unnormalized_wi_with_roc_phi_estimated_weights_2023_05_03_10_restarts_roc_phi_no_cutoff_rel_difference.tsv")
+write_tsv(raw.weights,"../Data/cope_unnormalized_wi.tsv")
+
+
+raw.weights <- tgcn.long %>% 
+  pivot_wider(id_cols=Species,names_from=Codon,values_from = W)
+
+
+
+write_tsv(raw.weights,"../Data/cope_tGCN_with_wobble.tsv")
+
+```
+## Make sure tGCN correlates with AA freq
+
+
+```{r}
+tgcn <- read_tsv("../Data/cope_tgcn_per_species.tsv")
+aa.freq <- read_tsv("../Post_analysis/amino_acid_frequency_per_species.tsv")
+
+tgcn.long <- tgcn %>%
+  pivot_longer(-Species,names_to="Codon",values_to="tGCN") %>%
+  rowwise() %>%
+  mutate(AA = AnaCoDa::codonToAA(Codon)) %>%
+  ungroup() %>%
+  group_by(Species,AA) %>%
+  summarize(tGCN = sum(tGCN,na.rm=T))
+  
+
+aa.freq.long <- aa.freq %>%
+  pivot_longer(-Species,names_to = "AA",values_to="AA_Freq")
+
+
+tgcn.aa.long <- tgcn.long %>%
+  left_join(aa.freq.long,by=c("Species","AA")) %>%
+  filter(!AA %in% c("M","W","X","L"))
+
+tgcn.aa.cor <- tgcn.aa.long %>%
+  nest(data=c(AA,AA_Freq,tGCN)) %>%
+  mutate(corr = purrr::map(data,~cor.test(.x$tGCN,.x$AA_Freq,method = "spearman",use="complete.obs") %>% tidy())) %>%
+  dplyr::select(-data) %>%
+  unnest(corr)
+
+test<- tgcn.aa.long %>% 
+  filter(Species == "candida_albicans.max.cds")
 
 ```
 
+
+```{r fig.height=7}
+clades <- read_tsv("../Data/clades.txt")
+
+tgcn.aa.cor.w.clades <- tgcn.aa.cor %>% 
+  left_join(clades,by=c("Species"="file_name_id"))
+
+aa.vs.tgcn <- ggplot(tgcn.aa.cor.w.clades,aes(x=Major.clade,y=estimate)) + 
+  geom_boxplot() +
+  geom_point(aes(color=Major.clade),position="jitter",show.legend = F)+
+  ylab("Spearman correlation\ntGCN vs. Amino Acid Frequency") +
+  theme_cowplot() +
+  xlab("Clade") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+ggsave2("../Figures/All_species/aa_vs_tgcn.pdf",plot = aa.vs.tgcn)
+```
+
+
+
+```{r}
+tgcn <- read_tsv("../Data/cope_tgcn_per_species.tsv")
+tgcn.long <- tgcn %>%
+  pivot_longer(-Species,names_to="Codon",values_to="tGCN") %>%
+  group_by(Species) %>%
+  summarize(tGCN = sum(tGCN,na.rm=T)) %>%
+  mutate(Species = str_remove(Species,"(_[0-9]*){0,1}.max.cds"),
+         Species = tolower(Species))
+
+genome.quality <- read_csv("../Data/genome_quality.csv")
+
+genome.quality <- genome.quality %>%
+  dplyr::rename(Species = old_species_id) %>%
+  mutate(Species = tolower(Species)) %>%
+  dplyr::select(Species,N50,`BUSCO Complete`)
+
+tgcn.genome.qual <- tgcn.long %>%
+  left_join(genome.quality)
+
+ggplot(tgcn.genome.qual,aes(x=N50,y=tGCN)) +
+  geom_point() +
+  stat_cor(method="spearman",label.sep="\n")+
+  theme_cowplot() +
+  scale_y_log10() +
+  theme(aspect.ratio = 1)
+
+
+
+
+
+```

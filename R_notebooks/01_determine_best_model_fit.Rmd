@@ -143,6 +143,34 @@ boot.cor.diff.test <- function(method,data,indices)
 
 ```
 
+# Set up color schemes
+
+```{r}
+scale_colour_brewer_d <- function(..., palette = "Set3") {
+  scale_colour_brewer(..., palette = palette )
+}
+
+scale_fill_brewer_d <- function(..., palette = "Set1") {
+  scale_fill_brewer(..., palette = palette)
+  
+}
+
+scale_colour_brewer_c <- function(..., palette = "BuGn") {
+  scale_colour_distiller(..., palette = palette )
+}
+
+scale_fill_brewer_c <- function(..., palette = "BuGn") {
+  scale_fill_distiller(..., palette = palette)
+}
+
+options(
+  ggplot2.discrete.colour = scale_colour_brewer_d,
+  ggplot2.discrete.fill = scale_fill_brewer_d,
+  ggplot2.continuous.colour = scale_colour_brewer_c,
+  ggplot2.continuous.fill = scale_fill_brewer_c
+)
+```
+
 ```{r warning = F}
 
 fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
@@ -238,18 +266,11 @@ compare.emp.unimproved <- compare.emp %>%
 
 
 compare.emp <- compare.emp %>% 
-  mutate(estimate_Phi = ifelse(Species %in% improved.fits.species,estimate_Phi_K2,estimate_Phi_K1))
+  mutate(estimate_Phi = ifelse(Species %in% improved.fits.species,estimate_Phi_K2,estimate_Phi_K1),
+         p.value = ifelse(Species %in% improved.fits.species,p.value_Phi_K2,p.value_Phi_K1),
+         adj_p.value = p.adjust(p.value,method="BH"))
 
 
-p <- ggplot(compare.emp,aes(estimate_Phi_K1,estimate_Phi_K2)) +
-  geom_point() + 
-  xlab("Phi vs. Empirical (ConstMut)") +
-  ylab("Phi vs. Empirical (VarMut)") +
-  theme_cowplot() + 
-  stat_cor(method="spearman") +
-  geom_abline(intercept=0,slope=1,linetype="dashed") +
-  facet_wrap(~Clade)
-p
 
 
 compare.emp <- compare.emp %>% 
@@ -265,8 +286,8 @@ compare.emp.grouped <- compare.emp.non.ref %>%
             Total=n())
 
 corr.diff.plot <- ggplot(compare.emp.non.ref,aes(x=Divergence,y=Corr.Diff)) +
-  geom_point(aes(color=Compared.to),show.legend =F) +
-  stat_cor(aes(x=Divergence,y=Corr.Diff),method="spearman",label.sep="\n",inherit.aes = F,label.x.npc = "center",label.y = -0.5) +
+  geom_point() +
+  stat_cor(aes(x=Divergence,y=Corr.Diff),method="spearman",label.sep="\n",inherit.aes = F,label.x.npc = "center",label.y = -0.5,cor.coef.name = "rho") +
   theme_cowplot() +
   ylab("Difference in Spearman Correlation") +
   xlab("Divergence time (MYA)") +
@@ -274,111 +295,16 @@ corr.diff.plot <- ggplot(compare.emp.non.ref,aes(x=Divergence,y=Corr.Diff)) +
   theme(aspect.ratio=1)
 corr.diff.plot
 
-ggsave2("../Figures/All_species/S01_phi_relative_to_refence_species.pdf",plot=corr.diff.plot,height=5,width=5)
+ggsave2("../Figures/All_species/phi_relative_to_refence_species.pdf",plot=corr.diff.plot,height=5,width=5)
 
 ```
 
 
 
-```{r echo = F, warning = F,fig.width=16,fig.height=7}
-roc.emp.df.long <- roc.emp.df %>%
-  pivot_longer(contains("Phi"),names_to="CUB",values_to="Predicted") %>%
-  dplyr::rename(GeneID=Orthogroups) %>%
-  group_by(Species) %>%
-  group_split()
-
-
-purrr::map(roc.emp.df.long,plotSpecies,cub=c("Phi_K1","Phi_K2"))
-
-```
 
 
 
-```{r}
 
-species <- improved.fits.species
-deta.k1.files <- file.path("../Final_runs/Results_k_1/",species,"run_2","Parameter_est",paste0(species,"_Selection.csv"))
-dm.k1.files <- file.path("../Final_runs/Results_k_1/",species,"run_2","Parameter_est",paste0(species,"_Mutation.csv"))
-deta.k2.files <- file.path("../Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","1_Selection.csv")
-dm.k2.1.files <- file.path("../Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","1_Mutation.csv")
-dm.k2.2.files <- file.path("../Final_runs/Results_k_2_selectionShared/",species,"run_2","Parameter_est","2_Mutation.csv")
-
-names(deta.k1.files) <- species
-names(dm.k1.files) <- species
-names(deta.k2.files) <- species
-names(dm.k2.1.files) <- species
-names(dm.k2.2.files) <- species
-
-deta.k1 <- purrr::map(deta.k1.files,read_csv,col_types=cols()) %>% bind_rows(.id="Species") %>% 
-  dplyr::select(Species,AA,Codon,Mean) %>% 
-  filter(Mean != 0) %>%
-  dplyr::rename(Selection.K1 = Mean)
-dm.k1 <- purrr::map(dm.k1.files,read_csv,col_types=cols()) %>% bind_rows(.id="Species") %>% 
-  dplyr::select(Species,AA,Codon,Mean) %>% 
-  filter(Mean != 0) %>%
-  dplyr::rename(Mutation.K1 = Mean)
-deta.k2 <- purrr::map(deta.k2.files,read_csv,col_types=cols()) %>% bind_rows(.id="Species") %>% 
-  dplyr::select(Species,AA,Codon,Mean) %>% 
-  filter(Mean != 0) %>%
-  dplyr::rename(Selection.K2 = Mean)
-dm.k2.1 <- purrr::map(dm.k2.1.files,read_csv,col_types=cols()) %>% bind_rows(.id="Species") %>% 
-  dplyr::select(Species,AA,Codon,Mean) %>% 
-  filter(Mean != 0) %>%
-  dplyr::rename(Mutation.K2.1 = Mean)
-dm.k2.2 <- purrr::map(dm.k2.2.files,read_csv,col_types=cols()) %>% bind_rows(.id="Species") %>% 
-  dplyr::select(Species,AA,Codon,Mean) %>% 
-  filter(Mean != 0) %>%
-  dplyr::rename(Mutation.K2.2 = Mean)
-
-csp.df <- list(deta.k1,dm.k1,deta.k2,dm.k2.1,dm.k2.2) %>% purrr::reduce(left_join, by = c("Species","AA","Codon"))
-
-csp.df <- csp.df %>% mutate(Mutation.K2.Diff = Mutation.K2.1 - Mutation.K2.2)
-```
-
-
-```{r fig.width=9,fig.height=9}
-csp.df.split <- csp.df %>% group_by(Species) %>% group_split()
-
-plotCSP <- function(df)
-{
-  species <- unique(cleanSpeciesLabels(df$Species))
-  sel <- ggplot(df,aes(x= Selection.K1,y=Selection.K2)) + geom_point() +
-        theme_cowplot() +
-        ggtitle(species) +
-        theme(aspect.ratio = 1) +
-        stat_cor(method="spearman",label.sep = "\n") + 
-        xlab("Selection (K = 1)") +
-        ylab("Selection (K = 2)") 
-  mut.1 <- ggplot(df,aes(x= Mutation.K1,y=Mutation.K2.1)) + geom_point() +
-        theme_cowplot() +
-        theme(aspect.ratio = 1) +
-        stat_cor(method="spearman",label.sep = "\n") + 
-        xlab("Mutation (K = 1)") +
-        ylab("Mutation Cluster 1 (K = 2)") 
-  mut.2 <- ggplot(df,aes(x= Mutation.K1,y=Mutation.K2.2)) + geom_point() +
-        theme_cowplot() +
-        theme(aspect.ratio = 1) +
-        stat_cor(method="spearman",label.sep = "\n") + 
-        xlab("Mutation (K = 1)") +
-        ylab("Mutation Cluster 2 (K = 2)") 
-  
-  mut.k2 <- ggplot(df,aes(x= Mutation.K2.1,y=Mutation.K2.2)) + geom_point() +
-        theme_cowplot() +
-        theme(aspect.ratio = 1) +
-        stat_cor(method="spearman",label.sep = "\n") + 
-        xlab("Mutation Cluster 1 (K = 2)") +
-        ylab("Mutation Cluster 2 (K = 2)")
-  
-  overall <- plot_grid(sel,mut.1,mut.2,mut.k2,nrow=2,ncol=2)
-  return(overall)
-  
-}
-
-purrr::map(csp.df.split,plotCSP)
-
-
-
-```
 
 
 ```{r fig.width=9}
@@ -389,11 +315,11 @@ var.tree.plot <- treeTraitPlot(const.tree.plot,compare.emp,"estimate_Phi_K2","Sp
 var.tree.plot <- treeTraitPlot(var.tree.plot,compare.emp,"Diff","Difference\nVarMut - ConstMut")
 var.tree.plot <- var.tree.plot + theme_tree2()
 var.tree.plot
-cor.tree.plot <- treeTraitPlot(tree.plot,compare.emp,"estimate_Phi","Spearman correlation\nObs. vs. Pred. Gene Expr.")
+cor.tree.plot <- treeTraitPlot(tree.plot,compare.emp,"estimate_Phi","Spearman correlation\nEmp. vs. Pred. Gene Expr.")
 cor.tree.plot <- cor.tree.plot + theme_tree2()
 cor.tree.plot
-ggsave2("../Figures/All_species/S02_constmut_vs_varmut.pdf",plot = var.tree.plot,width=9)
-ggsave2("../Figures/All_species/01_final_phi.pdf",plot = cor.tree.plot,width=9)
+ggsave2("../Figures/All_species/constmut_vs_varmut.pdf",plot = var.tree.plot,width=9)
+ggsave2("../Figures/All_species/final_phi.pdf",plot = cor.tree.plot,width=9)
 
 
 ```
@@ -408,3 +334,7 @@ print(paste("Number of species for which VarMut model improved model fit by 25%:
 compare.emp %>% filter(Species %in% improved.fits.species) %>% summarize(median(Diff))
 compare.emp %>% filter(!Species %in% improved.fits.species) %>% summarize(median(Diff))
 ```
+
+
+
+

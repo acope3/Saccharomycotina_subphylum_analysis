@@ -63,15 +63,22 @@ calculateAcrossSpeciesCorrelations <- function(df,tree,x.var,y.var,...)
       dplyr::select(!!x.var.sym,!!y.var.sym) %>% 
       dplyr::filter(!is.na(!!x.var.sym) & !is.na(!!y.var.sym)) %>%
       as.matrix()
-    print(tmp)
-    cleaned <- cleanData(tree,tmp)
-    x <- cleaned$data
-    tmp.tree <- cleaned$phy
-    x.values <- x[,x.var]
-    y.values <- x[,y.var]
-    x.pic <- calculatePIC(x.values[tmp.tree$tip.label],tree = tmp.tree)
-    y.pic <- calculatePIC(y.values[tmp.tree$tip.label],tree=tmp.tree)
-    cor.test(x.pic[,1],y.pic[,1],...) %>% broom::tidy()
+    if (nrow(tmp) == 0)
+    {
+      return(NA)
+    } else {
+    tryCatch({
+        cleaned <- cleanData(tree,tmp)
+        x <- cleaned$data
+        tmp.tree <- cleaned$phy
+        x.values <- x[,x.var]
+        y.values <- x[,y.var]
+        x.pic <- calculatePIC(x.values[tmp.tree$tip.label],tree = tmp.tree)
+        y.pic <- calculatePIC(y.values[tmp.tree$tip.label],tree=tmp.tree)
+        df <- data.frame(X = x.pic[,1],Y = y.pic[,1])
+        return(cor.test(df$X,df$Y,...) %>% broom::tidy())
+    }, error=function(e){return(NA)})
+    }
 }
 
 calculatePIC <- function(data,tree)
@@ -82,7 +89,7 @@ calculatePIC <- function(data,tree)
 }
 
 cleanData <- function(phy, data) {
-  cleaned <- geiger::treedata(phy,data,warnings=T)
+  cleaned <- geiger::treedata(phy,data,warnings=F)
   return(cleaned)
 }
 
