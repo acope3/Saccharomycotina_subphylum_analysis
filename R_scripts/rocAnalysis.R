@@ -23,11 +23,12 @@ parser$add_argument("--max_num_runs",help="Max number of runs to do.",type="inte
 parser$add_argument("--fix_dEta",help="Use this flag to fix dEta at starting value.",action="store_true")
 parser$add_argument("--fix_dM",help="Use this flag to fix dM at starting value",action="store_true")
 parser$add_argument("--mixture_assignment",type="character",default=NULL)
-parser$add_argument("--codon_table",type="integer",default=1)
+parser$add_argument("--codon_table",type="integer",default=NULL)
 parser$add_argument("--with_phi",action="store_true")
 parser$add_argument("--obs_phi",type="character",default=NULL)
 parser$add_argument("--restart_file",type="character",default=NULL)
-parser$add_argument("--development",help="Run a developmental version of AnaCoDa",action="store_true")
+parser$add_argument("--prior_from_gc",type="double",default=NULL)
+parser$add_argument("--development",type="character",default=NULL)
 
 
 args <- parser$parse_args()
@@ -53,37 +54,90 @@ fix_dM <- args$fix_dM
 with.phi <- args$with_phi
 obs.phi <- args$obs_phi
 dev <- args$development
+prior.from.gc <- args$prior_from_gc
 mix.assign <- args$mixture_assignment
 restart.file <- args$restart_file
 codon.table <- args$codon_table
 
-if(dev)
+if(!is.null(dev))
 {
-	library(AnaCoDa,lib.loc="~/R_dev/")
+	library(AnaCoDa,lib.loc=dev)
 } else{
 	library(AnaCoDa)
 }
 
-initializeGenesSeparateMixtures <- function(genome,sphi,geneAssignment)
+calcDeltaMFromGCBias <- function(gcBias, include.ref=TRUE)
 {
-  init_phi <- numeric(length=length(genome))
-  scuo <- calculateSCUO(genome)
-  for (i in 1:numMixtures)
-  {
-    sub_scuo <- scuo[which(geneAssignment==i),]
-    sub_phi <- numeric(length=nrow(sub_scuo))
-    while(abs(mean(sub_phi)-1) > 0.02)
+  #' Calculates mutation bias terms $\Delta M$ based on GC content.
+  #'
+  #' @description Calculates $\Delta M$ based on GC bias.  Calculations
+  #  assume freq A = freq T and freq C = freq G.
+  #' @param gcBias: frequency of GC within a region or genome.
+  #' @param include.ref: indicates whether reference codons should be included in results.
+  #' Default value is TRUE
+  #'
+  #' @return Vector of $\Delta M$ values for each codon. Codon strings are used for entry names.
+  #'
+  #' @details Reference codons in AnaCoDa are the last alphabetical codon for each
+  #' amino acid. By convention, the mutation and selection bias parameters, $\Delta M$ and $\Delta \eta$,
+  #' are scaled so that $\Delta M = 0$ and $\Delta \eta = 0$ for each reference codon.
+  #' In general the single codon amino acids and the stop codons (M, W, and X) are ignored.
+#' These reference codons values are not used by `initializeParameterObject()` when setting
+#' values of the `mutation.prior.mean` and `mutation.prior.sd`
+
+  atBias  <-  1- gcBias
+  
+  ## calculate nt frequencies
+  fG <- gcBias/2
+  fC <- fG
+  fA <- atBias/2
+  fT <- fA
+  
+  fVec = c(fA,fC,fG,fT)
+  names(fVec) <- c("A", "C", "G", "T")
+  ## calculate M values
+  ## note that sum fi = 1
+  mVec <- - log(fVec)
+  
+  aaList  <- AnaCoDa::aminoAcids()
+  ## Drop stop codons, M, and W
+  aaList <- aaList[grep("X|M|W", aaList, invert = TRUE)]
+  
+  ## Create a vector for mutation terms
+  M <- vector()
+  deltaM <- vector()
+  refCodon.list <- vector()
+  for(aa in aaList){
+    ## Get all codons, including reference.
+    ## I would expect focal = TRUE to be the correct syntax for this, but it's not
+    codons <- AnaCoDa::AAToCodon(aa, focal = FALSE);
+    nCodons = length(codons);
+    refCodon <- codons[nCodons]
+    ##print(c(aa, nCodons, codons))
+    refCodon.list[refCodon] <- refCodon
+    ## Calculate M for each codon
+    for(codon in codons)
     {
-      sub_phi <- rlnorm(nrow(sub_scuo),-(sphi[i]*sphi[i])/2,sphi[i])
+      thirdNt <- substring(codon, 3,3)
+      M[codon] <- mVec[thirdNt]
     }
-    sub_phi <- sort(sub_phi)
-    sub_phi <- sub_phi[rank(sub_scuo$SCUO)]
-    init_phi[geneAssignment==i] <- sub_phi
-    print(cor(init_phi[geneAssignment==i],sub_scuo$SCUO,method="spearman"))
+    
+    ## Scale relative to last codon
+    for(codon in codons)
+    {
+      deltaM[codon] = M[codon]-M[refCodon]
+    }
+    
   }
-  print(init_phi)
-  return(init_phi)
+  
+  if(include.ref == FALSE)
+  {
+  
+    deltaM <- deltaM[which(!names(deltaM) %in% refCodon.list)]
+  }
+  return(deltaM)
 }
+
 
 ## Outputs CSP estimates
 createParameterOutput <- function(parameter,numMixtures,samples,mixture.labels,samples.percent.keep=1,relative.to.optimal.codon=F,report.original.ref=T)
@@ -113,7 +167,7 @@ if (with.phi && !is.null(obs.phi))
 {
   genome <- initializeGenomeObject(file=input,codon_table=codon.table,match.expression.by.id = FALSE,observed.expression.file=obs.phi)
 } else{
-  if (dev)
+  if (!is.null(codon.table))
   {
     genome <- initializeGenomeObject(file=input,codon_table=codon.table)
   } else {
@@ -132,7 +186,6 @@ index <- c(1:size)
 if (!is.null(mix.assign))
 {
   tmp <- read.csv(mix.assign,sep="\t",header=T,stringsAsFactors=F)
-  #tmp[,2] <- ifelse(tmp[,2] == 2,2,1)
   geneAssignment <- tmp[,2]
   numMixtures <- length(unique(tmp[,2]))
   mixture.labels <- c("1","2")
@@ -167,7 +220,15 @@ if (!is.null(obs.phi))
 } else {
   s_eps <- 0.1
 }
-print(s_eps)
+
+if (!is.null(prior.from.gc))
+{
+  mutation.prior.mean <- calcDeltaMFromGCBias(prior.from.gc,F)
+  mutation.prior.mean <- rep(mutation.prior.mean,numMixtures)
+} else {
+  mutation.prior.mean <- 0
+}
+
 dir.create(directory)
 done <- FALSE
 done.adapt <- FALSE
@@ -175,104 +236,35 @@ run_number <- 1
 
 while((!done) && (run_number <= max_num_runs))
 {
-
   if (run_number == 1)
   {
-    percent.to.keep <- 0.5
-    if (is.null(restart.file))
-    {
-        parameter <- initializeParameterObject(genome,sphi_init,numMixtures, geneAssignment,init.sepsilon = s_eps,split.serine = TRUE, mixture.definition = mixDef, initial.expression.values = init_phi,init.w.obs.phi=with.phi)
-        if (length(dM.file) > 0)
-        {
-          parameter$initMutationCategories(dM.file,1,fix_dM)
-          
-        } 
-        if (length(dEta.file) > 0)
-        {
-          parameter$initSelectionCategories(dEta.file,1,fix_dEta)
-          
-        }
-        steps.to.adapt <- (samples*thinning)*percent.to.keep
-    } else {
-        previous <- stringr::str_extract(pattern="restart_[0-9]+",string=restart.file)
-        run_number <- as.numeric(stringr::str_extract(pattern="[0-9]+",string=previous)) + 1
-        parameter<-initializeParameterObject(init.with.restart.file = restart.file,model="ROC")
-        if (run_number == max_num_runs)
-        {
-          # prev.param <- loadParameterObject(file.path(directory,paste0("restart_",run_number-1),"R_objects","parameter.Rda"))
-          # prev.trace <- prev.param$getTraceObject()
-          # prev.sphi.trace <- prev.trace$getStdDevSynthesisRateTraces()
-          # sphi.fix <- unlist(lapply(prev.sphi.trace,function(x){mean(x[(samples*percent.to.keep):samples])}))
-          steps.to.adapt <- 0
-          samples <- 10000
-          thinning <- 10
-          percent.to.keep <- 1
-          # est_hyp <- FALSE
-
-          # for (i in 1:length(sphi.fix))
-          # {
-          #   ## Note: do i - 1 because setStdDevSynthesisRate is not R wrapper around c++ function
-          #   parameter$setStdDevSynthesisRate(sphi.fix[i],i-1)
-          # }
-          # parameter$fixSphi()
-          # rm(prev.param)
-          # rm(prev.trace)
-        } else {
-          steps.to.adapt <- (samples*thinning)*percent.to.keep
-        }
-      }
-    
-    
-  } else if (run_number == max_num_runs) {
-      # prev.param <- loadParameterObject(file.path(directory,paste0("restart_",run_number-1),"R_objects","parameter.Rda"))
-      # prev.trace <- prev.param$getTraceObject()
-      # prev.sphi.trace <- prev.trace$getStdDevSynthesisRateTraces()
-      # sphi.fix <- unlist(lapply(prev.sphi.trace,function(x){mean(x[(samples*percent.to.keep):samples])}))
-      
-      percent.to.keep <- 1
-      parameter<-initializeParameterObject(init.with.restart.file = paste(dir_name,"Restart_files/rstartFile.rst_final",sep="/"),model="ROC")
-      # for (i in 1:length(sphi.fix))
-      # {
-      #   ## Note: do i - 1 because setStdDevSynthesisRate is not R wrapper around c++ function
-      #   parameter$setStdDevSynthesisRate(sphi.fix[i],i-1)
-      # }
-      if (fix_dM)
-      {
-        parameter$fixDM()
-      }
-      if (fix_dEta)
-      {
-        parameter$fixDEta()
-      }
-      # parameter$fixSphi()
-      dir_name <- paste0(directory,"/final_restart")
-      steps.to.adapt <- 0
-      div <- 0
-      samples <- 10000
-      thinning <- 10
-      rm(prev.param)
-      rm(prev.trace)
-      ## Turn off estimation of hyperparameters for last run. Most likely at reasonable place for these values
-      est_hyp <- FALSE
-  } else {
-      percent.to.keep <- 0.5
-      parameter<-initializeParameterObject(init.with.restart.file = paste(dir_name,"Restart_files/rstartFile.rst_final",sep="/"),model="ROC")
-      dir_name <- paste0(directory,"/restart_",run_number)
-      if (fix_dM)
-      {
-        parameter$fixDM()
-      }
-      if (fix_dEta)
-      {
-        parameter$fixDEta()
-      }
-      steps.to.adapt <- (samples*thinning)*percent.to.keep
-      
-      div <- 0
+    div_run = 0
+  } else{
+    div_run = div
   }
-  # parameter$shareStdDevSynthesis()
-  # parameter$shareSynthesisRate()
-  #dir_name <- paste0(directory,"/restart_",run_number)
+  percent.to.keep <- 0.75
+  if (is.null(restart.file))
+  {
+      parameter <- initializeParameterObject(genome,sphi_init,numMixtures, geneAssignment,init.sepsilon = s_eps,split.serine = TRUE, mixture.definition = mixDef, initial.expression.values = init_phi,init.w.obs.phi=with.phi,mutation.prior.mean=mutation.prior.mean)
+      if (length(dM.file) > 0)
+      {
+        parameter$initMutationCategories(dM.file,1,fix_dM)
+        
+      } 
+      if (length(dEta.file) > 0)
+      {
+        parameter$initSelectionCategories(dEta.file,1,fix_dEta)
+        
+      }
+      
+  } else {
+      previous <- stringr::str_extract(pattern="restart_[0-9]+",string=restart.file)
+      run_number <- as.numeric(stringr::str_extract(pattern="[0-9]+",string=previous)) + 1
+      parameter<-initializeParameterObject(init.with.restart.file = restart.file,model="ROC")
+  }
+
+  steps.to.adapt <- (samples*thinning)*(1-percent.to.keep)
+  dir_name <- paste0(directory,"/run_",run_number)
   dir.create(dir_name)
   dir.create(paste(dir_name,"Graphs",sep="/"))
   dir.create(paste(dir_name,"Restart_files",sep="/"))
@@ -290,7 +282,7 @@ while((!done) && (run_number <= max_num_runs))
   
 
   sys.runtime <- system.time(
-    runMCMC(mcmc, genome, model, num_threads,div=div)
+    runMCMC(mcmc, genome, model, num_threads,div=div_run)
   )
 
   ## Output runtime for mcmc
@@ -326,27 +318,6 @@ while((!done) && (run_number <= max_num_runs))
   }
   if (est.csp)
   {
-
-    ## If still adapting, plot acceptance rate traces and check if mean acceptance rates are in acceptable range.
-    ## If all mean acceptance rates are in acceptable range, end adapting    
-    if (!done.adapt)
-    {
-      done.adapt <- TRUE
-      aa <- aminoAcids()
-      for(a in aa)
-      {
-        if (a=="M"||a=="X"||a=="W") next
-        accept.trace <- trace$getCodonSpecificAcceptanceRateTraceForAA(a)
-        len <- length(accept.trace)
-        mean.acceptance <- mean(accept.trace[(len-len*percent.to.keep):len])
-        if (mean.acceptance < 0.1 || mean.acceptance > 0.44) 
-        {
-          done.adapt <- FALSE
-        }
-      }
-    }
-
-
     ## Calculate auto-correlation and convergence of CSP traces
     param.conv <- TRUE
     if (!fix_dEta)
@@ -354,7 +325,7 @@ while((!done) && (run_number <= max_num_runs))
       acfCSP(parameter,csp="Selection",numMixtures = numMixtures,samples=samples*percent.to.keep)
       for (i in 1:numMixtures)
       {
-        param.diag<-convergence.test(trace,samples=samples*percent.to.keep,thin = thinning,what="Selection",mixture=i,frac1=0.2)
+        param.diag<-convergence.test(trace,samples=samples*percent.to.keep,thin = thinning,what="Selection",mixture=i,frac1=0.25,frac2=0.5)
         z.scores <- param.diag$z[which(abs(param.diag$z) > 1.96)]
         if (length(z.scores) > 5)
         {
@@ -368,7 +339,7 @@ while((!done) && (run_number <= max_num_runs))
       acfCSP(parameter,csp="Mutation",numMixtures = numMixtures,samples=samples*percent.to.keep)
       for (i in 1:numMixtures)
       {
-        param.diag<-convergence.test(trace,samples=samples*percent.to.keep,thin = thinning,what="Mutation",mixture=i,frac1=0.2)
+        param.diag<-convergence.test(trace,samples=samples*percent.to.keep,thin = thinning,what="Mutation",mixture=i,frac1=0.25,frac2=0.5)
         z.scores <- param.diag$z[which(abs(param.diag$z) > 1.96)]
         if (length(z.scores) > 5)
         {
@@ -380,8 +351,6 @@ while((!done) && (run_number <= max_num_runs))
   }
   dev.off()
   
-
-
   pdf(paste(dir_name,"Graphs/CSP_traces_CUB_plot.pdf",sep="/"), width = 11, height = 12)
   createTracePlots(trace=trace,model=model,genome=genome,numMixtures=numMixtures,samples=samples,samples.percent.keep = percent.to.keep,mixture.labels = mixture.labels)
   dev.off()

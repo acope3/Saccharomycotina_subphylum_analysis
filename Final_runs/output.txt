@@ -1,0 +1,1 @@
+rsync error: received SIGINT, SIGTERM, or SIGHUP (code 20) at /AppleInternal/Library/BuildRoots/4ff29661-3588-11ef-9513-e2437461156c/Library/Caches/com.apple.xbs/Sources/rsync/rsync/rsync.c(244) [receiver=2.6.9]
