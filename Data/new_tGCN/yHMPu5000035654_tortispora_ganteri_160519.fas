@@ -1,0 +1,75 @@
+Sequence         		tRNA  	Bounds	tRNA	Anti	Intron Bounds	Inf	      
+Name             	tRNA #	Begin 	End   	Type	Codon	Begin	End	Score	Note
+--------         	------	----- 	------	----	-----	-----	----	------	------
+flattened_line_0 	1	152004	152098	Ser	GCT	152041	152053	63.5	
+flattened_line_0 	2	479456	479527	Gly	TCC	0	0	69.2	
+flattened_line_0 	3	486299	486385	Lys	TTT	486336	486349	76.4	
+flattened_line_0 	4	586455	586537	Arg	ACG	586491	586501	59.2	
+flattened_line_0 	5	623326	623254	Met	CAT	0	0	78.7	
+flattened_line_0 	6	202384	202289	Ser	TGA	202347	202334	75.1	
+flattened_line_2 	1	328001	328074	Ala	CGC	0	0	62.0	
+flattened_line_2 	2	440725	440815	Ile	AAT	440763	440779	66.5	
+flattened_line_2 	3	87658 	87586 	Arg	TCG	0	0	70.4	
+flattened_line_4 	1	173052	173132	Trp	CCA	173088	173096	65.1	
+flattened_line_4 	2	322181	322252	Cys	GCA	0	0	47.8	
+flattened_line_4 	3	132220	132149	Asp	GTC	0	0	62.6	
+flattened_line_4 	4	83319 	83237 	Leu	AAG	0	0	73.7	
+flattened_line_4 	5	27994 	27921 	Ala	AGC	0	0	64.1	
+flattened_line_6 	1	24814 	24887 	Val	AAC	0	0	70.7	
+flattened_line_6 	2	76084 	76156 	Lys	CTT	0	0	71.4	
+flattened_line_6 	3	155684	155764	Leu	CAG	0	0	67.2	
+flattened_line_6 	4	196718	196809	Phe	GAA	196755	196773	73.0	
+flattened_line_8 	1	223274	223345	Gln	TTG	0	0	68.2	
+flattened_line_10	1	352162	352234	Thr	AGT	0	0	76.0	
+flattened_line_10	2	78310 	78239 	Glu	TTC	0	0	56.0	
+flattened_line_12	1	144044	144127	Thr	CGT	144080	144091	73.1	
+flattened_line_12	2	180998	181071	Val	AAC	0	0	70.7	
+flattened_line_14	1	40079 	40152 	Val	CAC	0	0	63.8	
+flattened_line_14	2	77714 	77786 	Thr	TGT	0	0	78.0	
+flattened_line_14	3	107643	107714	Glu	CTC	0	0	52.5	
+flattened_line_14	4	189799	189889	Ile	AAT	189837	189853	66.5	
+flattened_line_16	1	43177 	43269 	Ser	CGA	43214	43224	71.9	
+flattened_line_16	2	215536	215464	Lys	CTT	0	0	71.4	
+flattened_line_18	1	36394 	36465 	iMet	CAT	0	0	55.5	
+flattened_line_18	2	137794	137864	Gly	GCC	0	0	69.7	
+flattened_line_18	3	18214 	18143 	His	GTG	0	0	66.3	
+flattened_line_20	1	27334 	27449 	Ile	TAT	27372	27413	65.4	
+flattened_line_20	2	66768 	66839 	Asp	GTC	0	0	62.6	
+flattened_line_22	1	134572	134644	Gln	CTG	0	0	66.4	
+flattened_line_22	2	169198	169271	Ala	AGC	0	0	61.3	
+flattened_line_22	3	169081	169008	Arg	TCT	0	0	81.2	
+flattened_line_22	4	36548 	36446 	Pro	CGG	36512	36481	48.7	
+flattened_line_24	1	116823	116910	Asn	GTT	116861	116874	65.1	
+flattened_line_26	1	74273 	74354 	Arg	ACG	74309	74318	59.3	
+flattened_line_28	1	186790	186863	Ala	TGC	0	0	64.4	
+flattened_line_30	1	42669 	42739 	Gly	GCC	0	0	69.7	
+flattened_line_32	1	58920 	58991 	Arg	CCT	0	0	58.0	
+flattened_line_36	1	20244 	20327 	Tyr	GTA	20282	20291	57.1	
+flattened_line_38	1	141481	141399	Leu	AAG	0	0	73.7	
+flattened_line_38	2	100571	100457	Leu	CAA	100533	100501	62.1	
+flattened_line_50	1	12648 	12732 	Leu	TAG	0	0	35.2	pseudo
+flattened_line_50	2	12778 	12850 	Arg	TCG	0	0	46.6	
+flattened_line_50	3	26878 	26949 	Gly	TCC	0	0	35.5	pseudo
+flattened_line_50	4	26957 	27029 	Asp	GTC	0	0	35.8	pseudo
+flattened_line_50	5	29099 	29171 	Lys	TTT	0	0	35.6	pseudo
+flattened_line_50	6	37007 	36936 	Thr	TGT	0	0	52.3	
+flattened_line_50	7	36921 	36850 	Glu	TTC	0	0	46.2	
+flattened_line_50	8	36816 	36743 	Met	CAT	0	0	30.6	pseudo
+flattened_line_50	9	36737 	36667 	Met	CAT	0	0	35.6	
+flattened_line_50	10	36643 	36560 	Leu	TAA	0	0	35.4	pseudo
+flattened_line_50	11	36516 	36445 	Val	TAC	0	0	60.8	
+flattened_line_50	12	36427 	36357 	Met	CAT	0	0	36.2	pseudo
+flattened_line_50	13	36343 	36272 	Asn	GTT	0	0	52.4	
+flattened_line_50	14	36231 	36161 	Ala	TGC	0	0	46.2	
+flattened_line_50	15	24360 	24287 	Arg	TCT	0	0	51.3	
+flattened_line_50	16	23991 	23921 	Ile	GAT	0	0	51.8	
+flattened_line_50	17	23911 	23825 	Ser	TGA	0	0	53.6	
+flattened_line_50	18	23818 	23748 	Phe	GAA	0	0	53.7	
+flattened_line_52	1	25281 	25200 	Ser	AGA	0	0	77.6	
+flattened_line_58	1	34069 	34141 	Thr	AGT	0	0	76.0	
+flattened_line_60	1	75566 	75495 	Pro	TGG	0	0	58.0	
+flattened_line_64	1	47332 	47242 	Pro	AGG	47296	47278	69.3	
+flattened_line_66	1	42771 	42862 	Leu	TAA	42809	42818	66.1	
+flattened_line_72	1	42053 	42125 	Arg	CCG	0	0	58.5	
+flattened_line_72	2	20868 	20777 	Phe	GAA	20831	20813	73.0	
+flattened_line_88	1	9597  	9690  	Leu	TAG	9634	9646	52.9	

@@ -1,0 +1,1623 @@
+Sequence         		tRNA  	Bounds	tRNA	Anti	Intron Bounds	Inf	      
+Name             	tRNA #	Begin 	End   	Type	Codon	Begin	End	Score	Note
+--------         	------	----- 	------	----	-----	-----	----	------	------
+flattened_line_0 	1	47806 	47892 	Pro	AGG	47842	47856	69.2	
+flattened_line_0 	2	47903 	47976 	Ile	AAT	0	0	67.3	
+flattened_line_0 	3	132647	132720	Asn	GTT	0	0	73.2	
+flattened_line_0 	4	200992	201063	Glu	TTC	0	0	53.8	
+flattened_line_0 	5	201470	201552	Leu	AAG	0	0	73.0	
+flattened_line_0 	6	201565	201638	Val	AAC	0	0	68.7	
+flattened_line_0 	7	258136	258251	Arg	ACG	258172	258215	60.4	
+flattened_line_0 	8	258258	258355	Lys	CTT	258295	258319	75.7	
+flattened_line_0 	9	258780	258853	Ala	CGC	0	0	55.5	
+flattened_line_0 	10	318120	318190	Gly	GCC	0	0	68.7	
+flattened_line_0 	11	318199	318285	Asp	GTC	318236	318250	51.8	
+flattened_line_0 	12	387292	387365	Ala	AGC	0	0	63.3	
+flattened_line_0 	13	387372	387463	Phe	GAA	387409	387427	71.7	
+flattened_line_0 	14	387741	387846	Leu	TAA	387779	387800	61.5	
+flattened_line_0 	15	417727	417808	Val	CAC	417764	417772	65.7	
+flattened_line_0 	16	514243	514328	Pro	AGG	514279	514292	69.2	
+flattened_line_0 	17	514347	514420	Ile	AAT	0	0	67.3	
+flattened_line_0 	18	514427	514523	Lys	CTT	514464	514487	72.9	
+flattened_line_0 	19	719430	719501	Glu	TTC	0	0	53.8	
+flattened_line_0 	20	784780	784885	Leu	TAA	784818	784839	61.5	
+flattened_line_0 	21	894121	894049	Thr	TGT	0	0	67.3	
+flattened_line_0 	22	784290	784185	Leu	TAA	784252	784231	61.5	
+flattened_line_0 	23	780767	780662	Leu	TAA	780729	780708	61.5	
+flattened_line_0 	24	779183	779078	Leu	TAA	779145	779124	61.5	
+flattened_line_0 	25	719928	719856	Thr	AGT	0	0	72.6	
+flattened_line_0 	26	719834	719762	Gln	TTG	0	0	65.0	
+flattened_line_0 	27	695844	695739	Ser	TGA	695807	695784	66.6	
+flattened_line_0 	28	695018	694913	Ser	TGA	694981	694958	66.6	
+flattened_line_0 	29	686712	686640	Thr	AGT	0	0	72.6	
+flattened_line_0 	30	686618	686546	Gln	TTG	0	0	65.0	
+flattened_line_0 	31	600725	600643	Leu	AAG	0	0	73.0	
+flattened_line_0 	32	600628	600513	Arg	ACG	600592	600549	60.4	
+flattened_line_0 	33	556737	556665	Thr	TGT	0	0	67.3	
+flattened_line_0 	34	556337	556222	Arg	ACG	556301	556258	60.4	
+flattened_line_0 	35	556211	556106	Leu	TAA	556173	556152	61.5	
+flattened_line_0 	36	202999	202928	His	GTG	0	0	54.3	
+flattened_line_0 	37	133622	133549	Asn	GTT	0	0	73.2	
+flattened_line_0 	38	133542	133446	Lys	TTT	133505	133482	73.9	
+flattened_line_0 	39	132162	132058	Leu	TAA	132124	132104	61.6	
+flattened_line_0 	40	77066 	76995 	Cys	GCA	0	0	57.2	
+flattened_line_0 	41	76605 	76534 	Cys	GCA	0	0	57.2	
+flattened_line_0 	42	45336 	45250 	Pro	AGG	45300	45286	69.2	
+flattened_line_0 	43	45239 	45135 	Leu	TAA	45201	45181	58.1	
+flattened_line_2 	1	193660	193765	Ser	GCT	193697	193720	67.4	
+flattened_line_2 	2	535408	535492	Tyr	GTA	535446	535456	53.9	
+flattened_line_2 	3	537239	537323	Tyr	GTA	537277	537287	53.9	
+flattened_line_2 	4	245557	245485	Thr	AGT	0	0	75.4	
+flattened_line_4 	1	277   	350   	Ile	AAT	0	0	67.3	
+flattened_line_4 	2	356   	453   	Lys	CTT	393	417	72.9	
+flattened_line_4 	3	45758 	45840 	Leu	AAG	0	0	73.0	
+flattened_line_4 	4	45854 	45927 	Val	AAC	0	0	59.6	
+flattened_line_4 	5	46163 	46234 	Gly	TCC	0	0	56.2	
+flattened_line_4 	6	46282 	46369 	Asp	GTC	46319	46334	51.7	
+flattened_line_4 	7	53254 	53335 	Ser	AGA	0	0	82.6	
+flattened_line_4 	8	53345 	53418 	Val	AAC	0	0	68.7	
+flattened_line_4 	9	70032 	70147 	Arg	ACG	70068	70111	60.4	
+flattened_line_4 	10	274527	274598	Glu	CTC	0	0	60.7	
+flattened_line_4 	11	387359	387485	Leu	TAG	387397	387441	63.5	
+flattened_line_4 	12	423272	423345	Ile	AAT	0	0	67.3	
+flattened_line_4 	13	423351	423449	Lys	CTT	423388	423413	63.3	
+flattened_line_4 	14	465513	465628	Arg	ACG	465549	465592	60.4	
+flattened_line_4 	15	465636	465720	Tyr	GTA	465674	465684	53.9	
+flattened_line_4 	16	548835	548916	Ser	AGA	0	0	82.6	
+flattened_line_4 	17	548926	548999	Val	AAC	0	0	68.7	
+flattened_line_4 	18	549293	549398	Ser	GCT	549330	549353	67.4	
+flattened_line_4 	19	555049	555121	Gln	TTG	0	0	65.0	
+flattened_line_4 	20	627699	627770	His	GTG	0	0	55.2	
+flattened_line_4 	21	628697	628770	Ala	AGC	0	0	63.3	
+flattened_line_4 	22	628777	628868	Phe	GAA	628814	628832	71.7	
+flattened_line_4 	23	629070	629196	Leu	TAG	629108	629152	63.5	
+flattened_line_4 	24	583037	582965	Gln	TTG	0	0	65.0	
+flattened_line_4 	25	488526	488431	Lys	TTT	488489	488467	73.9	
+flattened_line_4 	26	479972	479891	Ser	AGA	0	0	82.6	
+flattened_line_4 	27	479881	479808	Val	AAC	0	0	68.7	
+flattened_line_4 	28	433869	433758	Leu	CAA	433831	433802	64.3	
+flattened_line_4 	29	417396	417324	Thr	AGT	0	0	75.4	
+flattened_line_4 	30	356151	356036	Arg	ACG	356115	356072	60.4	
+flattened_line_4 	31	188106	188025	Ser	AGA	0	0	82.6	
+flattened_line_4 	32	65615 	65502 	Leu	CAA	65577	65546	64.1	
+flattened_line_4 	33	53850 	53780 	Gly	GCC	0	0	68.7	
+flattened_line_4 	34	53771 	53684 	Asp	GTC	53734	53719	51.7	
+flattened_line_4 	35	46516 	46435 	Ser	AGA	0	0	82.6	
+flattened_line_4 	36	38767 	38671 	Thr	GGT	38730	38716	25.0	
+flattened_line_4 	37	38421 	38325 	Ser	CGA	38384	38370	71.8	
+flattened_line_4 	38	26578 	26491 	Asp	GTC	26541	26526	51.7	
+flattened_line_4 	39	1522  	1441  	Ser	AGA	0	0	82.6	
+flattened_line_4 	40	1431  	1360  	Glu	TTC	0	0	53.8	
+flattened_line_6 	1	133414	133487	Ala	AGC	0	0	63.3	
+flattened_line_6 	2	133501	133571	Gly	GCC	0	0	68.7	
+flattened_line_6 	3	133579	133670	Phe	GAA	133616	133634	71.7	
+flattened_line_6 	4	293166	293238	Thr	AGT	0	0	75.4	
+flattened_line_6 	5	293833	293906	Ile	AAT	0	0	67.3	
+flattened_line_6 	6	293913	294011	Lys	CTT	293950	293975	72.8	
+flattened_line_6 	7	394830	394903	Val	AAC	0	0	68.7	
+flattened_line_6 	8	470602	470675	Ala	AGC	0	0	63.3	
+flattened_line_6 	9	470689	470759	Gly	GCC	0	0	68.7	
+flattened_line_6 	10	470768	470854	Asp	GTC	470805	470819	51.8	
+flattened_line_6 	11	509342	509415	Ile	AAT	0	0	67.3	
+flattened_line_6 	12	508912	508831	Ser	AGA	0	0	82.6	
+flattened_line_6 	13	381408	381338	Gly	GCC	0	0	68.7	
+flattened_line_6 	14	381331	381226	Ser	TGA	381294	381271	66.6	
+flattened_line_6 	15	324420	324348	Thr	AGT	0	0	72.6	
+flattened_line_6 	16	324325	324253	Gln	TTG	0	0	65.0	
+flattened_line_6 	17	312867	312781	Pro	AGG	312831	312817	69.2	
+flattened_line_6 	18	312769	312696	Ile	AAT	0	0	67.3	
+flattened_line_6 	19	312689	312591	Lys	CTT	312652	312627	72.8	
+flattened_line_8 	1	1500  	1571  	Cys	GCA	0	0	58.0	
+flattened_line_8 	2	1578  	1668  	Asp	GTC	1615	1633	56.2	
+flattened_line_8 	3	28649 	28722 	Ala	AGC	0	0	63.3	
+flattened_line_8 	4	60277 	60392 	Arg	ACG	60313	60356	60.4	
+flattened_line_8 	5	106077	106161	Pro	AGG	106113	106125	69.2	
+flattened_line_8 	6	106361	106434	Ile	AAT	0	0	67.3	
+flattened_line_8 	7	106440	106537	Lys	CTT	106477	106501	72.9	
+flattened_line_8 	8	269363	269433	Gly	GCC	0	0	68.7	
+flattened_line_8 	9	269441	269512	Trp	CCA	0	0	71.2	
+flattened_line_8 	10	270040	270155	Ile	TAT	270077	270119	60.2	
+flattened_line_8 	11	390176	390278	Leu	TAA	390214	390232	58.2	
+flattened_line_8 	12	270490	270408	Leu	AAG	0	0	73.0	
+flattened_line_8 	13	270391	270276	Arg	ACG	270355	270312	60.4	
+flattened_line_8 	14	112574	112504	Gly	GCC	0	0	68.7	
+flattened_line_8 	15	112496	112425	Trp	CCA	0	0	71.2	
+flattened_line_8 	16	72227 	72155 	Gln	TTG	0	0	65.0	
+flattened_line_8 	17	59569 	59499 	Gly	GCC	0	0	68.7	
+flattened_line_8 	18	59490 	59402 	Asp	GTC	59453	59437	56.3	
+flattened_line_8 	19	59081 	58989 	Phe	GAA	59044	59025	71.7	
+flattened_line_8 	20	12534 	12453 	Ser	AGA	0	0	82.6	
+flattened_line_8 	21	12444 	12373 	Glu	TTC	0	0	53.8	
+flattened_line_10	1	6839  	6912  	Asn	GTT	0	0	73.2	
+flattened_line_10	2	178178	178251	Val	AAC	0	0	68.7	
+flattened_line_10	3	187562	187635	Ala	TGC	0	0	67.0	
+flattened_line_10	4	187660	187731	Glu	TTC	0	0	53.8	
+flattened_line_10	5	333434	333507	Ile	AAT	0	0	67.3	
+flattened_line_10	6	333511	333616	Ser	GCT	333548	333571	67.4	
+flattened_line_10	7	328923	328853	Gly	GCC	0	0	68.7	
+flattened_line_10	8	328846	328759	Asp	GTC	328809	328794	51.7	
+flattened_line_10	9	328747	328675	Thr	CGT	0	0	63.0	
+flattened_line_10	10	194566	194495	iMet	CAT	0	0	66.8	
+flattened_line_10	11	149541	149470	His	GTG	0	0	51.5	
+flattened_line_10	12	149463	149370	Phe	GAA	149426	149406	74.2	
+flattened_line_10	13	93411 	93339 	Thr	AGT	0	0	75.4	
+flattened_line_10	14	93326 	93254 	Gln	TTG	0	0	65.0	
+flattened_line_10	15	46723 	46641 	Leu	AAG	0	0	73.0	
+flattened_line_10	16	46629 	46556 	Val	AAC	0	0	68.7	
+flattened_line_12	1	30153 	30235 	Leu	AAG	0	0	73.0	
+flattened_line_12	2	30247 	30320 	Val	AAC	0	0	68.7	
+flattened_line_12	3	36848 	36921 	Asn	GTT	0	0	73.2	
+flattened_line_12	4	46361 	46432 	iMet	CAT	0	0	69.1	
+flattened_line_12	5	122707	122813	Leu	CAG	122744	122769	57.2	
+flattened_line_12	6	135730	135658	Thr	AGT	0	0	75.4	
+flattened_line_12	7	135271	135199	Thr	TGT	0	0	67.3	
+flattened_line_14	1	77440 	77524 	Tyr	GTA	77478	77488	53.9	
+flattened_line_14	2	77532 	77624 	Phe	GAA	77569	77588	71.7	
+flattened_line_14	3	77810 	77883 	Ala	AGC	0	0	55.4	
+flattened_line_14	4	78530 	78645 	Ile	TAT	78567	78609	60.2	
+flattened_line_14	5	80129 	80213 	Tyr	GTA	80167	80177	53.9	
+flattened_line_14	6	291498	291416	Leu	AAG	0	0	73.0	
+flattened_line_14	7	275434	275361	Ala	AGC	0	0	63.3	
+flattened_line_14	8	234270	234197	Ala	AGC	0	0	63.3	
+flattened_line_14	9	234182	234112	Gly	GCC	0	0	68.7	
+flattened_line_14	10	234107	234019	Asp	GTC	234070	234054	51.7	
+flattened_line_16	1	100745	100817	Gln	TTG	0	0	65.4	
+flattened_line_16	2	100822	100895	Asn	GTT	0	0	73.2	
+flattened_line_16	3	260476	260548	Thr	AGT	0	0	72.6	
+flattened_line_16	4	268256	268329	Val	AAC	0	0	68.7	
+flattened_line_16	5	276783	276710	Ala	TGC	0	0	67.0	
+flattened_line_16	6	268494	268422	Thr	AGT	0	0	75.4	
+flattened_line_16	7	259905	259834	Cys	GCA	0	0	59.1	
+flattened_line_16	8	176274	176201	Ile	AAT	0	0	67.3	
+flattened_line_16	9	176196	176123	Val	AAC	0	0	68.7	
+flattened_line_16	10	175811	175741	Gly	GCC	0	0	68.7	
+flattened_line_16	11	175734	175648	Asp	GTC	175697	175683	56.4	
+flattened_line_16	12	76803 	76722 	Ser	AGA	0	0	82.6	
+flattened_line_18	1	71188 	71259 	Cys	GCA	0	0	57.2	
+flattened_line_18	2	89931 	90004 	Ala	AGC	0	0	63.3	
+flattened_line_18	3	130712	130785	Ala	AGC	0	0	63.3	
+flattened_line_18	4	130802	130872	Gly	GCC	0	0	68.7	
+flattened_line_18	5	130880	130967	Asp	GTC	130917	130932	51.7	
+flattened_line_18	6	176127	176209	Leu	AAG	0	0	73.0	
+flattened_line_18	7	176223	176296	Val	AAC	0	0	68.7	
+flattened_line_18	8	176572	176644	Thr	AGT	0	0	72.6	
+flattened_line_18	9	176667	176739	Gln	TTG	0	0	65.0	
+flattened_line_18	10	225363	225447	Tyr	GTA	225401	225411	53.9	
+flattened_line_18	11	248915	249008	Phe	GAA	248952	248972	71.6	
+flattened_line_18	12	299701	299620	Ser	AGA	0	0	82.6	
+flattened_line_18	13	299611	299540	Glu	TTC	0	0	53.8	
+flattened_line_18	14	296149	296046	Val	TAC	296112	296082	55.0	
+flattened_line_18	15	295646	295557	Met	CAT	295609	295593	69.7	
+flattened_line_18	16	217733	217662	Glu	TTC	0	0	53.8	
+flattened_line_18	17	89147 	89074 	Ala	AGC	0	0	63.3	
+flattened_line_20	1	54780 	54851 	Cys	GCA	0	0	58.0	
+flattened_line_20	2	64714 	64786 	Thr	TGT	0	0	67.3	
+flattened_line_20	3	243313	243394	Ser	AGA	0	0	82.6	
+flattened_line_20	4	280668	280740	Thr	AGT	0	0	72.6	
+flattened_line_20	5	280750	280855	Ser	GCT	280787	280810	67.4	
+flattened_line_20	6	175114	175041	Ile	AAT	0	0	67.3	
+flattened_line_20	7	175035	174939	Lys	CTT	174998	174975	72.9	
+flattened_line_20	8	13407 	13334 	Ala	AGC	0	0	63.3	
+flattened_line_22	1	9279  	9349  	Gly	GCC	0	0	68.7	
+flattened_line_22	2	9355  	9426  	Trp	CCA	0	0	71.2	
+flattened_line_22	3	9940  	10026 	Pro	AGG	9976	9990	69.2	
+flattened_line_22	4	10038 	10111 	Ile	AAT	0	0	67.3	
+flattened_line_22	5	10118 	10216 	Lys	CTT	10155	10180	72.8	
+flattened_line_22	6	10514 	10629 	Arg	ACG	10550	10593	60.4	
+flattened_line_22	7	10638 	10722 	Tyr	GTA	10676	10686	53.9	
+flattened_line_22	8	13354 	13427 	Ala	AGC	0	0	63.3	
+flattened_line_22	9	69605 	69676 	Glu	CTC	0	0	56.2	
+flattened_line_22	10	70224 	70295 	Glu	CTC	0	0	56.2	
+flattened_line_22	11	74405 	74477 	Thr	AGT	0	0	72.6	
+flattened_line_22	12	74500 	74570 	Gly	GCC	0	0	68.7	
+flattened_line_22	13	74578 	74649 	Trp	CCA	0	0	71.2	
+flattened_line_22	14	117696	117767	Cys	GCA	0	0	57.2	
+flattened_line_22	15	150373	150455	Leu	AAG	0	0	73.0	
+flattened_line_22	16	150469	150542	Val	AAC	0	0	61.9	
+flattened_line_22	17	164888	164961	Ala	AGC	0	0	63.3	
+flattened_line_22	18	168567	168638	Glu	CTC	0	0	56.2	
+flattened_line_22	19	181675	181757	Leu	AAG	0	0	73.0	
+flattened_line_22	20	181771	181844	Val	AAC	0	0	68.7	
+flattened_line_22	21	276326	276399	Ala	AGC	0	0	63.3	
+flattened_line_22	22	278185	278258	Ala	AGC	0	0	63.3	
+flattened_line_22	23	285832	285905	Ala	AGC	0	0	63.3	
+flattened_line_22	24	286221	286148	Ala	AGC	0	0	63.3	
+flattened_line_22	25	182337	182250	Met	CAT	182300	182286	69.8	
+flattened_line_22	26	142318	142245	Ala	AGC	0	0	63.3	
+flattened_line_22	27	116477	116406	Cys	GCA	0	0	57.2	
+flattened_line_22	28	88936 	88865 	Glu	TTC	0	0	53.8	
+flattened_line_24	1	9766  	9881  	Ile	TAT	9803	9845	60.2	
+flattened_line_24	2	56877 	56992 	Arg	ACG	56913	56956	60.4	
+flattened_line_24	3	57001 	57085 	Tyr	GTA	57039	57049	53.9	
+flattened_line_24	4	62805 	62900 	Lys	CTT	62842	62864	72.9	
+flattened_line_24	5	96774 	96846 	Thr	AGT	0	0	68.5	
+flattened_line_24	6	96869 	96941 	Gln	TTG	0	0	65.0	
+flattened_line_24	7	98582 	98672 	Phe	GAA	98619	98636	71.7	
+flattened_line_24	8	98688 	98759 	iMet	CAT	0	0	69.1	
+flattened_line_24	9	131882	131954	Gln	TTG	0	0	65.0	
+flattened_line_24	10	132206	132290	Tyr	GTA	132244	132254	53.9	
+flattened_line_24	11	182364	182462	Lys	CTT	182401	182426	72.8	
+flattened_line_24	12	197653	197726	Ala	AGC	0	0	63.3	
+flattened_line_24	13	197740	197810	Gly	GCC	0	0	68.7	
+flattened_line_24	14	197819	197906	Asp	GTC	197856	197871	51.7	
+flattened_line_24	15	232919	232846	Ala	AGC	0	0	63.3	
+flattened_line_24	16	219824	219751	Val	AAC	0	0	68.7	
+flattened_line_24	17	197275	197178	Ser	CGA	197238	197223	73.3	
+flattened_line_24	18	190479	190407	Thr	AGT	0	0	72.6	
+flattened_line_24	19	190384	190312	Gln	TTG	0	0	65.0	
+flattened_line_24	20	186688	186606	Leu	AAG	0	0	73.0	
+flattened_line_24	21	186595	186522	Val	AAC	0	0	68.7	
+flattened_line_24	22	157531	157459	Arg	TCT	0	0	68.5	
+flattened_line_24	23	147302	147231	iMet	CAT	0	0	69.1	
+flattened_line_24	24	146866	146794	Thr	AGT	0	0	72.6	
+flattened_line_24	25	146771	146699	Gln	TTG	0	0	65.0	
+flattened_line_24	26	132715	132643	Thr	AGT	0	0	72.6	
+flattened_line_24	27	132620	132548	Gln	TTG	0	0	65.0	
+flattened_line_24	28	99040 	98968 	Gln	TTG	0	0	65.0	
+flattened_line_24	29	95836 	95755 	Ser	AGA	0	0	82.6	
+flattened_line_24	30	95746 	95675 	Glu	TTC	0	0	53.8	
+flattened_line_24	31	57535 	57454 	Ser	AGA	0	0	82.6	
+flattened_line_24	32	57445 	57374 	Glu	TTC	0	0	53.8	
+flattened_line_24	33	43541 	43451 	Met	CAT	43504	43487	69.7	
+flattened_line_24	34	8591  	8510  	Ser	AGA	0	0	82.6	
+flattened_line_26	1	104746	104848	Val	TAC	104783	104812	55.0	
+flattened_line_26	2	206667	206782	Leu	CAA	206705	206738	64.1	
+flattened_line_26	3	238735	238808	Ala	AGC	0	0	63.3	
+flattened_line_26	4	238838	238908	Gly	GCC	0	0	68.7	
+flattened_line_26	5	206008	205936	Arg	TCT	0	0	68.5	
+flattened_line_26	6	164393	164309	Tyr	GTA	164355	164345	53.9	
+flattened_line_26	7	164299	164228	Gly	TCC	0	0	56.2	
+flattened_line_28	1	16542 	16614 	Arg	TCT	0	0	68.5	
+flattened_line_28	2	123116	123187	Gly	TCC	0	0	56.2	
+flattened_line_28	3	227884	227955	Gly	TCC	0	0	56.2	
+flattened_line_28	4	236159	236274	Arg	ACG	236195	236238	60.4	
+flattened_line_28	5	236283	236367	Tyr	GTA	236321	236331	53.9	
+flattened_line_28	6	236561	236471	Phe	GAA	236524	236507	71.7	
+flattened_line_28	7	233397	233299	Lys	CTT	233360	233335	72.8	
+flattened_line_28	8	233071	232999	Arg	TCT	0	0	68.5	
+flattened_line_28	9	123880	123809	Gly	TCC	0	0	56.2	
+flattened_line_28	10	2048  	1975  	Asn	GTT	0	0	73.2	
+flattened_line_28	11	1969  	1874  	Lys	TTT	1932	1910	74.6	
+flattened_line_28	12	1791  	1706  	Pro	AGG	1755	1742	69.2	
+flattened_line_28	13	1325  	1253  	Thr	AGT	0	0	72.6	
+flattened_line_30	1	17895 	17967 	Gln	TTG	0	0	65.0	
+flattened_line_30	2	17971 	18044 	Asn	GTT	0	0	73.2	
+flattened_line_30	3	109914	109985	His	GTG	0	0	54.3	
+flattened_line_30	4	155142	155212	Gly	GCC	0	0	68.7	
+flattened_line_30	5	155221	155308	Asp	GTC	155258	155273	56.3	
+flattened_line_30	6	155662	155733	Glu	TTC	0	0	53.8	
+flattened_line_30	7	163475	163557	Leu	AAG	0	0	73.0	
+flattened_line_30	8	163571	163644	Val	AAC	0	0	68.7	
+flattened_line_30	9	183920	183992	Arg	TCT	0	0	68.5	
+flattened_line_30	10	186202	186275	Val	AAC	0	0	68.7	
+flattened_line_30	11	211958	212031	Ile	AAT	0	0	67.3	
+flattened_line_30	12	212038	212136	Lys	CTT	212075	212100	72.8	
+flattened_line_30	13	183274	183169	Ser	GCT	183237	183214	67.4	
+flattened_line_30	14	167405	167334	His	GTG	0	0	54.3	
+flattened_line_30	15	43904 	43833 	Glu	TTC	0	0	53.8	
+flattened_line_30	16	20111 	20038 	Ala	CGC	0	0	55.5	
+flattened_line_30	17	12548 	12475 	Ala	AGC	0	0	63.3	
+flattened_line_30	18	11877 	11806 	Glu	TTC	0	0	53.8	
+flattened_line_30	19	11411 	11339 	Gln	TTG	0	0	65.0	
+flattened_line_32	1	137398	137479	Ser	AGA	0	0	82.6	
+flattened_line_34	1	13496 	13569 	Ala	AGC	0	0	63.3	
+flattened_line_34	2	29969 	30040 	iMet	CAT	0	0	69.1	
+flattened_line_34	3	73004 	73076 	Thr	AGT	0	0	75.4	
+flattened_line_36	1	12275 	12348 	Asn	GTT	0	0	73.2	
+flattened_line_36	2	63576 	63669 	Phe	GAA	63613	63633	70.9	
+flattened_line_36	3	171869	171984	Arg	ACG	171905	171948	60.4	
+flattened_line_36	4	172000	172072	Arg	TCT	0	0	68.5	
+flattened_line_36	5	159053	158967	Pro	AGG	159017	159003	69.2	
+flattened_line_36	6	158955	158882	Ile	AAT	0	0	67.3	
+flattened_line_36	7	152705	152634	iMet	CAT	0	0	69.1	
+flattened_line_36	8	152309	152236	Ile	AAT	0	0	67.3	
+flattened_line_36	9	152229	152133	Lys	CTT	152192	152169	72.9	
+flattened_line_36	10	134531	134459	Thr	AGT	0	0	75.4	
+flattened_line_38	1	88791 	88718 	Asn	GTT	0	0	73.2	
+flattened_line_38	2	88713 	88620 	Lys	TTT	88676	88656	74.7	
+flattened_line_38	3	80452 	80379 	Asn	GTT	0	0	73.2	
+flattened_line_38	4	24462 	24377 	Pro	AGG	24426	24413	69.2	
+flattened_line_38	5	22835 	22764 	Glu	TTC	0	0	53.8	
+flattened_line_40	1	132216	132313	Lys	CTT	132253	132277	72.9	
+flattened_line_40	2	112792	112702	Met	CAT	112755	112738	69.7	
+flattened_line_40	3	59457 	59376 	Ser	AGA	0	0	82.6	
+flattened_line_40	4	59366 	59293 	Val	AAC	0	0	68.7	
+flattened_line_42	1	1946  	2049  	Pro	CGG	1982	2014	41.2	
+flattened_line_42	2	59733 	59859 	Leu	TAG	59771	59815	63.5	
+flattened_line_42	3	68380 	68452 	Arg	TCG	0	0	74.1	
+flattened_line_42	4	70581 	70653 	Arg	TCG	0	0	74.1	
+flattened_line_42	5	116240	116313	Ala	AGC	0	0	63.3	
+flattened_line_42	6	137179	137252	Ala	AGC	0	0	63.3	
+flattened_line_42	7	153498	153569	His	GTG	0	0	54.3	
+flattened_line_42	8	153828	153899	His	GTG	0	0	54.3	
+flattened_line_42	9	113527	113456	His	GTG	0	0	54.3	
+flattened_line_42	10	113449	113337	Leu	CAA	113411	113381	64.2	
+flattened_line_42	11	92523 	92453 	Gly	GCC	0	0	68.7	
+flattened_line_42	12	92444 	92357 	Asp	GTC	92407	92392	51.7	
+flattened_line_42	13	34744 	34672 	Arg	TCT	0	0	68.5	
+flattened_line_44	1	43701 	43773 	Gln	TTG	0	0	65.0	
+flattened_line_44	2	149094	149164	Gly	GCC	0	0	68.7	
+flattened_line_44	3	149178	149274	Ser	CGA	149215	149229	71.8	
+flattened_line_44	4	140747	140663	Pro	AGG	140711	140699	69.2	
+flattened_line_44	5	140648	140550	Lys	CTT	140611	140586	72.8	
+flattened_line_44	6	140212	140140	Arg	TCT	0	0	68.5	
+flattened_line_44	7	140129	140058	Glu	TTC	0	0	53.8	
+flattened_line_44	8	110489	110399	Met	CAT	110452	110435	69.7	
+flattened_line_44	9	44985 	44914 	Arg	CCG	0	0	70.3	
+flattened_line_44	10	44439 	44368 	Arg	CCG	0	0	73.4	
+flattened_line_46	1	133112	133198	Pro	AGG	133148	133162	69.2	
+flattened_line_46	2	133210	133283	Ile	AAT	0	0	67.3	
+flattened_line_46	3	133290	133388	Lys	CTT	133327	133352	72.8	
+flattened_line_46	4	156595	156509	Pro	AGG	156559	156545	69.2	
+flattened_line_46	5	155604	155518	Pro	AGG	155568	155554	69.2	
+flattened_line_46	6	155506	155433	Ile	AAT	0	0	67.3	
+flattened_line_46	7	155426	155328	Lys	CTT	155389	155364	72.8	
+flattened_line_48	1	179   	250   	Glu	TTC	0	0	53.8	
+flattened_line_48	2	34324 	34408 	Tyr	GTA	34362	34372	53.9	
+flattened_line_48	3	135403	135316	Asp	GTC	135366	135351	56.3	
+flattened_line_48	4	125990	125918	Thr	AGT	0	0	72.6	
+flattened_line_48	5	125896	125824	Gln	TTG	0	0	65.0	
+flattened_line_48	6	35663 	35590 	Ala	AGC	0	0	63.3	
+flattened_line_48	7	34821 	34730 	Met	CAT	34784	34766	69.6	
+flattened_line_48	8	17425 	17354 	Gln	CTG	0	0	59.1	
+flattened_line_50	1	15745 	15843 	Val	TAC	15782	15807	55.2	
+flattened_line_50	2	61866 	61959 	Pro	TGG	61902	61923	59.1	
+flattened_line_50	3	61966 	62037 	Gln	CTG	0	0	59.1	
+flattened_line_50	4	126975	127057	Leu	AAG	0	0	73.0	
+flattened_line_50	5	127072	127187	Arg	ACG	127108	127151	60.4	
+flattened_line_50	6	137647	137740	Phe	GAA	137684	137704	70.9	
+flattened_line_52	1	12838 	12911 	Asn	GTT	0	0	73.2	
+flattened_line_52	2	13203 	13274 	His	GTG	0	0	55.2	
+flattened_line_52	3	129233	129306	Ile	AAT	0	0	67.3	
+flattened_line_52	4	129313	129411	Lys	CTT	129350	129375	71.9	
+flattened_line_52	5	130722	130649	Val	AAC	0	0	68.7	
+flattened_line_52	6	99483 	99385 	Lys	CTT	99446	99421	72.8	
+flattened_line_52	7	35204 	35112 	Phe	GAA	35167	35148	71.7	
+flattened_line_52	8	34535 	34462 	Ala	AGC	0	0	65.4	
+flattened_line_52	9	34448 	34378 	Gly	GCC	0	0	68.7	
+flattened_line_52	10	12278 	12208 	Gly	GCC	0	0	68.7	
+flattened_line_52	11	12202 	12115 	Asp	GTC	12165	12150	51.7	
+flattened_line_54	1	11533 	11606 	Ile	AAT	0	0	67.3	
+flattened_line_54	2	11619 	11690 	Glu	CTC	0	0	58.4	
+flattened_line_54	3	108076	108181	Sup	TTA	108113	108136	66.6	
+flattened_line_56	1	121035	120963	Arg	TCT	0	0	68.5	
+flattened_line_56	2	78044 	77958 	Pro	AGG	78008	77994	69.2	
+flattened_line_56	3	77946 	77873 	Ile	AAT	0	0	67.3	
+flattened_line_56	4	77866 	77768 	Lys	CTT	77829	77804	72.8	
+flattened_line_58	1	24468 	24397 	Trp	CCA	0	0	72.5	
+flattened_line_58	2	23620 	23549 	Trp	CCA	0	0	71.2	
+flattened_line_58	3	5708  	5635  	Ala	CGC	0	0	55.5	
+flattened_line_60	1	762   	835   	Ala	AGC	0	0	63.3	
+flattened_line_60	2	52088 	52161 	Ala	AGC	0	0	63.3	
+flattened_line_60	3	52757 	52829 	Gln	TTG	0	0	65.0	
+flattened_line_60	4	52833 	52906 	Asn	GTT	0	0	73.2	
+flattened_line_60	5	53420 	53525 	Ser	TGA	53457	53480	68.4	
+flattened_line_60	6	53535 	53645 	Leu	CAA	53573	53601	64.2	
+flattened_line_60	7	154896	154815	Ser	AGA	0	0	82.6	
+flattened_line_60	8	154806	154735	Glu	TTC	0	0	53.8	
+flattened_line_60	9	154316	154234	Leu	AAG	0	0	73.0	
+flattened_line_60	10	153694	153621	Ala	AGC	0	0	63.3	
+flattened_line_60	11	153614	153523	Phe	GAA	153577	153559	71.7	
+flattened_line_60	12	153199	153129	Gly	GCC	0	0	68.7	
+flattened_line_60	13	153123	153036	Asp	GTC	153086	153071	51.7	
+flattened_line_60	14	142199	142113	Pro	TGG	142163	142149	59.4	
+flattened_line_60	15	101948	101875	Val	AAC	0	0	68.7	
+flattened_line_60	16	101866	101771	Lys	CTT	101829	101807	72.9	
+flattened_line_60	17	101094	100979	Arg	ACG	101058	101015	60.4	
+flattened_line_60	18	1499  	1426  	Ala	AGC	0	0	63.3	
+flattened_line_62	1	83627 	83700 	Asn	GTT	0	0	70.7	
+flattened_line_62	2	130011	130082	iMet	CAT	0	0	69.1	
+flattened_line_62	3	130330	130259	Glu	TTC	0	0	53.8	
+flattened_line_62	4	116185	116104	Ser	AGA	0	0	82.6	
+flattened_line_62	5	115502	115432	Gly	GCC	0	0	68.7	
+flattened_line_62	6	115424	115337	Asp	GTC	115387	115372	53.2	
+flattened_line_62	7	109868	109782	Pro	AGG	109832	109818	69.2	
+flattened_line_62	8	105980	105908	Thr	AGT	0	0	75.4	
+flattened_line_64	1	14580 	14652 	Arg	TCT	0	0	68.5	
+flattened_line_64	2	22410 	22483 	Ile	AAT	0	0	67.3	
+flattened_line_64	3	101279	101364	Pro	AGG	101315	101328	69.2	
+flattened_line_64	4	101376	101449	Ile	AAT	0	0	67.3	
+flattened_line_64	5	101456	101553	Lys	CTT	101493	101517	72.9	
+flattened_line_64	6	103327	103398	His	GTG	0	0	54.3	
+flattened_line_64	7	113740	113813	Val	AAC	0	0	68.7	
+flattened_line_64	8	149785	149873	Met	CAT	149822	149837	69.7	
+flattened_line_64	9	146840	146743	Lys	CTT	146803	146779	72.9	
+flattened_line_66	1	118883	118955	Arg	TCG	0	0	74.1	
+flattened_line_66	2	110482	110395	Asp	GTC	110445	110430	51.7	
+flattened_line_66	3	82980 	82908 	Thr	AGT	0	0	72.6	
+flattened_line_66	4	82887 	82817 	Gly	GCC	0	0	68.7	
+flattened_line_66	5	82812 	82741 	Trp	CCA	0	0	71.2	
+flattened_line_66	6	82489 	82418 	Trp	CCA	0	0	71.2	
+flattened_line_68	1	1992  	2062  	Gly	GCC	0	0	68.7	
+flattened_line_68	2	2068  	2154  	Asp	GTC	2105	2119	56.4	
+flattened_line_68	3	146711	146782	His	GTG	0	0	54.3	
+flattened_line_68	4	134409	134339	Gly	GCC	0	0	68.7	
+flattened_line_68	5	134333	134243	Phe	GAA	134296	134279	71.7	
+flattened_line_68	6	125208	125127	Val	CAC	125171	125163	65.7	
+flattened_line_68	7	124877	124796	Val	CAC	124840	124832	65.7	
+flattened_line_68	8	118745	118674	iMet	CAT	0	0	69.1	
+flattened_line_68	9	7761  	7691  	Gly	GCC	0	0	68.7	
+flattened_line_68	10	7685  	7595  	Phe	GAA	7648	7631	71.7	
+flattened_line_70	1	2139  	2212  	Ala	AGC	0	0	63.3	
+flattened_line_70	2	2226  	2296  	Gly	GCC	0	0	68.7	
+flattened_line_70	3	2302  	2388  	Asp	GTC	2339	2353	51.8	
+flattened_line_70	4	58745 	58639 	Pro	CGG	58709	58674	41.1	
+flattened_line_70	5	4513  	4443  	Gly	GCC	0	0	68.7	
+flattened_line_70	6	4437  	4351  	Asp	GTC	4400	4386	56.4	
+flattened_line_72	1	730   	833   	Ser	GCT	767	788	67.4	
+flattened_line_74	1	8805  	8876  	Glu	TTC	0	0	53.8	
+flattened_line_74	2	9317  	9399  	Leu	AAG	0	0	73.0	
+flattened_line_74	3	75547 	75475 	Thr	CGT	0	0	65.5	
+flattened_line_74	4	74915 	74843 	Thr	CGT	0	0	67.5	
+flattened_line_74	5	19561 	19465 	Lys	CTT	19524	19501	72.9	
+flattened_line_76	1	118876	118981	Leu	TAA	118914	118935	61.5	
+flattened_line_78	1	132372	132487	Arg	ACG	132408	132451	60.4	
+flattened_line_78	2	132496	132580	Tyr	GTA	132534	132544	53.9	
+flattened_line_78	3	134330	134244	Pro	AGG	134294	134280	69.2	
+flattened_line_78	4	134232	134159	Ile	AAT	0	0	67.3	
+flattened_line_78	5	134152	134053	Lys	CTT	134115	134089	72.8	
+flattened_line_78	6	131595	131480	Arg	ACG	131559	131516	60.4	
+flattened_line_78	7	118491	118379	Leu	CAG	118454	118423	60.6	
+flattened_line_78	8	79136 	79065 	His	GTG	0	0	54.3	
+flattened_line_80	1	99192 	99317 	Arg	ACG	99238	99281	42.3	
+flattened_line_80	2	31340 	31267 	Asn	GTT	0	0	73.2	
+flattened_line_80	3	31261 	31166 	Lys	TTT	31224	31202	74.6	
+flattened_line_82	1	4043  	4124  	Ser	AGA	0	0	82.6	
+flattened_line_82	2	4133  	4204  	Glu	TTC	0	0	53.8	
+flattened_line_82	3	37158 	37228 	Gly	GCC	0	0	68.7	
+flattened_line_82	4	37236 	37307 	Trp	CCA	0	0	71.2	
+flattened_line_82	5	37825 	37896 	Trp	CCA	0	0	71.2	
+flattened_line_82	6	52259 	52345 	Pro	TGG	52295	52309	59.4	
+flattened_line_82	7	123268	123156	Leu	CAA	123230	123200	64.2	
+flattened_line_82	8	109141	109059	Leu	AAG	0	0	73.0	
+flattened_line_82	9	30111 	30018 	Phe	GAA	30074	30054	70.9	
+flattened_line_82	10	29176 	29103 	Ala	AGC	0	0	63.3	
+flattened_line_82	11	29090 	29020 	Gly	GCC	0	0	68.7	
+flattened_line_82	12	18011 	17938 	Ile	AAT	0	0	67.3	
+flattened_line_82	13	17469 	17377 	Phe	GAA	17432	17413	71.7	
+flattened_line_82	14	17368 	17297 	iMet	CAT	0	0	69.1	
+flattened_line_82	15	16843 	16761 	Leu	AAG	0	0	73.0	
+flattened_line_82	16	16747 	16674 	Val	AAC	0	0	68.7	
+flattened_line_84	1	69096 	69168 	Arg	TCT	0	0	68.5	
+flattened_line_84	2	69948 	70019 	Glu	TTC	0	0	53.8	
+flattened_line_84	3	74794 	74864 	Gly	GCC	0	0	68.7	
+flattened_line_84	4	86158 	86228 	Gly	CCC	0	0	66.2	
+flattened_line_84	5	132306	132377	Glu	TTC	0	0	53.8	
+flattened_line_84	6	132382	132486	Leu	TAA	132420	132440	58.1	
+flattened_line_84	7	130617	130545	Thr	AGT	0	0	72.6	
+flattened_line_86	1	7374  	7468  	Met	CAT	7411	7432	69.5	
+flattened_line_86	2	10190 	10262 	Thr	TGT	0	0	72.4	
+flattened_line_86	3	54483 	54554 	Gly	TCC	0	0	56.2	
+flattened_line_86	4	55142 	55213 	Gly	TCC	0	0	53.2	
+flattened_line_86	5	84637 	84564 	Ala	TGC	0	0	61.5	
+flattened_line_86	6	73634 	73561 	Ile	AAT	0	0	67.3	
+flattened_line_86	7	73555 	73458 	Lys	CTT	73518	73494	72.9	
+flattened_line_86	8	73087 	73006 	Ser	AGA	0	0	82.6	
+flattened_line_86	9	6565  	6494  	Cys	GCA	0	0	58.0	
+flattened_line_88	1	74231 	74303 	Thr	AGT	0	0	72.6	
+flattened_line_88	2	74398 	74469 	Trp	CCA	0	0	71.2	
+flattened_line_88	3	97727 	97799 	Gln	TTG	0	0	65.0	
+flattened_line_88	4	97503 	97431 	Arg	TCT	0	0	68.5	
+flattened_line_90	1	42249 	42343 	Lys	TTT	42286	42307	73.9	
+flattened_line_90	2	68107 	68035 	Arg	TCT	0	0	68.5	
+flattened_line_90	3	68027 	67954 	Asn	GTT	0	0	73.2	
+flattened_line_90	4	53401 	53328 	Val	AAC	0	0	68.7	
+flattened_line_92	1	57982 	58052 	Gly	GCC	0	0	68.7	
+flattened_line_92	2	58061 	58148 	Asp	GTC	58098	58113	51.7	
+flattened_line_92	3	96673 	96743 	Gly	GCC	0	0	68.7	
+flattened_line_92	4	97445 	97516 	His	GTG	0	0	49.9	
+flattened_line_92	5	97522 	97593 	Glu	TTC	0	0	53.8	
+flattened_line_94	1	14714 	14787 	Ile	AAT	0	0	67.3	
+flattened_line_94	2	14794 	14892 	Lys	CTT	14831	14856	72.8	
+flattened_line_94	3	15624 	15706 	Leu	AAG	0	0	73.0	
+flattened_line_94	4	15720 	15793 	Val	AAC	0	0	68.7	
+flattened_line_94	5	24763 	24867 	Ser	GCT	24800	24822	67.4	
+flattened_line_94	6	81912 	81842 	Gly	GCC	0	0	68.7	
+flattened_line_94	7	81833 	81746 	Asp	GTC	81796	81781	51.7	
+flattened_line_96	1	57689 	57616 	Val	AAC	0	0	68.7	
+flattened_line_100	1	66185 	66289 	Pro	CGG	66221	66254	41.2	
+flattened_line_100	2	72264 	72337 	Asn	GTT	0	0	73.2	
+flattened_line_102	1	4644  	4759  	Arg	ACG	4680	4723	60.4	
+flattened_line_102	2	78248 	78164 	Pro	AGG	78212	78200	69.2	
+flattened_line_104	1	565   	637   	His	GTG	0	0	47.2	
+flattened_line_106	1	13808 	13727 	Val	CAC	13771	13763	65.7	
+flattened_line_108	1	34552 	34636 	Tyr	GTA	34590	34600	53.9	
+flattened_line_108	2	54564 	54460 	Ser	GCT	54527	54505	67.4	
+flattened_line_108	3	35694 	35624 	Gly	GCC	0	0	68.7	
+flattened_line_108	4	35616 	35529 	Asp	GTC	35579	35564	51.7	
+flattened_line_110	1	46091 	46189 	Lys	CTT	46128	46153	72.8	
+flattened_line_110	2	46203 	46275 	Arg	TCT	0	0	68.5	
+flattened_line_110	3	47231 	47304 	Asn	GTT	0	0	73.2	
+flattened_line_110	4	68511 	68626 	Arg	ACG	68547	68590	60.4	
+flattened_line_110	5	68795 	68868 	Ile	AAT	0	0	67.3	
+flattened_line_110	6	68874 	68972 	Lys	CTT	68911	68936	72.8	
+flattened_line_110	7	69349 	69422 	Asn	GTT	0	0	73.2	
+flattened_line_110	8	79841 	79911 	Gly	GCC	0	0	68.7	
+flattened_line_110	9	79916 	80006 	Phe	GAA	79953	79970	71.7	
+flattened_line_110	10	39252 	39179 	Ile	AAT	0	0	67.3	
+flattened_line_110	11	39173 	39075 	Lys	CTT	39136	39111	72.8	
+flattened_line_112	1	60063 	59976 	Asp	GTC	60026	60011	56.3	
+flattened_line_114	1	17353 	17426 	Ala	AGC	0	0	63.3	
+flattened_line_116	1	18469 	18555 	Pro	AGG	18505	18519	69.2	
+flattened_line_116	2	18569 	18674 	Ser	GCT	18606	18629	67.4	
+flattened_line_118	1	31828 	31909 	Ser	AGA	0	0	82.6	
+flattened_line_118	2	31918 	31989 	Glu	TTC	0	0	53.8	
+flattened_line_118	3	35076 	35157 	Ser	AGA	0	0	82.6	
+flattened_line_118	4	35166 	35237 	Glu	TTC	0	0	53.8	
+flattened_line_118	5	34383 	34302 	Ser	AGA	0	0	82.6	
+flattened_line_118	6	34293 	34222 	Glu	TTC	0	0	53.8	
+flattened_line_118	7	33248 	33133 	Arg	ACG	33212	33169	60.4	
+flattened_line_118	8	33124 	33040 	Tyr	GTA	33086	33076	53.9	
+flattened_line_118	9	32623 	32553 	Gly	GCC	0	0	68.7	
+flattened_line_118	10	32546 	32459 	Asp	GTC	32509	32494	51.7	
+flattened_line_118	11	32275 	32183 	Phe	GAA	32238	32219	71.7	
+flattened_line_120	1	64400 	64473 	Ala	AGC	0	0	63.3	
+flattened_line_122	1	5795  	5868  	Ala	AGC	0	0	63.3	
+flattened_line_122	2	5884  	5954  	Gly	GCC	0	0	68.7	
+flattened_line_122	3	5960  	6046  	Asp	GTC	5997	6011	56.4	
+flattened_line_122	4	37373 	37444 	Glu	TTC	0	0	53.8	
+flattened_line_122	5	41600 	41692 	Phe	GAA	41637	41656	71.7	
+flattened_line_126	1	52212 	52139 	Val	AAC	0	0	68.7	
+flattened_line_130	1	34307 	34378 	Arg	CCT	0	0	60.2	
+flattened_line_130	2	35288 	35358 	Gly	GCC	0	0	68.7	
+flattened_line_130	3	35367 	35455 	Asp	GTC	35404	35420	51.7	
+flattened_line_130	4	35627 	35716 	Met	CAT	35664	35680	69.7	
+flattened_line_132	1	22660 	22745 	Pro	AGG	22696	22709	69.2	
+flattened_line_132	2	24020 	24105 	Pro	AGG	24056	24069	69.2	
+flattened_line_132	3	24351 	24422 	Glu	TTC	0	0	53.8	
+flattened_line_132	4	25615 	25515 	Lys	CTT	25578	25551	72.7	
+flattened_line_142	1	5017  	4944  	Val	AAC	0	0	68.7	
+flattened_line_142	2	1002  	929   	Ile	AAT	0	0	67.3	
+flattened_line_142	3	922   	824   	Lys	CTT	885	860	72.8	
+flattened_line_144	1	23567 	23649 	Leu	AAG	0	0	73.0	
+flattened_line_144	2	23660 	23733 	Val	AAC	0	0	68.7	
+flattened_line_144	3	23041 	22968 	Asn	GTT	0	0	73.2	
+flattened_line_144	4	22962 	22867 	Lys	TTT	22925	22903	74.6	
+flattened_line_146	1	37927 	38011 	Tyr	GTA	37965	37975	53.9	
+flattened_line_146	2	38485 	38579 	Met	CAT	38522	38543	69.5	
+flattened_line_146	3	446   	373   	Ala	TGC	0	0	67.0	
+flattened_line_148	1	19355 	19428 	Ile	AAT	0	0	67.3	
+flattened_line_152	1	35013 	35085 	Arg	TCT	0	0	68.5	
+flattened_line_156	1	33078 	33007 	Gln	CTG	0	0	59.1	
+flattened_line_156	2	32693 	32622 	Gln	CTG	0	0	59.1	
+flattened_line_156	3	32185 	32075 	Leu	CAA	32147	32119	64.2	
+flattened_line_158	1	17450 	17521 	Glu	TTC	0	0	53.8	
+flattened_line_158	2	18135 	18208 	Ile	AAT	0	0	67.3	
+flattened_line_158	3	18215 	18313 	Lys	CTT	18252	18277	72.8	
+flattened_line_162	1	10719 	10792 	Ala	AGC	0	0	63.3	
+flattened_line_162	2	10805 	10875 	Gly	GCC	0	0	68.7	
+flattened_line_164	1	3321  	3234  	Asp	GTC	3284	3269	51.7	
+flattened_line_175	1	5369  	5455  	Pro	AGG	5405	5419	69.2	
+flattened_line_175	2	5467  	5540  	Ile	AAT	0	0	67.3	
+flattened_line_175	3	5547  	5645  	Lys	CTT	5584	5609	72.8	
+flattened_line_175	4	13876 	13805 	Glu	TTC	0	0	50.3	
+flattened_line_261	1	495   	568   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_273	1	537   	466   	Glu	TTC	0	0	48.1	
+flattened_line_273	2	214   	142   	Ala	TGC	0	0	45.7	pseudo
+flattened_line_283	1	516   	443   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_283	2	136   	47    	Ser	TGA	0	0	48.7	
+flattened_line_291	1	202   	272   	His	GTG	0	0	49.2	
+flattened_line_339	1	308   	378   	Ile	GAT	0	0	50.7	
+flattened_line_343	1	281   	351   	Ile	GAT	0	0	50.7	
+flattened_line_357	1	275   	345   	Ile	GAT	0	0	50.7	
+flattened_line_379	1	123   	193   	Ile	GAT	0	0	50.7	
+flattened_line_395	1	221   	291   	Ile	GAT	0	0	50.7	
+flattened_line_401	1	201   	271   	Ile	GAT	0	0	50.7	
+flattened_line_403	1	40    	110   	Ile	GAT	0	0	50.7	
+flattened_line_579	1	321   	248   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_581	1	342   	269   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_583	1	393   	304   	Ser	TGA	0	0	48.7	
+flattened_line_585	1	164   	75    	Ser	TGA	0	0	48.7	
+flattened_line_595	1	331   	242   	Ser	TGA	0	0	48.7	
+flattened_line_597	1	371   	282   	Ser	TGA	0	0	48.7	
+flattened_line_611	1	102   	13    	Ser	TGA	0	0	48.7	
+flattened_line_613	1	233   	160   	Leu	TAG	0	0	22.6	pseudo
+flattened_line_633	1	257   	168   	Ser	TGA	0	0	48.1	
+flattened_line_637	1	399   	314   	Ser	TGA	0	0	29.0	pseudo
+flattened_line_665	1	256   	167   	Ser	TGA	0	0	46.7	
+flattened_line_669	1	96    	7     	Ser	TGA	0	0	48.7	
+flattened_line_711	1	318   	229   	Ser	TGA	0	0	48.7	
+flattened_line_713	1	399   	320   	Ser	TGA	0	0	22.0	pseudo
+flattened_line_813	1	175   	102   	Lys	TTT	0	0	36.6	
+flattened_line_815	1	220   	147   	Lys	TTT	0	0	32.1	
+flattened_line_853	1	174   	101   	Lys	TTT	0	0	36.6	
+flattened_line_857	1	168   	98    	Sup	TCA	0	0	45.8	
+flattened_line_907	1	101   	28    	Lys	TTT	0	0	36.6	
+flattened_line_969	1	35    	105   	Phe	GAA	0	0	46.8	
+flattened_line_981	1	164   	235   	Thr	TGT	0	0	56.8	
+flattened_line_1035	1	207   	136   	Arg	TCT	0	0	36.0	pseudo
+flattened_line_1063	1	157   	87    	Sup	TCA	0	0	45.8	
+flattened_line_1067	1	79    	6     	Lys	TTT	0	0	36.6	
+flattened_line_1081	1	190   	120   	Phe	GAA	0	0	46.8	
+flattened_line_1083	1	121   	50    	Arg	TCT	0	0	44.6	
+flattened_line_1087	1	266   	195   	Arg	TCT	0	0	39.9	
+flattened_line_1129	1	237   	164   	Lys	TTT	0	0	29.9	
+flattened_line_1131	1	279   	206   	Lys	TTT	0	0	36.6	
+flattened_line_1133	1	150   	80    	Sup	TCA	0	0	45.8	
+flattened_line_1135	1	205   	132   	Lys	TTT	0	0	34.3	
+flattened_line_1167	1	319   	246   	Met	CAT	0	0	30.9	pseudo
+flattened_line_1167	2	195   	115   	Leu	TAA	0	0	41.7	pseudo
+flattened_line_1191	1	363   	293   	Sup	TCA	0	0	45.8	
+flattened_line_1191	2	162   	92    	Asn	GTT	0	0	55.9	
+flattened_line_1193	1	265   	192   	Met	CAT	0	0	27.4	pseudo
+flattened_line_1193	2	141   	61    	Leu	TAA	0	0	41.7	pseudo
+flattened_line_1197	1	110   	37    	Lys	TTT	0	0	36.6	
+flattened_line_1199	1	305   	232   	Lys	TTT	0	0	36.6	
+flattened_line_1201	1	124   	194   	Phe	GAA	0	0	46.8	
+flattened_line_1203	1	111   	181   	Phe	GAA	0	0	46.8	
+flattened_line_1205	1	61    	131   	Phe	GAA	0	0	46.8	
+flattened_line_1207	1	219   	289   	Phe	GAA	0	0	46.8	
+flattened_line_1209	1	247   	317   	Phe	GAA	0	0	46.8	
+flattened_line_1239	1	221   	148   	Met	CAT	0	0	30.8	pseudo
+flattened_line_1239	2	97    	17    	Leu	TAA	0	0	41.7	pseudo
+flattened_line_1241	1	396   	323   	Met	CAT	0	0	30.9	pseudo
+flattened_line_1241	2	272   	192   	Leu	TAA	0	0	41.8	
+flattened_line_1259	1	146   	216   	Phe	GAA	0	0	47.8	
+flattened_line_1275	1	133   	204   	Thr	TGT	0	0	56.5	
+flattened_line_1275	2	323   	394   	Glu	TTC	0	0	48.1	
+flattened_line_1277	1	115   	186   	Glu	TTC	0	0	48.1	
+flattened_line_1281	1	169   	98    	Arg	TCT	0	0	44.6	
+flattened_line_1331	1	324   	251   	Lys	TTT	0	0	36.6	
+flattened_line_1331	2	72    	2     	Sup	TCA	0	0	45.8	
+flattened_line_1339	1	170   	241   	Glu	TTC	0	0	42.4	
+flattened_line_1345	1	399   	332   	Arg	TCT	0	0	25.8	pseudo
+flattened_line_1347	1	212   	141   	Arg	TCT	0	0	44.3	
+flattened_line_1349	1	219   	148   	Arg	TCT	0	0	36.3	pseudo
+flattened_line_1375	1	279   	209   	Sup	TCA	0	0	45.8	
+flattened_line_1375	2	78    	8     	Asn	GTT	0	0	55.9	
+flattened_line_1377	1	399   	344   	Sup	TCA	0	0	24.5	pseudo
+flattened_line_1377	2	205   	135   	Asn	GTT	0	0	56.2	
+flattened_line_1379	1	256   	326   	Phe	GAA	0	0	46.8	
+flattened_line_1381	1	198   	268   	Phe	GAA	0	0	41.1	
+flattened_line_1401	1	188   	259   	Thr	TGT	0	0	56.4	
+flattened_line_1403	1	368   	297   	Arg	TCT	0	0	44.6	
+flattened_line_1405	1	239   	168   	Arg	TCT	0	0	37.1	
+flattened_line_1445	1	257   	187   	Sup	TCA	0	0	42.2	pseudo
+flattened_line_1447	1	399   	339   	Sup	TCA	0	0	28.7	pseudo
+flattened_line_1447	2	203   	133   	Asn	GTT	0	0	57.3	
+flattened_line_1449	1	292   	219   	Lys	TTT	0	0	36.6	
+flattened_line_1451	1	195   	265   	Phe	GAA	0	0	47.2	
+flattened_line_1459	1	218   	289   	Thr	TGT	0	0	58.9	
+flattened_line_1461	1	43    	114   	Glu	TTC	0	0	48.1	
+flattened_line_1463	1	106   	178   	Ala	TGC	0	0	51.7	
+flattened_line_1465	1	55    	126   	Thr	TGT	0	0	58.9	
+flattened_line_1465	2	245   	316   	Glu	TTC	0	0	48.1	
+flattened_line_1473	1	399   	330   	Arg	TCT	0	0	31.1	pseudo
+flattened_line_1475	1	349   	278   	Arg	TCT	0	0	44.6	
+flattened_line_1495	1	207   	137   	Asn	GTT	0	0	47.2	
+flattened_line_1523	1	257   	187   	Asn	GTT	0	0	55.5	
+flattened_line_1527	1	100   	29    	Thr	TGT	0	0	58.9	
+flattened_line_1535	1	156   	228   	Ala	TGC	0	0	57.5	
+flattened_line_1537	1	33    	104   	Glu	TTC	0	0	48.1	
+flattened_line_1539	1	102   	173   	Thr	TGT	0	0	58.9	
+flattened_line_1539	2	292   	363   	Glu	TTC	0	0	48.1	
+flattened_line_1541	1	35    	107   	Ala	TGC	0	0	51.7	
+flattened_line_1543	1	398   	327   	Arg	TCT	0	0	44.6	
+flattened_line_1565	1	85    	155   	His	GTG	0	0	49.2	
+flattened_line_1569	1	232   	303   	Thr	TGT	0	0	58.9	
+flattened_line_1605	1	242   	172   	Met	CAT	0	0	56.2	
+flattened_line_1615	1	172   	244   	Ala	TGC	0	0	46.2	
+flattened_line_1617	1	236   	307   	Thr	TGT	0	0	58.9	
+flattened_line_1619	1	190   	262   	Ala	TGC	0	0	46.3	
+flattened_line_1665	1	169   	99    	Met	CAT	0	0	57.9	
+flattened_line_1675	1	135   	208   	Val	TAC	0	0	51.1	
+flattened_line_1681	1	15    	87    	Ala	TGC	0	0	51.7	
+flattened_line_1695	1	192   	122   	Met	CAT	0	0	57.9	
+flattened_line_1703	1	49    	122   	Val	TAC	0	0	55.1	
+flattened_line_1735	1	72    	145   	Val	TAC	0	0	55.1	
+flattened_line_1737	1	14    	87    	Val	TAC	0	0	55.1	
+flattened_line_1809	1	119   	190   	Asp	GTC	0	0	48.5	
+flattened_line_1821	1	365   	295   	Met	CAT	0	0	57.9	
+flattened_line_1849	1	303   	374   	Asp	GTC	0	0	48.5	
+flattened_line_1851	1	203   	274   	Asp	GTC	0	0	48.5	
+flattened_line_1865	1	398   	328   	Met	CAT	0	0	57.9	
+flattened_line_1881	1	219   	290   	Asp	GTC	0	0	48.5	
+flattened_line_1889	1	308   	378   	Arg	ACG	0	0	48.0	
+flattened_line_1893	1	150   	220   	Arg	ACG	0	0	38.8	
+flattened_line_1895	1	212   	282   	Arg	ACG	0	0	48.0	
+flattened_line_1897	1	1     	57    	Val	TAC	0	0	23.1	pseudo
+flattened_line_1921	1	279   	350   	Asp	GTC	0	0	48.5	
+flattened_line_1925	1	197   	267   	Arg	ACG	0	0	48.8	
+flattened_line_1927	1	261   	331   	Arg	ACG	0	0	48.0	
+flattened_line_1929	1	283   	353   	Arg	ACG	0	0	48.0	
+flattened_line_1957	1	168   	252   	Tyr	GTA	0	0	32.0	
+flattened_line_1959	1	5     	76    	Asp	GTC	0	0	48.5	
+flattened_line_1959	2	257   	341   	Tyr	GTA	0	0	29.8	
+flattened_line_1961	1	313   	384   	Asp	GTC	0	0	48.5	
+flattened_line_1963	1	153   	224   	Asp	GTC	0	0	49.8	
+flattened_line_1967	1	157   	227   	Arg	ACG	0	0	51.5	
+flattened_line_1993	1	17    	87    	Arg	ACG	0	0	48.0	
+flattened_line_1997	1	123   	193   	Arg	ACG	0	0	48.0	
+flattened_line_2017	1	156   	227   	Asp	GTC	0	0	47.1	
+flattened_line_2019	1	310   	381   	Asp	GTC	0	0	48.5	
+flattened_line_2021	1	251   	321   	Arg	ACG	0	0	48.0	
+flattened_line_2023	1	1     	60    	Arg	ACG	0	0	28.7	pseudo
+flattened_line_2025	1	244   	314   	Arg	ACG	0	0	48.0	
+flattened_line_2041	1	179   	263   	Tyr	GTA	0	0	29.8	
+flattened_line_2055	1	61    	132   	Asp	GTC	0	0	48.5	
+flattened_line_2055	2	313   	397   	Tyr	GTA	0	0	29.8	
+flattened_line_2075	1	235   	319   	Tyr	GTA	0	0	29.8	
+flattened_line_2083	1	106   	190   	Tyr	GTA	0	0	29.8	
+flattened_line_2111	1	313   	243   	Ile	GAT	0	0	50.7	
+flattened_line_2117	1	285   	214   	Glu	TTC	0	0	48.1	
+flattened_line_2119	1	41    	111   	Asn	GTT	0	0	55.9	
+flattened_line_2137	1	121   	51    	Ile	GAT	0	0	50.7	
+flattened_line_2143	1	133   	63    	Ile	GAT	0	0	50.7	
+flattened_line_2161	1	116   	46    	Ile	GAT	0	0	50.7	
+flattened_line_2163	1	94    	24    	Ile	GAT	0	0	50.7	
+flattened_line_2165	1	99    	29    	Ile	GAT	0	0	50.7	
+flattened_line_2173	1	238   	168   	Ile	GAT	0	0	50.4	
+flattened_line_2181	1	128   	58    	Ile	GAT	0	0	50.7	
+flattened_line_2183	1	74    	4     	Ile	GAT	0	0	50.7	
+flattened_line_2207	1	136   	66    	Ile	GAT	0	0	50.7	
+flattened_line_2213	1	149   	79    	Ile	GAT	0	0	50.7	
+flattened_line_2215	1	155   	85    	Ile	GAT	0	0	50.7	
+flattened_line_2225	1	138   	68    	Ile	GAT	0	0	50.7	
+flattened_line_2231	1	208   	138   	Ile	GAT	0	0	51.0	
+flattened_line_2233	1	210   	140   	Ile	GAT	0	0	39.5	pseudo
+flattened_line_2241	1	115   	45    	Ile	GAT	0	0	50.7	
+flattened_line_2243	1	280   	210   	Ile	GAT	0	0	50.7	
+flattened_line_2245	1	106   	36    	Ile	GAT	0	0	50.7	
+flattened_line_2259	1	236   	166   	Ile	GAT	0	0	43.0	pseudo
+flattened_line_2271	1	172   	102   	Ile	GAT	0	0	50.7	
+flattened_line_2277	1	283   	213   	Ile	GAT	0	0	50.7	
+flattened_line_2279	1	266   	196   	Ile	GAT	0	0	43.6	
+flattened_line_2287	1	77    	7     	Ile	GAT	0	0	50.7	
+flattened_line_2293	1	202   	132   	Ile	GAT	0	0	43.8	pseudo
+flattened_line_2299	1	338   	268   	Ile	GAT	0	0	50.7	
+flattened_line_2301	1	310   	240   	Ile	GAT	0	0	50.7	
+flattened_line_2305	1	258   	188   	Ile	GAT	0	0	40.9	pseudo
+flattened_line_2307	1	253   	183   	Ile	GAT	0	0	45.0	pseudo
+flattened_line_2309	1	284   	214   	Ile	GAT	0	0	50.7	
+flattened_line_2313	1	168   	98    	Ile	GAT	0	0	50.7	
+flattened_line_2323	1	247   	177   	Ile	GAT	0	0	40.2	pseudo
+flattened_line_2325	1	287   	217   	Ile	GAT	0	0	50.7	
+flattened_line_2337	1	328   	258   	Ile	GAT	0	0	50.7	
+flattened_line_2339	1	330   	260   	Ile	GAT	0	0	50.7	
+flattened_line_2347	1	399   	345   	Ile	GAT	0	0	23.4	pseudo
+flattened_line_2353	1	348   	278   	Ile	GAT	0	0	50.7	
+flattened_line_2363	1	190   	120   	Ile	GAT	0	0	50.7	
+flattened_line_2365	1	225   	155   	Ile	GAT	0	0	45.4	
+flattened_line_2367	1	214   	144   	Ile	GAT	0	0	53.2	
+flattened_line_2377	1	341   	271   	Ile	GAT	0	0	50.7	
+flattened_line_2381	1	220   	150   	Ile	GAT	0	0	50.7	pseudo
+flattened_line_2383	1	218   	148   	Ile	GAT	0	0	46.2	pseudo
+flattened_line_2385	1	219   	149   	Ile	GAT	0	0	43.9	pseudo
+flattened_line_2405	1	399   	329   	Ile	GAT	0	0	50.7	
+flattened_line_2407	1	380   	310   	Ile	GAT	0	0	50.7	
+flattened_line_2409	1	339   	269   	Ile	GAT	0	0	50.7	
+flattened_line_2413	1	370   	300   	Ile	GAT	0	0	50.7	
+flattened_line_2415	1	378   	308   	Ile	GAT	0	0	50.7	
+flattened_line_2443	1	386   	316   	Ile	GAT	0	0	50.7	
+flattened_line_2447	1	377   	307   	Ile	GAT	0	0	50.7	
+flattened_line_2453	1	343   	273   	Ile	GAT	0	0	50.7	
+flattened_line_2777	1	44    	117   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2809	1	193   	266   	Leu	TAG	0	0	21.6	pseudo
+flattened_line_2811	1	63    	136   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2813	1	34    	107   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2835	1	25    	98    	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2839	1	206   	279   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2841	1	49    	122   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2843	1	64    	137   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2845	1	78    	151   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2847	1	45    	118   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2883	1	154   	227   	Leu	TAG	0	0	32.4	pseudo
+flattened_line_2885	1	177   	266   	Ser	TGA	0	0	44.4	
+flattened_line_2887	1	223   	296   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2889	1	71    	144   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2891	1	199   	288   	Ser	TGA	0	0	40.2	
+flattened_line_2905	1	162   	251   	Thr	TGT	0	0	48.6	
+flattened_line_2907	1	176   	265   	Ser	TGA	0	0	40.7	
+flattened_line_2909	1	25    	98    	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2945	1	189   	278   	Ser	TGA	0	0	42.3	
+flattened_line_2947	1	173   	262   	Ser	TGA	0	0	44.1	
+flattened_line_2949	1	156   	229   	Leu	TAG	0	0	32.5	pseudo
+flattened_line_2951	1	26    	99    	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2955	1	78    	151   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2957	1	226   	315   	Ser	TGA	0	0	48.7	
+flattened_line_2959	1	92    	181   	Ser	TGA	0	0	48.7	
+flattened_line_2961	1	229   	302   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_2967	1	86    	159   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3015	1	172   	261   	Ser	TGA	0	0	46.9	
+flattened_line_3017	1	132   	221   	Ser	TGA	0	0	40.9	
+flattened_line_3021	1	226   	299   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3025	1	57    	130   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3027	1	53    	126   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3029	1	111   	200   	Ser	TGA	0	0	49.9	
+flattened_line_3033	1	171   	260   	Ser	TGA	0	0	42.8	
+flattened_line_3091	1	186   	275   	Ser	TGA	0	0	40.3	pseudo
+flattened_line_3093	1	202   	291   	Ser	TGA	0	0	48.7	
+flattened_line_3097	1	82    	155   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3099	1	54    	127   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3101	1	89    	178   	Ser	TGA	0	0	48.7	
+flattened_line_3103	1	71    	160   	Ser	TGA	0	0	48.7	
+flattened_line_3105	1	30    	119   	Ser	TGA	0	0	48.7	
+flattened_line_3109	1	173   	246   	Leu	TAG	0	0	26.8	pseudo
+flattened_line_3111	1	171   	260   	Ser	TGA	0	0	39.7	
+flattened_line_3171	1	140   	229   	Ser	TGA	0	0	46.3	
+flattened_line_3177	1	119   	192   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3179	1	100   	189   	Ser	TGA	0	0	48.7	
+flattened_line_3181	1	93    	182   	Ser	TGA	0	0	48.7	
+flattened_line_3247	1	149   	222   	Leu	TAG	0	0	21.4	pseudo
+flattened_line_3249	1	128   	217   	Ser	TGA	0	0	42.9	
+flattened_line_3255	1	102   	175   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3257	1	3     	92    	Ser	TGA	0	0	48.7	
+flattened_line_3259	1	106   	195   	Ser	TGA	0	0	48.7	
+flattened_line_3265	1	26    	115   	Ser	TGA	0	0	48.7	
+flattened_line_3337	1	43    	132   	Ser	TGA	0	0	48.7	
+flattened_line_3341	1	120   	209   	Ser	TGA	0	0	45.8	
+flattened_line_3345	1	78    	167   	Ser	TGA	0	0	48.7	
+flattened_line_3349	1	49    	138   	Ser	TGA	0	0	48.7	
+flattened_line_3449	1	172   	245   	Leu	TAG	0	0	24.0	pseudo
+flattened_line_3625	1	245   	174   	Glu	TTC	0	0	47.5	
+flattened_line_3699	1	25    	98    	Lys	TTT	0	0	36.6	
+flattened_line_3699	2	277   	347   	Sup	TCA	0	0	45.8	
+flattened_line_3749	1	315   	388   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_3823	1	32    	102   	Sup	TCA	0	0	45.8	
+flattened_line_3823	2	233   	303   	Asn	GTT	0	0	55.9	
+flattened_line_3847	1	384   	314   	Phe	GAA	0	0	46.8	
+flattened_line_3959	1	199   	272   	Lys	TTT	0	0	29.2	
+flattened_line_3997	1	242   	171   	Glu	TTC	0	0	46.0	
+flattened_line_4045	1	64    	137   	Met	CAT	0	0	30.9	pseudo
+flattened_line_4045	2	188   	268   	Leu	TAA	0	0	38.1	pseudo
+flattened_line_4047	1	13    	86    	Met	CAT	0	0	30.9	pseudo
+flattened_line_4047	2	137   	217   	Leu	TAA	0	0	36.1	pseudo
+flattened_line_4053	1	197   	270   	Met	CAT	0	0	29.9	pseudo
+flattened_line_4109	1	190   	263   	Lys	TTT	0	0	31.0	
+flattened_line_4111	1	207   	280   	Lys	TTT	0	0	36.6	
+flattened_line_4113	1	235   	305   	Sup	TCA	0	0	45.8	
+flattened_line_4115	1	143   	216   	Lys	TTT	0	0	37.6	
+flattened_line_4123	1	197   	270   	Lys	TTT	0	0	35.6	
+flattened_line_4169	1	332   	399   	Arg	TCT	0	0	27.7	pseudo
+flattened_line_4183	1	155   	226   	Arg	TCT	0	0	44.8	
+flattened_line_4187	1	272   	343   	Arg	TCT	0	0	44.6	
+flattened_line_4215	1	49    	122   	Met	CAT	0	0	30.9	pseudo
+flattened_line_4215	2	173   	253   	Leu	TAA	0	0	32.9	pseudo
+flattened_line_4287	1	132   	205   	Lys	TTT	0	0	33.0	
+flattened_line_4291	1	189   	262   	Lys	TTT	0	0	29.7	
+flattened_line_4293	1	234   	307   	Lys	TTT	0	0	36.6	
+flattened_line_4297	1	184   	257   	Lys	TTT	0	0	34.7	
+flattened_line_4299	1	98    	171   	Met	CAT	0	0	30.9	pseudo
+flattened_line_4299	2	222   	302   	Leu	TAA	0	0	41.7	pseudo
+flattened_line_4309	1	323   	396   	Lys	TTT	0	0	36.6	
+flattened_line_4325	1	282   	212   	Phe	GAA	0	0	46.8	
+flattened_line_4331	1	389   	319   	Phe	GAA	0	0	46.8	
+flattened_line_4337	1	363   	293   	Phe	GAA	0	0	46.8	
+flattened_line_4363	1	237   	166   	Thr	TGT	0	0	60.2	
+flattened_line_4367	1	276   	347   	Arg	TCT	0	0	44.6	
+flattened_line_4369	1	277   	348   	Arg	TCT	0	0	44.6	
+flattened_line_4381	1	141   	212   	Arg	TCT	0	0	34.8	pseudo
+flattened_line_4481	1	5     	78    	Lys	TTT	0	0	36.6	
+flattened_line_4481	2	257   	327   	Sup	TCA	0	0	45.8	
+flattened_line_4483	1	16    	86    	Sup	TCA	0	0	45.8	
+flattened_line_4483	2	217   	287   	Asn	GTT	0	0	55.9	
+flattened_line_4485	1	15    	85    	Sup	TCA	0	0	45.8	
+flattened_line_4485	2	216   	286   	Asn	GTT	0	0	55.9	
+flattened_line_4487	1	186   	259   	Lys	TTT	0	0	39.1	
+flattened_line_4493	1	97    	170   	Lys	TTT	0	0	36.6	
+flattened_line_4495	1	113   	186   	Lys	TTT	0	0	36.6	
+flattened_line_4499	1	336   	266   	Phe	GAA	0	0	46.8	
+flattened_line_4511	1	326   	256   	Phe	GAA	0	0	46.8	
+flattened_line_4567	1	137   	208   	Arg	TCT	0	0	38.5	pseudo
+flattened_line_4569	1	311   	382   	Arg	TCT	0	0	44.6	
+flattened_line_4577	1	118   	189   	Arg	TCT	0	0	44.6	
+flattened_line_4609	1	102   	34    	Undet	NNN	0	0	27.8	pseudo
+flattened_line_4625	1	5     	78    	Met	CAT	0	0	30.9	pseudo
+flattened_line_4625	2	129   	209   	Leu	TAA	0	0	38.9	pseudo
+flattened_line_4701	1	138   	211   	Lys	TTT	0	0	28.8	
+flattened_line_4703	1	194   	267   	Lys	TTT	0	0	34.0	
+flattened_line_4705	1	174   	247   	Lys	TTT	0	0	37.8	
+flattened_line_4707	1	217   	287   	Sup	TCA	0	0	45.8	
+flattened_line_4709	1	18    	88    	Sup	TCA	0	0	45.8	
+flattened_line_4709	2	219   	289   	Asn	GTT	0	0	55.9	
+flattened_line_4711	1	261   	334   	Lys	TTT	0	0	36.6	
+flattened_line_4717	1	120   	193   	Lys	TTT	0	0	36.6	
+flattened_line_4729	1	299   	229   	Phe	GAA	0	0	46.8	
+flattened_line_4731	1	342   	272   	Phe	GAA	0	0	46.8	
+flattened_line_4737	1	394   	324   	Phe	GAA	0	0	46.8	
+flattened_line_4739	1	375   	305   	Phe	GAA	0	0	46.8	
+flattened_line_4761	1	90    	18    	Ala	TGC	0	0	51.7	
+flattened_line_4763	1	239   	168   	Thr	TGT	0	0	52.4	
+flattened_line_4777	1	142   	213   	Arg	TCT	0	0	44.3	
+flattened_line_4811	1	77    	150   	Met	CAT	0	0	30.9	pseudo
+flattened_line_4811	2	201   	281   	Leu	TAA	0	0	41.7	pseudo
+flattened_line_4813	1	19    	92    	Met	CAT	0	0	30.9	pseudo
+flattened_line_4813	2	143   	223   	Leu	TAA	0	0	38.3	pseudo
+flattened_line_4815	1	122   	202   	Leu	TAA	0	0	37.2	pseudo
+flattened_line_4911	1	247   	320   	Lys	TTT	0	0	36.6	
+flattened_line_4913	1	111   	181   	Sup	TCA	0	0	45.8	
+flattened_line_4913	2	312   	382   	Asn	GTT	0	0	55.9	
+flattened_line_4915	1	61    	134   	Lys	TTT	0	0	36.6	
+flattened_line_4915	2	313   	383   	Sup	TCA	0	0	45.8	
+flattened_line_4917	1	75    	148   	Lys	TTT	0	0	36.6	
+flattened_line_4917	2	327   	397   	Sup	TCA	0	0	45.8	
+flattened_line_4919	1	217   	287   	Sup	TCA	0	0	45.8	
+flattened_line_4921	1	18    	91    	Lys	TTT	0	0	36.6	
+flattened_line_4921	2	270   	340   	Sup	TCA	0	0	45.8	
+flattened_line_4923	1	182   	252   	Sup	TCA	0	0	41.9	pseudo
+flattened_line_4925	1	194   	264   	Sup	TCA	0	0	36.2	pseudo
+flattened_line_4929	1	260   	333   	Lys	TTT	0	0	36.6	
+flattened_line_4931	1	117   	190   	Lys	TTT	0	0	36.6	
+flattened_line_4939	1	237   	167   	Phe	GAA	0	0	38.7	
+flattened_line_4941	1	234   	164   	Leu	GAG	0	0	46.8	
+flattened_line_4943	1	296   	226   	Phe	GAA	0	0	46.8	
+flattened_line_4945	1	356   	286   	Phe	GAA	0	0	46.8	
+flattened_line_4947	1	337   	267   	His	GTG	0	0	49.2	
+flattened_line_4973	1	95    	23    	Ala	TGC	0	0	51.7	
+flattened_line_4975	1	269   	198   	Thr	TGT	0	0	50.3	
+flattened_line_4975	2	79    	8     	Glu	TTC	0	0	48.1	
+flattened_line_4977	1	162   	90    	Ala	TGC	0	0	51.7	
+flattened_line_4979	1	237   	166   	Glu	TTC	0	0	48.2	
+flattened_line_4981	1	255   	326   	Arg	TCT	0	0	44.6	
+flattened_line_4983	1	231   	302   	Arg	TCT	0	0	44.6	
+flattened_line_4987	1	205   	276   	Arg	TCT	0	0	44.6	
+flattened_line_5039	1	160   	233   	Met	CAT	0	0	22.8	pseudo
+flattened_line_5039	2	284   	364   	Leu	TAA	0	0	41.7	pseudo
+flattened_line_5125	1	184   	254   	Sup	TCA	0	0	36.3	pseudo
+flattened_line_5127	1	93    	166   	Lys	TTT	0	0	36.6	
+flattened_line_5129	1	65    	135   	Sup	TCA	0	0	45.8	
+flattened_line_5129	2	266   	336   	Asn	GTT	0	0	55.9	
+flattened_line_5131	1	79    	149   	Sup	TCA	0	0	45.8	
+flattened_line_5131	2	280   	350   	Asn	GTT	0	0	55.9	
+flattened_line_5135	1	171   	241   	Sup	TCA	0	0	40.1	pseudo
+flattened_line_5141	1	335   	265   	Phe	GAA	0	0	46.8	
+flattened_line_5143	1	343   	273   	Phe	GAA	0	0	46.8	
+flattened_line_5145	1	288   	218   	Phe	GAA	0	0	46.8	
+flattened_line_5147	1	257   	187   	Phe	GAA	0	0	46.5	
+flattened_line_5151	1	223   	153   	Phe	GAA	0	0	44.1	
+flattened_line_5181	1	290   	218   	Ala	TGC	0	0	51.7	
+flattened_line_5183	1	381   	310   	Glu	TTC	0	0	48.1	
+flattened_line_5185	1	223   	152   	Glu	TTC	0	0	44.3	
+flattened_line_5187	1	103   	31    	Ala	TGC	0	0	51.7	
+flattened_line_5189	1	398   	327   	Thr	TGT	0	0	58.9	
+flattened_line_5189	2	208   	137   	Glu	TTC	0	0	47.4	
+flattened_line_5191	1	264   	193   	Glu	TTC	0	0	42.1	
+flattened_line_5193	1	213   	283   	Phe	GAA	0	0	46.8	
+flattened_line_5197	1	294   	223   	Glu	TTC	0	0	48.1	
+flattened_line_5199	1	306   	235   	Glu	TTC	0	0	48.1	
+flattened_line_5201	1	76    	147   	Arg	TCT	0	0	44.6	
+flattened_line_5203	1	243   	314   	Arg	TCT	0	0	44.6	
+flattened_line_5205	1	243   	314   	Arg	TCT	0	0	44.6	
+flattened_line_5219	1	204   	275   	Arg	TCT	0	0	44.6	
+flattened_line_5221	1	213   	284   	Arg	TCT	0	0	44.6	
+flattened_line_5223	1	124   	195   	Arg	TCT	0	0	44.6	
+flattened_line_5227	1	186   	257   	Arg	TCT	0	0	47.1	
+flattened_line_5231	1	106   	177   	Arg	TCT	0	0	44.6	
+flattened_line_5313	1	187   	257   	Sup	TCA	0	0	36.3	pseudo
+flattened_line_5315	1	55    	125   	Sup	TCA	0	0	45.8	
+flattened_line_5315	2	256   	326   	Asn	GTT	0	0	55.9	
+flattened_line_5317	1	37    	110   	Lys	TTT	0	0	36.6	
+flattened_line_5317	2	289   	359   	Sup	TCA	0	0	45.8	
+flattened_line_5319	1	188   	258   	Asn	GTT	0	0	45.4	
+flattened_line_5321	1	60    	130   	Sup	TCA	0	0	45.8	
+flattened_line_5321	2	261   	331   	Asn	GTT	0	0	55.9	
+flattened_line_5323	1	63    	133   	Sup	TCA	0	0	45.8	
+flattened_line_5323	2	264   	334   	Asn	GTT	0	0	55.9	
+flattened_line_5329	1	259   	189   	Phe	GAA	0	0	42.3	
+flattened_line_5331	1	142   	72    	Phe	GAA	0	0	46.8	
+flattened_line_5339	1	269   	196   	Glu	TTC	0	0	41.2	
+flattened_line_5341	1	375   	304   	Thr	TGT	0	0	58.9	
+flattened_line_5341	2	185   	114   	Glu	TTC	0	0	48.1	
+flattened_line_5343	1	374   	303   	Glu	TTC	0	0	48.1	
+flattened_line_5345	1	373   	302   	Glu	TTC	0	0	48.1	
+flattened_line_5347	1	395   	324   	Thr	TGT	0	0	58.9	
+flattened_line_5347	2	205   	134   	Glu	TTC	0	0	50.4	
+flattened_line_5349	1	393   	322   	Thr	TGT	0	0	58.9	
+flattened_line_5349	2	203   	132   	Glu	TTC	0	0	38.2	
+flattened_line_5351	1	392   	321   	Thr	TGT	0	0	58.9	
+flattened_line_5351	2	202   	131   	Glu	TTC	0	0	43.5	
+flattened_line_5353	1	388   	317   	Glu	TTC	0	0	48.1	
+flattened_line_5353	2	58    	1     	Ala	TGC	0	0	22.2	pseudo
+flattened_line_5355	1	277   	205   	Ala	TGC	0	0	51.7	
+flattened_line_5357	1	250   	179   	Thr	TGT	0	0	55.0	
+flattened_line_5359	1	293   	222   	Thr	TGT	0	0	58.9	
+flattened_line_5359	2	103   	32    	Glu	TTC	0	0	48.1	
+flattened_line_5361	1	222   	292   	Phe	GAA	0	0	46.8	
+flattened_line_5363	1	290   	219   	Glu	TTC	0	0	48.1	
+flattened_line_5365	1	163   	91    	Ala	TGC	0	0	51.7	
+flattened_line_5371	1	32    	103   	Arg	TCT	0	0	44.6	
+flattened_line_5373	1	232   	303   	Arg	TCT	0	0	44.6	
+flattened_line_5375	1	178   	249   	Arg	TCT	0	0	35.8	pseudo
+flattened_line_5477	1	161   	231   	Sup	TCA	0	0	38.1	
+flattened_line_5479	1	66    	139   	Lys	TTT	0	0	36.6	
+flattened_line_5479	2	318   	388   	Sup	TCA	0	0	45.8	
+flattened_line_5481	1	185   	255   	Asn	GTT	0	0	61.2	
+flattened_line_5497	1	73    	3     	Phe	GAA	0	0	46.8	
+flattened_line_5499	1	261   	191   	Phe	GAA	0	0	39.3	
+flattened_line_5503	1	174   	104   	Phe	GAA	0	0	46.8	
+flattened_line_5505	1	271   	201   	His	GTG	0	0	49.2	
+flattened_line_5529	1	288   	216   	Ala	TGC	0	0	51.7	
+flattened_line_5531	1	261   	190   	Glu	TTC	0	0	48.1	
+flattened_line_5533	1	302   	231   	Glu	TTC	0	0	48.1	
+flattened_line_5535	1	271   	200   	Thr	TGT	0	0	57.7	
+flattened_line_5535	2	81    	10    	Glu	TTC	0	0	48.1	
+flattened_line_5537	1	171   	100   	Thr	TGT	0	0	58.9	
+flattened_line_5539	1	64    	135   	Arg	TCT	0	0	44.6	
+flattened_line_5559	1	36    	107   	Arg	TCT	0	0	44.6	
+flattened_line_5563	1	52    	123   	Arg	TCT	0	0	44.6	
+flattened_line_5637	1	45    	115   	Asn	GTT	0	0	55.9	
+flattened_line_5639	1	125   	195   	Sup	TCA	0	0	45.8	
+flattened_line_5639	2	326   	396   	Asn	GTT	0	0	55.9	
+flattened_line_5641	1	88    	158   	Asn	GTT	0	0	55.9	
+flattened_line_5643	1	177   	247   	Asn	GTT	0	0	53.1	
+flattened_line_5645	1	88    	158   	Sup	TCA	0	0	45.8	
+flattened_line_5645	2	289   	359   	Asn	GTT	0	0	55.9	
+flattened_line_5647	1	1     	56    	Asn	GTT	0	0	25.9	pseudo
+flattened_line_5647	2	335   	399   	Met	CAT	0	0	39.3	
+flattened_line_5649	1	156   	226   	Sup	TCA	0	0	45.0	pseudo
+flattened_line_5657	1	342   	272   	His	GTG	0	0	49.2	
+flattened_line_5681	1	312   	241   	Thr	TGT	0	0	58.9	
+flattened_line_5681	2	122   	51    	Glu	TTC	0	0	48.1	
+flattened_line_5683	1	361   	290   	Thr	TGT	0	0	58.9	
+flattened_line_5683	2	171   	100   	Glu	TTC	0	0	48.1	
+flattened_line_5685	1	340   	269   	Thr	TGT	0	0	58.9	
+flattened_line_5685	2	150   	79    	Glu	TTC	0	0	48.1	
+flattened_line_5687	1	348   	277   	Thr	TGT	0	0	58.9	
+flattened_line_5687	2	158   	87    	Glu	TTC	0	0	48.1	
+flattened_line_5689	1	154   	83    	Thr	TGT	0	0	58.9	
+flattened_line_5691	1	142   	70    	Ala	TGC	0	0	51.7	
+flattened_line_5695	1	84    	13    	Thr	TGT	0	0	58.9	
+flattened_line_5697	1	290   	219   	Glu	TTC	0	0	48.1	
+flattened_line_5699	1	316   	245   	Glu	TTC	0	0	48.1	
+flattened_line_5701	1	305   	234   	Glu	TTC	0	0	48.1	
+flattened_line_5703	1	286   	214   	Ala	TGC	0	0	51.7	
+flattened_line_5705	1	223   	294   	Arg	TCT	0	0	44.6	
+flattened_line_5717	1	4     	75    	Arg	TCT	0	0	44.6	
+flattened_line_5729	1	304   	232   	Ala	TGC	0	0	51.7	
+flattened_line_5787	1	159   	229   	Asn	GTT	0	0	54.3	
+flattened_line_5789	1	43    	113   	Asn	GTT	0	0	55.9	
+flattened_line_5791	1	329   	399   	Met	CAT	0	0	57.9	
+flattened_line_5793	1	7     	77    	Asn	GTT	0	0	55.9	
+flattened_line_5795	1	171   	241   	Asn	GTT	0	0	50.2	
+flattened_line_5833	1	319   	247   	Ala	TGC	0	0	51.7	
+flattened_line_5835	1	148   	76    	Ala	TGC	0	0	51.7	
+flattened_line_5837	1	260   	188   	Ala	TGC	0	0	42.1	pseudo
+flattened_line_5839	1	265   	193   	Ala	TGC	0	0	45.7	
+flattened_line_5841	1	217   	146   	Thr	TGT	0	0	51.7	
+flattened_line_5847	1	146   	75    	Thr	TGT	0	0	58.9	
+flattened_line_5849	1	300   	229   	Thr	TGT	0	0	58.9	
+flattened_line_5849	2	110   	39    	Glu	TTC	0	0	48.1	
+flattened_line_5853	1	313   	242   	Glu	TTC	0	0	48.1	
+flattened_line_5855	1	192   	120   	Ala	TGC	0	0	51.7	
+flattened_line_5857	1	359   	287   	Ala	TGC	0	0	51.7	
+flattened_line_5859	1	351   	280   	Thr	TGT	0	0	58.9	
+flattened_line_5859	2	161   	90    	Glu	TTC	0	0	48.1	
+flattened_line_5871	1	6     	77    	Arg	TCT	0	0	44.6	
+flattened_line_5933	1	130   	200   	Sup	TCA	0	0	45.0	pseudo
+flattened_line_5933	2	333   	399   	Asn	GTT	0	0	37.3	
+flattened_line_5971	1	255   	183   	Ala	TGC	0	0	46.2	pseudo
+flattened_line_5973	1	270   	198   	Ala	TGC	0	0	49.7	
+flattened_line_5975	1	269   	197   	Ala	TGC	0	0	52.8	
+flattened_line_5977	1	152   	80    	Ala	TGC	0	0	51.7	
+flattened_line_5979	1	342   	270   	Ala	TGC	0	0	51.7	
+flattened_line_5981	1	82    	11    	Thr	TGT	0	0	58.9	
+flattened_line_6005	1	19    	90    	Arg	TCT	0	0	44.6	
+flattened_line_6017	1	307   	235   	Ala	TGC	0	0	51.7	
+flattened_line_6067	1	142   	212   	Asn	GTT	0	0	46.2	
+flattened_line_6069	1	104   	174   	Asn	GTT	0	0	55.9	
+flattened_line_6071	1	322   	392   	Met	CAT	0	0	57.9	
+flattened_line_6073	1	74    	144   	Asn	GTT	0	0	55.9	
+flattened_line_6081	1	351   	281   	His	GTG	0	0	49.2	
+flattened_line_6083	1	350   	280   	His	GTG	0	0	49.2	
+flattened_line_6087	1	287   	358   	Thr	TGT	0	0	58.9	
+flattened_line_6089	1	134   	61    	Val	TAC	0	0	55.1	
+flattened_line_6091	1	314   	244   	His	GTG	0	0	49.2	
+flattened_line_6099	1	143   	72    	Thr	TGT	0	0	58.9	
+flattened_line_6101	1	263   	191   	Ala	TGC	0	0	44.6	
+flattened_line_6103	1	112   	41    	Thr	TGT	0	0	58.9	
+flattened_line_6105	1	129   	58    	Thr	TGT	0	0	58.9	
+flattened_line_6173	1	147   	217   	Asn	GTT	0	0	50.3	
+flattened_line_6175	1	141   	211   	Asn	GTT	0	0	48.7	
+flattened_line_6177	1	184   	254   	Met	CAT	0	0	48.5	
+flattened_line_6179	1	266   	336   	Met	CAT	0	0	57.9	
+flattened_line_6181	1	223   	150   	Val	TAC	0	0	51.1	
+flattened_line_6185	1	278   	349   	Thr	TGT	0	0	58.9	
+flattened_line_6187	1	135   	62    	Val	TAC	0	0	55.1	
+flattened_line_6199	1	347   	275   	Ala	TGC	0	0	51.7	
+flattened_line_6203	1	354   	282   	Ala	TGC	0	0	51.7	
+flattened_line_6205	1	380   	308   	Ala	TGC	0	0	51.7	
+flattened_line_6271	1	92    	162   	Asn	GTT	0	0	55.9	
+flattened_line_6273	1	183   	253   	Met	CAT	0	0	49.4	
+flattened_line_6275	1	266   	336   	Met	CAT	0	0	57.9	
+flattened_line_6309	1	125   	54    	Thr	TGT	0	0	58.9	
+flattened_line_6317	1	110   	39    	Thr	TGT	0	0	58.9	
+flattened_line_6319	1	202   	130   	Ala	TGC	0	0	49.1	
+flattened_line_6395	1	231   	301   	Met	CAT	0	0	57.9	
+flattened_line_6397	1	25    	95    	Met	CAT	0	0	57.9	
+flattened_line_6399	1	147   	217   	Met	CAT	0	0	52.1	
+flattened_line_6413	1	385   	312   	Val	TAC	0	0	55.1	
+flattened_line_6515	1	32    	102   	Met	CAT	0	0	57.9	
+flattened_line_6517	1	6     	76    	Met	CAT	0	0	57.9	
+flattened_line_6523	1	203   	130   	Val	TAC	0	0	54.1	
+flattened_line_6537	1	388   	318   	Met	CAT	0	0	57.9	
+flattened_line_6633	1	67    	137   	Met	CAT	0	0	57.9	
+flattened_line_6635	1	17    	87    	Met	CAT	0	0	57.9	
+flattened_line_6645	1	73    	3     	Arg	ACG	0	0	48.0	
+flattened_line_6649	1	212   	139   	Val	TAC	0	0	44.6	
+flattened_line_6657	1	303   	230   	Val	TAC	0	0	55.1	
+flattened_line_6707	1	101   	30    	Asp	GTC	0	0	48.5	
+flattened_line_6747	1	238   	308   	Met	CAT	0	0	57.9	
+flattened_line_6751	1	17    	87    	Met	CAT	0	0	57.9	
+flattened_line_6759	1	228   	158   	Arg	ACG	0	0	50.2	
+flattened_line_6763	1	173   	103   	Arg	ACG	0	0	48.0	
+flattened_line_6765	1	399   	326   	Val	TAC	0	0	55.1	
+flattened_line_6777	1	327   	254   	Val	TAC	0	0	55.1	
+flattened_line_6779	1	296   	223   	Val	TAC	0	0	55.1	
+flattened_line_6861	1	64    	134   	Met	CAT	0	0	57.9	
+flattened_line_6863	1	172   	242   	Met	CAT	0	0	51.0	
+flattened_line_6939	1	83    	12    	Asp	GTC	0	0	48.5	
+flattened_line_6941	1	266   	195   	Asp	GTC	0	0	39.7	
+flattened_line_6965	1	142   	212   	Met	CAT	0	0	48.2	
+flattened_line_6967	1	176   	106   	Arg	ACG	0	0	48.0	
+flattened_line_6971	1	198   	128   	Arg	ACG	0	0	48.0	
+flattened_line_6975	1	227   	157   	Arg	ACG	0	0	42.5	
+flattened_line_6977	1	202   	132   	Arg	ACG	0	0	46.6	
+flattened_line_6981	1	102   	32    	Arg	ACG	0	0	48.0	
+flattened_line_6983	1	75    	5     	Arg	ACG	0	0	48.0	
+flattened_line_7015	1	23    	93    	Arg	ACG	0	0	48.0	
+flattened_line_7041	1	261   	190   	Asp	GTC	0	0	39.9	
+flattened_line_7045	1	249   	178   	Asp	GTC	0	0	48.4	
+flattened_line_7059	1	57    	127   	Met	CAT	0	0	57.9	
+flattened_line_7061	1	86    	156   	Met	CAT	0	0	57.9	
+flattened_line_7065	1	262   	192   	Arg	ACG	0	0	44.4	
+flattened_line_7069	1	246   	176   	Arg	ACG	0	0	37.7	
+flattened_line_7071	1	235   	165   	Arg	ACG	0	0	42.5	
+flattened_line_7161	1	287   	216   	Asp	GTC	0	0	48.5	
+flattened_line_7163	1	116   	45    	Asp	GTC	0	0	48.5	
+flattened_line_7165	1	130   	59    	Asp	GTC	0	0	48.5	
+flattened_line_7169	1	248   	177   	Asp	GTC	0	0	45.2	
+flattened_line_7171	1	248   	177   	Asp	GTC	0	0	42.5	
+flattened_line_7179	1	159   	89    	Arg	ACG	0	0	48.0	
+flattened_line_7181	1	120   	50    	Arg	ACG	0	0	48.0	
+flattened_line_7183	1	251   	181   	Arg	ACG	0	0	39.4	
+flattened_line_7187	1	185   	115   	Arg	ACG	0	0	48.0	
+flattened_line_7205	1	324   	251   	Val	TAC	0	0	55.1	
+flattened_line_7257	1	259   	188   	Asp	GTC	0	0	40.6	
+flattened_line_7259	1	325   	254   	Asp	GTC	0	0	48.5	
+flattened_line_7261	1	399   	329   	Asp	GTC	0	0	37.9	
+flattened_line_7261	2	148   	64    	Tyr	GTA	0	0	29.8	
+flattened_line_7263	1	178   	107   	Asp	GTC	0	0	48.5	
+flattened_line_7265	1	150   	79    	Asp	GTC	0	0	48.5	
+flattened_line_7269	1	159   	89    	Arg	ACG	0	0	48.0	
+flattened_line_7271	1	110   	40    	Arg	ACG	0	0	48.0	
+flattened_line_7273	1	290   	220   	Arg	ACG	0	0	48.0	
+flattened_line_7275	1	120   	50    	Arg	ACG	0	0	48.0	
+flattened_line_7277	1	252   	182   	Arg	ACG	0	0	38.2	
+flattened_line_7279	1	317   	247   	Arg	ACG	0	0	48.0	
+flattened_line_7287	1	378   	308   	Met	CAT	0	0	57.9	
+flattened_line_7335	1	162   	91    	Asp	GTC	0	0	48.5	
+flattened_line_7337	1	111   	40    	Asp	GTC	0	0	48.5	
+flattened_line_7339	1	252   	181   	Asp	GTC	0	0	40.0	
+flattened_line_7341	1	254   	183   	Asp	GTC	0	0	43.0	
+flattened_line_7343	1	168   	97    	Asp	GTC	0	0	48.5	
+flattened_line_7345	1	208   	138   	Arg	ACG	0	0	48.3	
+flattened_line_7347	1	135   	65    	Arg	ACG	0	0	48.0	
+flattened_line_7349	1	355   	285   	Arg	ACG	0	0	48.0	
+flattened_line_7351	1	294   	224   	Arg	ACG	0	0	48.0	
+flattened_line_7353	1	216   	146   	Arg	ACG	0	0	38.6	
+flattened_line_7399	1	91    	20    	Asp	GTC	0	0	48.5	
+flattened_line_7401	1	341   	257   	Tyr	GTA	0	0	29.8	
+flattened_line_7403	1	194   	110   	Tyr	GTA	0	0	29.8	
+flattened_line_7405	1	193   	109   	Tyr	GTA	0	0	29.8	
+flattened_line_7417	1	357   	287   	Arg	ACG	0	0	48.0	
+flattened_line_7419	1	348   	278   	Arg	ACG	0	0	48.0	
+flattened_line_7457	1	338   	254   	Tyr	GTA	0	0	29.8	
+flattened_line_7461	1	397   	328   	Arg	ACG	0	0	30.1	
+flattened_line_7553	1	244   	160   	Tyr	GTA	0	0	26.0	
+flattened_line_7557	1	284   	200   	Tyr	GTA	0	0	28.6	pseudo
+flattened_line_7559	1	310   	226   	Tyr	GTA	0	0	29.8	
+flattened_line_7599	1	279   	195   	Tyr	GTA	0	0	23.2	
+flattened_line_7601	1	278   	194   	Tyr	GTA	0	0	20.0	pseudo
+flattened_line_7633	1	295   	211   	Tyr	GTA	0	0	29.8	
+flattened_line_7647	1	325   	241   	Tyr	GTA	0	0	29.8	
+flattened_line_7665	1	308   	224   	Tyr	GTA	0	0	29.8	
+flattened_line_7667	1	375   	291   	Tyr	GTA	0	0	29.8	
+flattened_line_7669	1	228   	312   	Tyr	GTA	0	0	29.8	
+flattened_line_7697	1	23    	93    	His	GTG	0	0	49.2	
+flattened_line_7705	1	89    	162   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_7707	1	57    	146   	Ser	TGA	0	0	48.7	
+flattened_line_7715	1	20    	91    	Arg	TCT	0	0	44.6	
+flattened_line_7719	1	207   	277   	Met	CAT	0	0	57.9	
+flattened_line_7725	1	70    	141   	Thr	TGT	0	0	58.9	
+flattened_line_7725	2	260   	331   	Glu	TTC	0	0	48.1	
+flattened_line_7727	1	385   	315   	Met	CAT	0	0	57.9	
+flattened_line_7729	1	365   	292   	Val	TAC	0	0	55.1	
+flattened_line_7731	1	385   	315   	Asn	GTT	0	0	55.9	
+flattened_line_7735	1	358   	288   	Met	CAT	0	0	57.9	
+flattened_line_7743	1	399   	331   	Arg	TCT	0	0	26.7	pseudo
+flattened_line_7747	1	89    	18    	Arg	TCT	0	0	44.6	
+flattened_line_7753	1	270   	343   	Val	TAC	0	0	55.1	
+flattened_line_7771	1	77    	7     	Ile	GAT	0	0	50.7	
+flattened_line_7775	1	244   	174   	Ile	GAT	0	0	48.7	pseudo
+flattened_line_7777	1	332   	262   	Ile	GAT	0	0	50.7	
+flattened_line_7783	1	166   	96    	Ile	GAT	0	0	50.7	
+flattened_line_7785	1	78    	8     	Ile	GAT	0	0	50.7	
+flattened_line_7789	1	313   	243   	Ile	GAT	0	0	50.7	
+flattened_line_7793	1	303   	233   	Ile	GAT	0	0	50.7	
+flattened_line_7799	1	200   	129   	Ile	GAT	0	0	44.9	
+flattened_line_7905	1	219   	292   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_8061	1	99    	172   	Met	CAT	0	0	30.9	pseudo
+flattened_line_8061	2	223   	303   	Leu	TAA	0	0	41.7	pseudo
+flattened_line_8079	1	221   	294   	Lys	TTT	0	0	36.6	
+flattened_line_8081	1	152   	225   	Lys	TTT	0	0	34.0	
+flattened_line_8101	1	83    	153   	Sup	TCA	0	0	45.8	
+flattened_line_8101	2	284   	354   	Asn	GTT	0	0	55.9	
+flattened_line_8105	1	341   	271   	Phe	GAA	0	0	46.8	
+flattened_line_8113	1	294   	365   	Arg	TCT	0	0	44.6	
+flattened_line_8117	1	100   	32    	Undet	NNN	0	0	27.8	pseudo
+flattened_line_8121	1	203   	276   	Met	CAT	0	0	30.9	pseudo
+flattened_line_8135	1	23    	96    	Met	CAT	0	0	30.9	pseudo
+flattened_line_8135	2	147   	227   	Leu	TAA	0	0	40.6	pseudo
+flattened_line_8163	1	187   	257   	Asn	GTT	0	0	49.0	
+flattened_line_8165	1	22    	95    	Met	CAT	0	0	30.9	pseudo
+flattened_line_8165	2	146   	226   	Leu	TAA	0	0	41.1	pseudo
+flattened_line_8167	1	73    	146   	Met	CAT	0	0	30.9	pseudo
+flattened_line_8167	2	197   	277   	Leu	TAA	0	0	40.6	
+flattened_line_8169	1	167   	97    	Phe	GAA	0	0	46.8	
+flattened_line_8205	1	126   	199   	Lys	TTT	0	0	36.6	
+flattened_line_8207	1	298   	228   	Phe	GAA	0	0	46.8	
+flattened_line_8215	1	168   	239   	Ser	ACT	0	0	44.6	
+flattened_line_8237	1	180   	110   	Phe	GAA	0	0	46.8	
+flattened_line_8239	1	396   	326   	His	GTG	0	0	49.2	
+flattened_line_8269	1	352   	281   	Glu	TTC	0	0	48.1	
+flattened_line_8271	1	257   	185   	Ala	TGC	0	0	43.5	pseudo
+flattened_line_8273	1	158   	86    	Ala	TGC	0	0	51.7	
+flattened_line_8279	1	239   	310   	Arg	TCT	0	0	44.6	
+flattened_line_8285	1	146   	66    	Leu	TAA	0	0	41.7	pseudo
+flattened_line_8299	1	164   	235   	Thr	TGT	0	0	51.2	
+flattened_line_8301	1	153   	80    	Val	TAC	0	0	55.1	
+flattened_line_8307	1	380   	309   	Glu	TTC	0	0	48.1	
+flattened_line_8309	1	339   	268   	Thr	TGT	0	0	58.9	
+flattened_line_8309	2	149   	78    	Glu	TTC	0	0	48.1	
+flattened_line_8321	1	304   	232   	Ala	TGC	0	0	51.7	
+flattened_line_8335	1	66    	136   	Asn	GTT	0	0	55.9	
+flattened_line_8337	1	2     	68    	Sup	TCA	0	0	34.0	pseudo
+flattened_line_8337	2	201   	271   	Asn	GTT	0	0	55.9	
+flattened_line_8347	1	354   	283   	Thr	TGT	0	0	58.9	
+flattened_line_8347	2	164   	93    	Glu	TTC	0	0	48.1	
+flattened_line_8351	1	28    	99    	Arg	TCT	0	0	44.6	
+flattened_line_8397	1	190   	117   	Lys	TTT	0	0	36.6	
+flattened_line_8399	1	86    	13    	Lys	TTT	0	0	36.6	
+flattened_line_8405	1	192   	262   	Asn	GTT	0	0	56.2	
+flattened_line_8407	1	130   	201   	Thr	TGT	0	0	54.5	
+flattened_line_8407	2	320   	391   	Glu	TTC	0	0	48.1	
+flattened_line_8409	1	306   	236   	His	GTG	0	0	49.2	
+flattened_line_8413	1	221   	149   	Ala	TGC	0	0	43.9	
+flattened_line_8415	1	142   	71    	Thr	TGT	0	0	58.9	
+flattened_line_8417	1	173   	102   	Thr	TGT	0	0	58.9	
+flattened_line_8445	1	230   	158   	Ala	TGC	0	0	43.4	
+flattened_line_8447	1	29    	99    	Phe	GAA	0	0	46.8	
+flattened_line_8469	1	130   	57    	Lys	TTT	0	0	36.6	
+flattened_line_8473	1	185   	256   	Thr	TGT	0	0	56.5	
+flattened_line_8491	1	229   	156   	Val	TAC	0	0	48.2	
+flattened_line_8525	1	251   	178   	Lys	TTT	0	0	27.0	
+flattened_line_8543	1	91    	161   	Phe	GAA	0	0	46.8	
+flattened_line_8569	1	332   	259   	Val	TAC	0	0	55.1	
+flattened_line_8591	1	342   	272   	Sup	TCA	0	0	45.8	
+flattened_line_8591	2	141   	71    	Asn	GTT	0	0	55.9	
+flattened_line_8593	1	383   	313   	Asn	GTT	0	0	55.9	
+flattened_line_8595	1	353   	283   	Sup	TCA	0	0	45.8	
+flattened_line_8595	2	152   	82    	Asn	GTT	0	0	55.9	
+flattened_line_8603	1	93    	163   	Met	CAT	0	0	57.9	
+flattened_line_8605	1	101   	171   	Met	CAT	0	0	57.9	
+flattened_line_8641	1	333   	260   	Lys	TTT	0	0	36.6	
+flattened_line_8641	2	81    	11    	Sup	TCA	0	0	45.8	
+flattened_line_8647	1	168   	238   	Ile	AAT	0	0	57.9	
+flattened_line_8649	1	59    	1     	Arg	ACG	0	0	28.1	pseudo
+flattened_line_8651	1	173   	103   	Arg	ACG	0	0	48.0	
+flattened_line_8661	1	364   	291   	Val	TAC	0	0	55.1	
+flattened_line_8665	1	299   	226   	Val	TAC	0	0	55.1	
+flattened_line_8693	1	296   	226   	Sup	TCA	0	0	45.8	
+flattened_line_8693	2	95    	25    	Asn	GTT	0	0	55.9	
+flattened_line_8695	1	331   	258   	Lys	TTT	0	0	36.6	
+flattened_line_8695	2	79    	9     	Sup	TCA	0	0	45.8	
+flattened_line_8697	1	212   	142   	Asn	GTT	0	0	53.3	
+flattened_line_8705	1	259   	331   	Ala	TGC	0	0	51.7	
+flattened_line_8731	1	95    	167   	Ala	TGC	0	0	51.7	
+flattened_line_8737	1	73    	143   	Met	CAT	0	0	57.9	
+flattened_line_8745	1	227   	157   	Met	CAT	0	0	48.6	
+flattened_line_8759	1	211   	140   	Asp	GTC	0	0	41.6	
+flattened_line_8761	1	88    	17    	Asp	GTC	0	0	48.5	
+flattened_line_8769	1	149   	221   	Ala	TGC	0	0	45.2	
+flattened_line_8783	1	11    	82    	Glu	TTC	0	0	48.1	
+flattened_line_8783	2	337   	399   	Ala	TGC	0	0	24.4	pseudo
+flattened_line_8785	1	205   	277   	Ala	TGC	0	0	51.7	
+flattened_line_8819	1	399   	345   	Asn	GTT	0	0	23.6	pseudo
+flattened_line_8819	2	67    	1     	Met	CAT	0	0	43.0	
+flattened_line_8827	1	399   	330   	Arg	ACG	0	0	30.1	
+flattened_line_8829	1	316   	243   	Val	TAC	0	0	55.1	
+flattened_line_8847	1	66    	136   	Arg	ACG	0	0	48.0	
+flattened_line_8859	1	300   	229   	Asp	GTC	0	0	48.5	
+flattened_line_8865	1	254   	184   	Asn	GTT	0	0	47.2	
+flattened_line_8867	1	258   	188   	Asn	GTT	0	0	47.9	
+flattened_line_8869	1	254   	184   	Asn	GTT	0	0	54.8	
+flattened_line_8883	1	139   	211   	Ala	TGC	0	0	44.1	
+flattened_line_8909	1	393   	322   	Asp	GTC	0	0	48.5	
+flattened_line_8909	2	141   	57    	Tyr	GTA	0	0	29.8	
+flattened_line_8921	1	118   	48    	Met	CAT	0	0	57.9	
+flattened_line_8929	1	205   	135   	Arg	ACG	0	0	41.0	
+flattened_line_8949	1	210   	126   	Tyr	GTA	0	0	25.0	
+flattened_line_8951	1	367   	296   	Arg	TCT	0	0	44.6	
+flattened_line_8959	1	363   	290   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_8961	1	165   	236   	Asp	GTC	0	0	49.8	
+flattened_line_8963	1	107   	37    	Met	CAT	0	0	57.9	
+flattened_line_8983	1	257   	173   	Tyr	GTA	0	0	32.9	
+flattened_line_8985	1	391   	320   	Asp	GTC	0	0	48.5	
+flattened_line_8985	2	139   	55    	Tyr	GTA	0	0	29.8	
+flattened_line_9019	1	166   	82    	Tyr	GTA	0	0	29.8	
+flattened_line_9029	1	302   	373   	Asp	GTC	0	0	48.5	
+flattened_line_9037	1	82    	11    	Arg	TCT	0	0	44.6	
+flattened_line_9067	1	359   	288   	Asp	GTC	0	0	48.5	
+flattened_line_9067	2	107   	23    	Tyr	GTA	0	0	29.8	
+flattened_line_9105	1	182   	252   	Arg	ACG	0	0	44.1	
+flattened_line_9109	1	140   	210   	Arg	ACG	0	0	48.0	
+flattened_line_9119	1	220   	131   	Ser	TGA	0	0	49.4	
+flattened_line_9121	1	271   	341   	Ile	GAT	0	0	50.7	
+flattened_line_9135	1	336   	252   	Tyr	GTA	0	0	29.8	
+flattened_line_9141	1	95    	6     	Ser	TGA	0	0	48.7	
+flattened_line_9163	1	320   	231   	Ser	TGA	0	0	48.7	
+flattened_line_9165	1	232   	303   	Asp	GTC	0	0	48.5	
+flattened_line_9167	1	214   	284   	Ile	GAT	0	0	50.7	
+flattened_line_9169	1	77    	147   	Ile	GAT	0	0	50.7	
+flattened_line_9185	1	232   	302   	Ile	GAT	0	0	50.7	
+flattened_line_9207	1	326   	237   	Ser	TGA	0	0	48.7	
+flattened_line_9209	1	386   	297   	Ser	TGA	0	0	48.7	
+flattened_line_9255	1	17    	87    	His	GTG	0	0	49.2	
+flattened_line_9261	1	17    	87    	His	GTG	0	0	49.2	
+flattened_line_9323	1	154   	227   	Leu	TAG	0	0	34.1	pseudo
+flattened_line_9341	1	371   	301   	His	GTG	0	0	49.2	
+flattened_line_9343	1	171   	100   	Thr	TGT	0	0	58.9	
+flattened_line_9363	1	50    	122   	Ala	TGC	0	0	51.7	
+flattened_line_9371	1	188   	99    	Ser	TGA	0	0	48.7	
+flattened_line_9407	1	283   	356   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_9413	1	183   	113   	His	GTG	0	0	49.2	
+flattened_line_9415	1	398   	331   	Phe	GAA	0	0	25.1	pseudo
+flattened_line_9435	1	164   	94    	Phe	GAA	0	0	46.8	
+flattened_line_9477	1	118   	188   	Sup	TCA	0	0	45.8	
+flattened_line_9477	2	319   	389   	Asn	GTT	0	0	55.9	
+flattened_line_9487	1	73    	143   	Arg	ACG	0	0	48.0	
+flattened_line_9523	1	209   	298   	Ser	TGA	0	0	48.7	
+flattened_line_9559	1	200   	273   	Met	CAT	0	0	30.9	pseudo
+flattened_line_9569	1	388   	318   	Sup	TCA	0	0	45.8	
+flattened_line_9569	2	187   	117   	Asn	GTT	0	0	55.9	
+flattened_line_9591	1	8     	78    	Asn	GTT	0	0	55.9	
+flattened_line_9595	1	317   	246   	Glu	TTC	0	0	48.1	
+flattened_line_9605	1	345   	274   	Asp	GTC	0	0	48.5	
+flattened_line_9605	2	94    	10    	Tyr	GTA	0	0	29.8	
+flattened_line_9621	1	51    	135   	Tyr	GTA	0	0	29.8	
+flattened_line_9623	1	69    	139   	Ile	GAT	0	0	50.7	
+flattened_line_9643	1	368   	298   	Arg	ACG	0	0	48.0	
+flattened_line_9647	1	369   	299   	Arg	ACG	0	0	48.0	
+flattened_line_9657	1	313   	241   	Ala	TGC	0	0	51.7	
+flattened_line_9661	1	1     	68    	Phe	GAA	0	0	25.1	pseudo
+flattened_line_9669	1	82    	154   	Ala	TGC	0	0	51.7	
+flattened_line_9707	1	193   	120   	Val	TAC	0	0	55.1	
+flattened_line_9711	1	391   	321   	Arg	ACG	0	0	48.0	
+flattened_line_9731	1	91    	21    	Arg	ACG	0	0	48.0	
+flattened_line_9733	1	1     	71    	Arg	ACG	0	0	48.0	
+flattened_line_9743	1	318   	248   	Met	CAT	0	0	57.9	
+flattened_line_9757	1	254   	324   	Met	CAT	0	0	57.9	
+flattened_line_9773	1	121   	191   	Sup	TCA	0	0	45.8	
+flattened_line_9773	2	321   	391   	Asn	GTT	0	0	55.9	
+flattened_line_9785	1	319   	249   	Met	CAT	0	0	57.9	
+flattened_line_9823	1	117   	47    	Met	CAT	0	0	57.9	
+flattened_line_9827	1	118   	188   	Sup	TCA	0	0	45.8	
+flattened_line_9827	2	320   	389   	Asn	GTT	0	0	50.4	
+flattened_line_9831	1	274   	344   	Met	CAT	0	0	57.9	
+flattened_line_9841	1	375   	291   	Tyr	GTA	0	0	29.8	
+flattened_line_9843	1	57    	130   	Val	TAC	0	0	55.1	
+flattened_line_9845	1	284   	357   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_9869	1	280   	200   	Leu	TAA	0	0	41.7	pseudo
+flattened_line_9871	1	104   	31    	Leu	TAG	0	0	31.0	pseudo
+flattened_line_9873	1	246   	319   	Val	TAC	0	0	55.1	
+flattened_line_9877	1	19    	90    	Glu	TTC	0	0	48.1	
+flattened_line_9883	1	189   	259   	Met	CAT	0	0	47.9	
+flattened_line_9885	1	358   	287   	Thr	TGT	0	0	58.9	
+flattened_line_9885	2	168   	97    	Glu	TTC	0	0	48.1	
+flattened_line_9887	1	214   	143   	Thr	TGT	0	0	41.2	
+flattened_line_9897	1	203   	273   	His	GTG	0	0	49.2	
+flattened_line_9903	1	56    	126   	Phe	GAA	0	0	46.8	
+flattened_line_9905	1	209   	298   	Ser	TGA	0	0	48.7	
+flattened_line_9907	1	29    	102   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_9925	1	237   	153   	Tyr	GTA	0	0	29.9	
+flattened_line_9947	1	293   	223   	Met	CAT	0	0	57.9	
+flattened_line_9967	1	131   	61    	Arg	ACG	0	0	48.0	
+flattened_line_9993	1	132   	59    	Val	TAC	0	0	55.1	
+flattened_line_10013	1	90    	179   	Ser	TGA	0	0	48.7	
+flattened_line_10025	1	203   	276   	Lys	TTT	0	0	36.6	
+flattened_line_10033	1	171   	101   	His	GTG	0	0	49.2	
+flattened_line_10061	1	83    	154   	Thr	TGT	0	0	58.9	
+flattened_line_10061	2	273   	344   	Glu	TTC	0	0	48.1	
+flattened_line_10067	1	89    	18    	Thr	TGT	0	0	58.9	
+flattened_line_10113	1	141   	70    	Arg	TCT	0	0	44.6	
+flattened_line_10119	1	314   	244   	Ile	GAT	0	0	50.7	
+flattened_line_10155	1	19    	90    	Thr	TGT	0	0	58.9	
+flattened_line_10155	2	209   	280   	Glu	TTC	0	0	48.1	
+flattened_line_10167	1	357   	286   	Glu	TTC	0	0	48.1	
+flattened_line_10181	1	331   	261   	Arg	ACG	0	0	48.0	
+flattened_line_10187	1	131   	61    	Arg	ACG	0	0	48.0	
+flattened_line_10197	1	342   	272   	Phe	GAA	0	0	46.8	
+flattened_line_10199	1	197   	126   	Ser	TGA	0	0	58.9	
+flattened_line_10207	1	156   	227   	Glu	TTC	0	0	39.0	
+flattened_line_10211	1	355   	285   	Sup	TCA	0	0	45.8	
+flattened_line_10211	2	154   	84    	Asn	GTT	0	0	55.9	
+flattened_line_10213	1	205   	135   	Sup	TCA	0	0	47.3	
+flattened_line_10217	1	158   	228   	Asn	GTT	0	0	46.8	
+flattened_line_10219	1	207   	277   	Sup	TCA	0	0	45.8	
+flattened_line_10229	1	223   	152   	Asp	GTC	0	0	39.2	
+flattened_line_10261	1	181   	109   	Ala	TGC	0	0	41.7	
+flattened_line_10277	1	209   	282   	Lys	TTT	0	0	36.6	
+flattened_line_10315	1	1     	85    	Ser	TGA	0	0	26.3	pseudo
+flattened_line_10361	1	213   	141   	Ala	TGC	0	0	43.8	pseudo
+flattened_line_10375	1	183   	256   	Lys	TTT	0	0	36.4	
+flattened_line_10377	1	235   	305   	Sup	TCA	0	0	45.8	
+flattened_line_10443	1	277   	205   	Ala	TGC	0	0	51.7	
+flattened_line_10457	1	261   	188   	Met	CAT	0	0	30.9	pseudo
+flattened_line_10457	2	137   	57    	Leu	TAA	0	0	41.7	pseudo
+flattened_line_10475	1	274   	204   	Phe	GAA	0	0	46.8	
+flattened_line_10485	1	98    	26    	Ala	TGC	0	0	51.7	
+flattened_line_10487	1	298   	226   	Ala	TGC	0	0	51.7	
+flattened_line_10509	1	197   	267   	Ile	GAT	0	0	46.9	
+flattened_line_10511	1	2     	63    	Ile	GAT	0	0	32.0	pseudo
+flattened_line_10535	1	198   	125   	Val	TAC	0	0	49.3	
+flattened_line_10583	1	294   	210   	Tyr	GTA	0	0	29.8	
+flattened_line_10653	1	2     	75    	Val	TAC	0	0	49.3	
+flattened_line_10655	1	256   	183   	Val	TAC	0	0	49.3	
+flattened_line_10657	1	256   	183   	Val	TAC	0	0	55.1	
+flattened_line_10669	1	53    	123   	Ile	GAT	0	0	46.9	
+flattened_line_10671	1	53    	123   	Ile	GAT	0	0	46.9	
+flattened_line_10673	1	53    	123   	Ile	GAT	0	0	50.7	
+flattened_line_10713	1	102   	174   	Ala	TGC	0	0	51.7	
+flattened_line_10715	1	102   	174   	Ala	TGC	0	0	51.7	
+flattened_line_10723	1	152   	80    	Ala	TGC	0	0	51.7	
+flattened_line_10869	1	217   	144   	Lys	TTT	0	0	36.4	
+flattened_line_10873	1	31    	104   	Lys	TTT	0	0	36.4	
+flattened_line_10875	1	31    	104   	Lys	TTT	0	0	36.6	
+flattened_line_11043	1	19    	91    	Ala	TGC	0	0	51.7	
+flattened_line_11045	1	19    	91    	Ala	TGC	0	0	41.7	
+flattened_line_11061	1	222   	150   	Ala	TGC	0	0	41.7	
+flattened_line_11111	1	193   	123   	Sup	TCA	0	0	45.8	
+flattened_line_11113	1	193   	123   	Sup	TCA	0	0	45.8	
+flattened_line_11115	1	237   	180   	Sup	TCA	0	0	26.2	pseudo
+flattened_line_11117	1	237   	180   	Sup	TCA	0	0	27.8	pseudo
+flattened_line_11119	1	237   	180   	Sup	TCA	0	0	27.8	pseudo
+flattened_line_11123	1	193   	123   	Sup	TCA	0	0	45.8	
+flattened_line_11125	1	3     	74    	Ser	TGA	0	0	58.9	
+flattened_line_11127	1	3     	74    	Ser	TGA	0	0	58.9	
+flattened_line_11141	1	234   	163   	Thr	TGT	0	0	58.9	
+flattened_line_11175	1	69    	139   	Arg	ACG	0	0	48.0	
+flattened_line_11177	1	69    	139   	Arg	ACG	0	0	48.0	
+flattened_line_11183	1	69    	139   	Arg	ACG	0	0	48.0	
+flattened_line_11185	1	106   	36    	His	GTG	0	0	49.2	
+flattened_line_11195	1	43    	114   	Glu	TTC	0	0	48.1	
+flattened_line_11199	1	43    	114   	Glu	TTC	0	0	48.1	
+flattened_line_11201	1	43    	114   	Glu	TTC	0	0	48.1	
+flattened_line_11273	1	135   	208   	Val	TAC	0	0	55.1	
+flattened_line_11335	1	111   	182   	Thr	TGT	0	0	58.9	
+flattened_line_11337	1	111   	182   	Thr	TGT	0	0	58.9	
+flattened_line_11345	1	117   	46    	Thr	TGT	0	0	58.9	
+flattened_line_11347	1	157   	227   	His	GTG	0	0	49.2	
+flattened_line_11415	1	177   	107   	His	GTG	0	0	49.2	
+flattened_line_11495	1	137   	67    	His	GTG	0	0	49.2	
+flattened_line_11507	1	99    	29    	Met	CAT	0	0	57.9	
+flattened_line_11547	1	151   	81    	Arg	ACG	0	0	48.0	
+flattened_line_11559	1	35    	108   	Val	TAC	0	0	55.1	
+flattened_line_11619	1	140   	69    	Glu	TTC	0	0	48.1	
+flattened_line_11637	1	91    	161   	Phe	GAA	0	0	46.8	
+flattened_line_11679	1	130   	203   	Met	CAT	0	0	30.9	pseudo
+flattened_line_11701	1	51    	135   	Tyr	GTA	0	0	29.8	
+flattened_line_11721	1	167   	94    	Met	CAT	0	0	30.9	pseudo
+flattened_line_11745	1	94    	165   	Arg	TCT	0	0	44.6	
+flattened_line_11757	1	112   	32    	Leu	TAA	0	0	41.7	pseudo
+flattened_line_11761	1	81    	10    	Asp	GTC	0	0	48.5	
+flattened_line_11769	1	90    	174   	Tyr	GTA	0	0	29.8	
+flattened_line_11773	1	104   	174   	Sup	TCA	0	0	45.8	
+flattened_line_11787	1	178   	110   	Undet	NNN	0	0	27.8	pseudo
+flattened_line_11791	1	180   	108   	Ala	TGC	0	0	51.7	
+flattened_line_11803	1	57    	127   	Met	CAT	0	0	57.9	
+flattened_line_11833	1	133   	206   	Leu	TAG	0	0	31.0	pseudo
+flattened_line_11839	1	90    	163   	Lys	TTT	0	0	36.6	
+flattened_line_11843	1	212   	141   	Thr	TGT	0	0	58.9	
+flattened_line_11845	1	33    	103   	Asn	GTT	0	0	55.9	
+flattened_line_11853	1	29    	99    	His	GTG	0	0	49.2	
+flattened_line_11859	1	32    	102   	Sup	TCA	0	0	45.8	
+flattened_line_11881	1	32    	103   	Glu	TTC	0	0	48.1	
+flattened_line_11883	1	32    	103   	Glu	TTC	0	0	48.1	
+flattened_line_11885	1	32    	103   	Glu	TTC	0	0	48.1	
+flattened_line_11887	1	211   	141   	Met	CAT	0	0	47.9	
+flattened_line_11891	1	211   	141   	Met	CAT	0	0	47.9	
+flattened_line_11901	1	2     	72    	Met	CAT	0	0	57.9	
+flattened_line_11917	1	141   	69    	Ala	TGC	0	0	51.7	
+flattened_line_11933	1	70    	1     	Sup	TCA	0	0	40.3	pseudo
+flattened_line_11939	1	207   	123   	Tyr	GTA	0	0	29.8	
+flattened_line_11941	1	123   	193   	Arg	ACG	0	0	48.0	
+flattened_line_11959	1	121   	201   	Leu	TAA	0	0	41.7	pseudo
+flattened_line_11969	1	98    	25    	Leu	TAG	0	0	31.0	pseudo
+flattened_line_11977	1	19    	92    	Leu	TAG	0	0	31.0	pseudo
+flattened_line_11987	1	209   	139   	His	GTG	0	0	49.2	
+flattened_line_11999	1	116   	43    	Val	TAC	0	0	55.1	
+flattened_line_12107	1	108   	38    	Asn	GTT	0	0	55.9	
+flattened_line_12113	1	107   	23    	Tyr	GTA	0	0	29.8	
+flattened_line_12117	1	106   	35    	Arg	TCT	0	0	44.6	
+flattened_line_12143	1	202   	134   	Undet	NNN	0	0	27.8	pseudo
+flattened_line_12189	1	68    	141   	Val	TAC	0	0	55.1	
+flattened_line_12191	1	68    	141   	Val	TAC	0	0	55.1	
+flattened_line_12229	1	98    	171   	Met	CAT	0	0	30.9	pseudo
+flattened_line_12239	1	67    	135   	Undet	NNN	0	0	27.8	pseudo
+flattened_line_12275	1	210   	140   	Asp	GTC	0	0	37.9	
+flattened_line_12277	1	93    	165   	Ala	TGC	0	0	51.7	
+flattened_line_12283	1	150   	79    	Asp	GTC	0	0	48.5	
+flattened_line_12289	1	186   	102   	Tyr	GTA	0	0	29.8	
+flattened_line_12309	1	68    	141   	Val	TAC	0	0	55.1	
+flattened_line_12311	1	15    	85    	His	GTG	0	0	49.2	
+flattened_line_12315	1	82    	11    	Thr	TGT	0	0	58.9	
+flattened_line_12337	1	202   	131   	Glu	TTC	0	0	48.1	
+flattened_line_12341	1	56    	124   	Undet	NNN	0	0	27.8	pseudo
+flattened_line_12355	1	2     	72    	Met	CAT	0	0	57.9	
+flattened_line_12365	1	136   	52    	Tyr	GTA	0	0	29.8	
+flattened_line_12369	1	47    	120   	Val	TAC	0	0	55.1	
+flattened_line_12387	1	24    	113   	Ser	TGA	0	0	48.7	
+flattened_line_12407	1	113   	186   	Met	CAT	0	0	30.9	pseudo
+flattened_line_12433	1	192   	121   	Thr	TGT	0	0	58.9	
+flattened_line_12457	1	101   	171   	Phe	GAA	0	0	46.8	
+flattened_line_12473	1	163   	90    	Lys	TTT	0	0	36.6	
+flattened_line_12481	1	67    	1     	Asn	GTT	0	0	37.3	
+flattened_line_12485	1	111   	40    	Asp	GTC	0	0	48.5	
+flattened_line_12487	1	198   	128   	Arg	ACG	0	0	48.0	
+flattened_line_12493	1	191   	120   	Asp	GTC	0	0	48.5	
+flattened_line_12497	1	65    	1     	Met	CAT	0	0	39.3	
+flattened_line_12501	1	178   	107   	Asp	GTC	0	0	48.5	
+flattened_line_12525	1	100   	171   	Thr	TGT	0	0	58.9	
+flattened_line_12635	1	120   	208   	Ser	TGA	0	0	43.2	
+flattened_line_12681	1	108   	181   	Lys	TTT	0	0	36.6	
+flattened_line_12687	1	153   	83    	Phe	GAA	0	0	46.8	
+flattened_line_12691	1	84    	152   	Undet	NNN	0	0	27.8	pseudo
+flattened_line_12693	1	129   	197   	Undet	NNN	0	0	27.8	pseudo
+flattened_line_12729	1	136   	206   	Phe	GAA	0	0	46.8	
+flattened_line_12761	1	81    	153   	Ala	TGC	0	0	51.7	
+flattened_line_12769	1	123   	195   	Ala	TGC	0	0	51.7	
+flattened_line_12815	1	70    	141   	Asp	GTC	0	0	48.5	
+flattened_line_12829	1	10    	80    	Ile	GAT	0	0	50.7	
+flattened_line_12833	1	50    	121   	Asp	GTC	0	0	48.5	
+flattened_line_12845	1	121   	191   	Asn	GTT	0	0	55.9	
+flattened_line_12847	1	60    	133   	Lys	TTT	0	0	36.6	
+flattened_line_12893	1	120   	188   	Undet	NNN	0	0	27.8	pseudo
+flattened_line_12899	1	139   	68    	Thr	TGT	0	0	58.9	
+flattened_line_12937	1	61    	131   	Arg	ACG	0	0	48.0	
+flattened_line_12967	1	74    	4     	Ile	GAT	0	0	50.7	
+flattened_line_12991	1	6     	79    	Leu	TAG	0	0	31.0	pseudo
+flattened_line_13047	1	18    	91    	Lys	TTT	0	0	36.6	
+flattened_line_13057	1	77    	6     	Glu	TTC	0	0	48.1	
+flattened_line_13077	1	148   	77    	Glu	TTC	0	0	48.1	
+flattened_line_13079	1	6     	76    	Phe	GAA	0	0	46.8	
+flattened_line_13081	1	72    	143   	Arg	TCT	0	0	44.6	
+flattened_line_13091	1	51    	122   	Arg	TCT	0	0	44.6	
+flattened_line_13151	1	134   	64    	Asn	GTT	0	0	55.9	
+flattened_line_13159	1	152   	82    	Asn	GTT	0	0	55.9	
+flattened_line_13175	1	1     	70    	Ala	TGC	0	0	38.9	pseudo
+flattened_line_13199	1	126   	56    	Met	CAT	0	0	57.9	
+flattened_line_13211	1	151   	62    	Ser	TGA	0	0	48.7	
+flattened_line_13225	1	84    	157   	Val	TAC	0	0	55.1	
+flattened_line_13227	1	57    	130   	Val	TAC	0	0	55.1	
+flattened_line_13231	1	58    	128   	His	GTG	0	0	49.2	
+flattened_line_13275	1	135   	65    	Phe	GAA	0	0	46.8	
+flattened_line_13299	1	193   	123   	Sup	TCA	0	0	45.8	
+flattened_line_13307	1	73    	3     	Arg	ACG	0	0	48.0	
+flattened_line_13313	1	110   	40    	Arg	ACG	0	0	48.0	
+flattened_line_13315	1	102   	32    	Arg	ACG	0	0	48.0	
+flattened_line_13317	1	107   	37    	Met	CAT	0	0	57.9	
+flattened_line_13335	1	94    	164   	His	GTG	0	0	49.2	
+flattened_line_13389	1	43    	132   	Ser	TGA	0	0	48.7	
+flattened_line_13391	1	89    	178   	Ser	TGA	0	0	48.7	
+flattened_line_13467	1	12    	85    	Met	CAT	0	0	30.9	pseudo
+flattened_line_13473	1	77    	147   	Sup	TCA	0	0	45.8	
+flattened_line_13485	1	118   	189   	Arg	TCT	0	0	44.6	
+flattened_line_13503	1	96    	26    	Phe	GAA	0	0	46.8	
+flattened_line_13509	1	13    	84    	Arg	TCT	0	0	44.6	
+flattened_line_13543	1	44    	114   	Phe	GAA	0	0	46.8	
+flattened_line_13583	1	129   	199   	Met	CAT	0	0	57.9	
+flattened_line_13591	1	147   	74    	Met	CAT	0	0	30.9	pseudo
+flattened_line_13607	1	96    	26    	Sup	TCA	0	0	45.8	
+flattened_line_13621	1	193   	120   	Val	TAC	0	0	55.1	
+flattened_line_13631	1	200   	130   	Sup	TCA	0	0	45.8	
+flattened_line_13653	1	95    	25    	Asn	GTT	0	0	55.9	
