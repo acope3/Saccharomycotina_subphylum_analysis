@@ -131,15 +131,6 @@ plotSpecies <- function(species.df,cub=c("Phi_Shared_Mutation","Phi_Variable_Mut
   plot_grid(emp.vs.pred,k1.vs.k2,ncol=2,align = "h", axis = "bt",rel_widths = c(1,0.5))
 }
 
-boot.cor.diff.test <- function(method,data,indices)
-{
-  d <- data[indices,] # allows boot to select sample
-  corr.k1 <- cor(d$Empirical,d$Phi_K1,method=method)
-  corr.k2 <- cor(d$Empirical,d$Phi_K2,method=method)
-  diff <- corr.k2 - corr.k1 ## how much does allowing the extra mutation bias parameters change the 
-  return(diff)
-}
-
 
 ```
 
@@ -327,7 +318,6 @@ ggsave2("../Figures/All_species/final_phi.pdf",plot = cor.tree.plot,width=9)
 
 
 ```{r}
-write_csv(compare.emp,"../2023-05-04_compare_phi_vs_empirical_k1_vs_k2_roc_fits_all_species.csv")
 print(nrow(compare.emp %>% filter(estimate_Phi > 0))/327)
 print(paste("Number of species for which VarMut model improved model fit by 25%:",length(improved.fits.species)/327))
 

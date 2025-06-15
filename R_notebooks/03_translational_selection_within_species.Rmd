@@ -562,7 +562,7 @@ ggsave2("../Figures/All_species/tai_vs_phi_cor.pdf",plot=tai.vs.phi.cor)
 write_tsv(compare.emp.tai %>% 
   dplyr::select(Species,estimate_Phi,corr.otai_estimate) %>% 
   dplyr::rename(Corr.Gene.Exp.vs.Phi = estimate_Phi, 
-                Corr.tAI.vs.Sel.Coef = corr.otai_estimate),"../Post_analysis/within_species_correlaitons_gene_expression_vs_phi_and_otAI_vs_sel_coeff.tsv")
+                Corr.tAI.vs.Sel.Coef = corr.otai_estimate),"../Post_analysis/within_species_correlaitons_gene_expression_vs_phi_and_tAI_vs_sel_coeff.tsv")
 
 
 ```
@@ -604,21 +604,12 @@ calb.phi.vs.emp <- ggplot(calb.phi,aes(x=Empirical,y=Phi)) +
      
 calb.phi.vs.emp
 
-# layout<-"
-# AAEBBBB
-# AAEBBBB
-# CCEDDDD
-# CCEDDDD
-# "
-# sel.vs.trna <- (calb.phi.vs.emp + theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))) + roc.vs.emp.box  + (calb.sel.vs.tai + theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))) + sel.vs.tai.box + plot_spacer() +
-#   plot_annotation(tag_level="A") + 
-#   plot_layout(design = layout)
 
 layout<-"
-AABBBB
-AABBBB
-CCDDDD
-CCDDDD
+AABBB
+AABBB
+CCDDD
+CCDDD
 "
 
 sel.vs.trna <- (calb.phi.vs.emp + theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))) + roc.vs.emp.box  + (calb.sel.vs.tai + theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))) + sel.vs.tai.box +
@@ -627,7 +618,7 @@ sel.vs.trna <- (calb.phi.vs.emp + theme(axis.title.x = element_text(margin = mar
 
 sel.vs.trna
 
-savePlot("../Figures/All_species/intraspecies_translational_selection.pdf",plot = sel.vs.trna,height=10,width=12)
+savePlot("../Figures/All_species/intraspecies_translational_selection.pdf",plot = sel.vs.trna,height=9,width=9.5)
 
 
 

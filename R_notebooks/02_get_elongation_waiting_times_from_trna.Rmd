@@ -154,39 +154,6 @@ options(
 # Get new tGCN estimates
 
 ```{r}
-
-
-species <- readLines("~/Labella2019_scripts/all_fungi.txt") %>% 
-  str_remove(".max.cds") %>% sort()
-dir.create("/data2/Labella2019/Genomes/fas_nuc/")
-
-all.contig <- list.files("/data2/Labella2019/Genomes/fas/")
-all.contig.remove.fas <- all.contig %>% str_remove(".fas") %>% sort()
-mito.contig <- list.files("/data2/Labella2019/Genomes/Mito_sequences_removed/")
-mito.contig <- mito.contig %>% 
-  str_remove(".mito.fasta")
-missing.species <- all.contig[which(!all.contig %in% mito.contig)]
-all.contig <- all.contig[which(all.contig %in% mito.contig)]
-
-
-
-all.contig <-sort(all.contig)
-mito.contig <- sort(mito.contig)
-
-which(all.contig != mito.contig)
-
-mito.contig <- mito.contig %>% 
-  str_c(".mito.fasta",sep="")
-
-purrr::map2(as.list(all.contig),as.list(mito.contig),removeMitoContigs)
-
-lapply(missing.species,function(x) {
-  file.copy(from = file.path("../Data/Genomes/fas/",x), to = file.path("/data2/Labella2019/Genomes/fas_nuc/",x))
-})
-```
-
-
-```{r}
 all.genomes <- readLines("../Data/all_fungi.txt")
 ser.genomes <- readLines("../Data/ser_fungi.txt")
 fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
@@ -297,7 +264,6 @@ fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
 fungi.tree <- cleanTree(fungi.tree,all.genomes)
 
 trna.count <- read_csv("../Data/cope_trna.csv")
-#trna.count <- read_tsv("../Data/labella_trna.tsv")
 trna.count <- trna.count %>%
   #dplyr::select(-c(`Species name`,`Major clade`,`Total_tRNA Counts`,`CAG-Ala`,`CAG-Ser`)) %>%
   dplyr::select(-c(`CAG-Ala`,`CAG-Ser`)) %>%
@@ -333,9 +299,6 @@ trna.count.long.split <- trna.count.long %>%
   group_split()
 names(trna.count.long.split) <- unique(trna.count.long$Species)
 
-rtai.weights <- read_tsv("../Data/tai_optimization_w_phi_2023_05_03_10_restarts_roc_phi_no_cutoff.tsv") %>%
-  dplyr::select(-starts_with("Performance"))
-
 otai.long <- trna.count.long.split %>%
   purrr::map(~gettAI.relative.aa(.x$tGCN,
                                  codon.order.sense, 
@@ -344,15 +307,6 @@ otai.long <- trna.count.long.split %>%
   bind_rows(.id="Species")  %>%
   dplyr::rename(otAI = tAI)
 
-# rtai.long <- trna.count.long.split %>%
-#   purrr::map(~gettAI.relative.aa(.x$tGCN,
-#                                  codon.order.sense,
-#                                  s = c(0,0,0,0,rtai.weights %>% filter(Species %in% .x$Species) %>% dplyr::select(-Species,-Num.Genes) %>% unlist() %>% unname()), 
-#                                  sking = 0, 
-#                                  exclude.ctg = .x$Exclude.CTG[1])) %>%
-#   bind_rows(.id="Species")  %>%
-#   dplyr::rename(rtAI = tAI)
-# 
 
 tgcn.long <- trna.count.long.split %>%
   purrr::map(~gettAI.relative.aa(.x$tGCN,
@@ -368,12 +322,6 @@ otai.wide <- otai.long %>%
 
 write_tsv(otai.wide,"../Data/cope_wi_otAI_inverse.tsv")
 
-# rtai.wide <- rtai.long %>% 
-#   pivot_wider(id_cols=Species,names_from=Codon,values_from = rtAI)
-# 
-# write_tsv(rtai.wide,"../Data/cope_wi_rtAI_inverse.tsv")
-
-
 
 tgcn.wide <- tgcn.long %>% 
   pivot_wider(id_cols=Species,names_from=Codon,values_from = tGCN)
@@ -383,14 +331,11 @@ write_tsv(tgcn.wide,"../Data/cope_wi_tGCN_inverse.tsv")
 raw.weights <- otai.long %>% 
   pivot_wider(id_cols=Species,names_from=Codon,values_from = W)
 
-
-
 write_tsv(raw.weights,"../Data/cope_unnormalized_wi.tsv")
 
 
 raw.weights <- tgcn.long %>% 
   pivot_wider(id_cols=Species,names_from=Codon,values_from = W)
-
 
 
 write_tsv(raw.weights,"../Data/cope_tGCN_with_wobble.tsv")

@@ -128,9 +128,9 @@ renameMutationFiles <- function(run.dir,gc.file,clust.file)
 
 ```{r}
 
-all.genomes <- readLines("all_fungi.txt")
-ser.genomes <- readLines("ser_fungi.txt")
-fungi.tree <- read.tree("tree_with_cds_labels.nwk")
+all.genomes <- readLines("../Data/all_fungi.txt")
+ser.genomes <- readLines("../Data/ser_fungi.txt")
+fungi.tree <- read.tree("../Data/tree_with_cds_labels.nwk")
 fungi.tree <- cleanTree(fungi.tree,all.genomes)
 ```
 
@@ -145,7 +145,7 @@ names(gc.files) <- all.genomes
 gc.df <- purrr::map(gc.files,read_tsv,col_types = cols()) %>% bind_rows(.id="Species")
 gc.df <- gc.df %>% dplyr::rename(GeneID=Gene)
 
-clust.files <- paste0("Clara_k_2/",all.genomes)
+clust.files <- paste0("../Data/Clara_k_2/",all.genomes)
 names(clust.files) <- all.genomes
 clust.df <- purrr::map(clust.files,read_tsv,col_types = cols()) %>% 
   bind_rows(.id="Species")
@@ -153,13 +153,13 @@ clust.df <- clust.df %>% dplyr::rename(GeneID=Gene)
 
 
 
-target.dir<- paste0("Final_runs/Results_k_1/",all.genomes,"/run_2/")
+target.dir<- paste0("../Final_runs/Results_k_1/",all.genomes,"/run_2/")
 purrr::map(target.dir,rescaleParam)
 
-target.dir <- paste0("Final_runs/Results_k_2_selectionShared/",all.genomes,"/run_2/")
+target.dir <- paste0("../Final_runs/Results_k_2_selectionShared/",all.genomes,"/run_2/")
 purrr::pmap(list(target.dir,gc.files,clust.files),renameMutationFiles)
 
-target.dir <- paste0("Final_runs/Results_k_2_selectionShared/",all.genomes,"/run_2/")
+target.dir <- paste0("../Final_runs/Results_k_2_selectionShared/",all.genomes,"/run_2/")
 purrr::map(target.dir,rescaleParam)
 
 
@@ -170,45 +170,45 @@ purrr::map(target.dir,rescaleParam)
 This file will create parameter matrices that can be read during the post-hoc analysis. This will be faster than recreating them every time we want to run the analysis.
 
 ```{r}
-deta.matrix.k1 <- getDataMatrix("Final_runs/Results_k_1/",fungi.tree,param = "_Selection.csv",column = "Mean")
-deta.matrix.k2 <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Selection.csv",column = "Mean")
+deta.matrix.k1 <- getDataMatrix("../Final_runs/Results_k_1/",fungi.tree,param = "_Selection.csv",column = "Mean")
+deta.matrix.k2 <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Selection.csv",column = "Mean")
 
-dm.matrix.k1 <- getDataMatrix("Final_runs/Results_k_1/",fungi.tree,param = "_Mutation.csv",column = "Mean")
-dm.matrix.k2.higher.gc <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Higher_GC3_Mutation.csv",column = "Mean")
-dm.matrix.k2.lower.gc <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Lower_GC3_Mutation.csv",column = "Mean")
-dm.matrix.k2.1 <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Mutation.csv",column = "Mean")
-dm.matrix.k2.2 <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "2_Mutation.csv",column = "Mean")
+dm.matrix.k1 <- getDataMatrix("../Final_runs/Results_k_1/",fungi.tree,param = "_Mutation.csv",column = "Mean")
+dm.matrix.k2.higher.gc <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Higher_GC3_Mutation.csv",column = "Mean")
+dm.matrix.k2.lower.gc <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Lower_GC3_Mutation.csv",column = "Mean")
+dm.matrix.k2.1 <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Mutation.csv",column = "Mean")
+dm.matrix.k2.2 <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "2_Mutation.csv",column = "Mean")
 
-deta.matrix.k1.rescaled <- getDataMatrix("Final_runs/Results_k_1/",fungi.tree,param = "_Selection_GC_rescaled.csv",column = "Mean")
-deta.matrix.k2.rescaled <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Selection_GC_rescaled.csv",column = "Mean")
+deta.matrix.k1.rescaled <- getDataMatrix("../Final_runs/Results_k_1/",fungi.tree,param = "_Selection_GC_rescaled.csv",column = "Mean")
+deta.matrix.k2.rescaled <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Selection_GC_rescaled.csv",column = "Mean")
 
-dm.matrix.k1.rescaled <- getDataMatrix("Final_runs/Results_k_1/",fungi.tree,param = "_Mutation_GC_rescaled.csv",column = "Mean")
-dm.matrix.k2.higher.gc.rescaled <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Higher_GC3_Mutation_GC_rescaled.csv",column = "Mean")
-dm.matrix.k2.lower.gc.rescaled <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Lower_GC3_Mutation_GC_rescaled.csv",column = "Mean")
-dm.matrix.k2.1.rescaled <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Mutation_GC_rescaled.csv",column = "Mean")
-dm.matrix.k2.2.rescaled <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "2_Mutation_GC_rescaled.csv",column = "Mean")
+dm.matrix.k1.rescaled <- getDataMatrix("../Final_runs/Results_k_1/",fungi.tree,param = "_Mutation_GC_rescaled.csv",column = "Mean")
+dm.matrix.k2.higher.gc.rescaled <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Higher_GC3_Mutation_GC_rescaled.csv",column = "Mean")
+dm.matrix.k2.lower.gc.rescaled <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Lower_GC3_Mutation_GC_rescaled.csv",column = "Mean")
+dm.matrix.k2.1.rescaled <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Mutation_GC_rescaled.csv",column = "Mean")
+dm.matrix.k2.2.rescaled <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "2_Mutation_GC_rescaled.csv",column = "Mean")
 ```
 
 ```{r}
 
-write_tsv(deta.matrix.k1,"Post_analysis/selection_coefficients_k1.tsv")
-write_tsv(deta.matrix.k2,"Post_analysis/selection_coefficients_k2.tsv")
-write_tsv(deta.matrix.k1.rescaled,"Post_analysis/selection_coefficients_k1_GC_rescaled.tsv")
-write_tsv(deta.matrix.k2.rescaled,"Post_analysis/selection_coefficients_k2_GC_rescaled.tsv")
+write_tsv(deta.matrix.k1,"../Post_analysis/selection_coefficients_k1.tsv")
+write_tsv(deta.matrix.k2,"../Post_analysis/selection_coefficients_k2.tsv")
+write_tsv(deta.matrix.k1.rescaled,"../Post_analysis/selection_coefficients_k1_GC_rescaled.tsv")
+write_tsv(deta.matrix.k2.rescaled,"../Post_analysis/selection_coefficients_k2_GC_rescaled.tsv")
 
-write_tsv(dm.matrix.k1,"Post_analysis/mutation_bias_k1.tsv")
-write_tsv(dm.matrix.k2.higher.gc,"Post_analysis/mutation_bias_k2_higher_GC3.tsv")
-write_tsv(dm.matrix.k2.lower.gc,"Post_analysis/mutation_bias_k2_lower_GC3.tsv")
-write_tsv(dm.matrix.k2.1,"Post_analysis/mutation_bias_k2_1.tsv")
-write_tsv(dm.matrix.k2.2,"Post_analysis/mutation_bias_k2_2.tsv")
+write_tsv(dm.matrix.k1,"../Post_analysis/mutation_bias_k1.tsv")
+write_tsv(dm.matrix.k2.higher.gc,"../Post_analysis/mutation_bias_k2_higher_GC3.tsv")
+write_tsv(dm.matrix.k2.lower.gc,"../Post_analysis/mutation_bias_k2_lower_GC3.tsv")
+write_tsv(dm.matrix.k2.1,"../Post_analysis/mutation_bias_k2_1.tsv")
+write_tsv(dm.matrix.k2.2,"../Post_analysis/mutation_bias_k2_2.tsv")
 
 
 
-write_tsv(dm.matrix.k1.rescaled,"Post_analysis/mutation_bias_k1_GC_rescaled.tsv")
-write_tsv(dm.matrix.k2.higher.gc.rescaled,"Post_analysis/mutation_bias_k2_higher_GC3_GC_rescaled.tsv")
-write_tsv(dm.matrix.k2.lower.gc.rescaled,"Post_analysis/mutation_bias_k2_lower_GC3_GC_rescaled.tsv")
-write_tsv(dm.matrix.k2.1.rescaled,"Post_analysis/mutation_bias_k2_1_GC_rescaled.tsv")
-write_tsv(dm.matrix.k2.2.rescaled,"Post_analysis/mutation_bias_k2_2_GC_rescaled.tsv")
+write_tsv(dm.matrix.k1.rescaled,"../Post_analysis/mutation_bias_k1_GC_rescaled.tsv")
+write_tsv(dm.matrix.k2.higher.gc.rescaled,"../Post_analysis/mutation_bias_k2_higher_GC3_GC_rescaled.tsv")
+write_tsv(dm.matrix.k2.lower.gc.rescaled,"../Post_analysis/mutation_bias_k2_lower_GC3_GC_rescaled.tsv")
+write_tsv(dm.matrix.k2.1.rescaled,"../Post_analysis/mutation_bias_k2_1_GC_rescaled.tsv")
+write_tsv(dm.matrix.k2.2.rescaled,"../Post_analysis/mutation_bias_k2_2_GC_rescaled.tsv")
 
 
 
@@ -216,22 +216,22 @@ write_tsv(dm.matrix.k2.2.rescaled,"Post_analysis/mutation_bias_k2_2_GC_rescaled.
 
 
 ```{r}
-deta.matrix.k1 <- getDataMatrix("Final_runs/Results_k_1/",fungi.tree,param = "_Selection.csv",column = "Std.Dev")
-deta.matrix.k2 <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Selection.csv",column = "Std.Dev")
+deta.matrix.k1 <- getDataMatrix("../Final_runs/Results_k_1/",fungi.tree,param = "_Selection.csv",column = "Std.Dev")
+deta.matrix.k2 <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Selection.csv",column = "Std.Dev")
 
-dm.matrix.k1 <- getDataMatrix("Final_runs/Results_k_1/",fungi.tree,param = "_Mutation.csv",column = "Std.Dev")
-dm.matrix.k2.higher.gc <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Higher_GC3_Mutation.csv",column = "Std.Dev")
-dm.matrix.k2.lower.gc <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Lower_GC3_Mutation.csv",column = "Std.Dev")
-dm.matrix.k2.1 <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Mutation.csv",column = "Std.Dev")
-dm.matrix.k2.2 <- getDataMatrix("Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "2_Mutation.csv",column = "Std.Dev")
+dm.matrix.k1 <- getDataMatrix("../Final_runs/Results_k_1/",fungi.tree,param = "_Mutation.csv",column = "Std.Dev")
+dm.matrix.k2.higher.gc <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Higher_GC3_Mutation.csv",column = "Std.Dev")
+dm.matrix.k2.lower.gc <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "Lower_GC3_Mutation.csv",column = "Std.Dev")
+dm.matrix.k2.1 <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "1_Mutation.csv",column = "Std.Dev")
+dm.matrix.k2.2 <- getDataMatrix("../Final_runs/Results_k_2_selectionShared/",fungi.tree,param = "2_Mutation.csv",column = "Std.Dev")
 
-write_tsv(deta.matrix.k1,"Post_analysis/std_selection_coefficients_k1.tsv")
-write_tsv(deta.matrix.k2,"Post_analysis/std_selection_coefficients_k2.tsv")
+write_tsv(deta.matrix.k1,"../Post_analysis/std_selection_coefficients_k1.tsv")
+write_tsv(deta.matrix.k2,"../Post_analysis/std_selection_coefficients_k2.tsv")
 
-write_tsv(dm.matrix.k1,"Post_analysis/std_mutation_bias_k1.tsv")
-write_tsv(dm.matrix.k2.higher.gc,"Post_analysis/std_mutation_bias_k2_higher_GC3.tsv")
-write_tsv(dm.matrix.k2.lower.gc,"Post_analysis/std_mutation_bias_k2_lower_GC3.tsv")
-write_tsv(dm.matrix.k2.1,"Post_analysis/std_mutation_bias_k2_1.tsv")
-write_tsv(dm.matrix.k2.2,"Post_analysis/std_mutation_bias_k2_2.tsv")
+write_tsv(dm.matrix.k1,"../Post_analysis/std_mutation_bias_k1.tsv")
+write_tsv(dm.matrix.k2.higher.gc,"../Post_analysis/std_mutation_bias_k2_higher_GC3.tsv")
+write_tsv(dm.matrix.k2.lower.gc,"../Post_analysis/std_mutation_bias_k2_lower_GC3.tsv")
+write_tsv(dm.matrix.k2.1,"../Post_analysis/std_mutation_bias_k2_1.tsv")
+write_tsv(dm.matrix.k2.2,"../Post_analysis/std_mutation_bias_k2_2.tsv")
 
 ```

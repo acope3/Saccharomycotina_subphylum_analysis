@@ -11,14 +11,14 @@ library(ape)
 library(phytools)
 library(tidyverse)
 library(cowplot)
-library(reshape2)
 library(ggpubr)
 library(broom)
 library(ggtree)
 library(patchwork)
 library(phylolm)
-library(ppcor)
+library(preprocessCore)
 library(ComplexHeatmap)
+library(AnaCoDa)
 source("helperFunctions.R")
 
 ```
@@ -280,7 +280,8 @@ sphi <- lapply(all.genomes,function(species){
   } else {
     data.frame(Species = species,Sphi=as.numeric(readLines(file.path("..","Final_runs","Results_k_1",species,"run_2","Parameter_est","sphi.txt"))))
   }
-}) %>% bind_rows()
+}) %>% bind_rows() %>%
+  mutate(Sphi.log = log(Sphi))
 
 ```
 
@@ -294,14 +295,28 @@ phi <- phi %>%
   rename_with(~cleanColumnNames(.x,fungi.tree$tip.label))
 phi <- phi[,fungi.tree$tip.label]
 
+
 phi <- list(phi,tad2) %>% 
   bind_rows()
 
 
 phi.transform <- phi %>%
-  mutate(across(where(is.numeric),log),
-         #across(where(is.numeric),~(.x - mean(.x,na.rm=T))/sd(.x,na.rm=T))
-         )
+  mutate(across(where(is.numeric),log))
+
+phi.long <- phi.transform %>%
+  pivot_longer(everything(),names_to="Species",values_to="Phi")
+
+ggplot(phi.long,aes(x=Species,y=Phi)) +
+  geom_boxplot()
+
+phi.transform <- as.data.frame(normalize.quantiles(as.matrix(phi.transform),keep.names = T))
+
+phi.long <- phi.transform %>%
+  pivot_longer(everything(),names_to="Species",values_to="Phi")
+
+ggplot(phi.long,aes(x=Species,y=Phi)) +
+  geom_boxplot()
+
 phi.filt <- phi.transform[which(rowSums(is.na(phi.transform)) < 120),]
 phi <- t(phi.filt)
 ```
@@ -335,7 +350,8 @@ sel.summary <- deta.vs.wi %>%
   summarize(Mean.Abs.Selection = mean(abs(Selection),na.rm=T)) %>%
   mutate(file_name_id = str_remove(Species,"(_[0-9]+){0,1}\\.max\\.cds")) %>%
   filter(Species %in% fungi.tree$tip.label) %>%
-  left_join(sphi) 
+  left_join(sphi) %>%
+  left_join(gc.cont)
 
 labella <- read_csv("../Data/labella_etal_2019_stai.csv")
 
@@ -580,88 +596,6 @@ ggsave2("../Figures/All_species/num_unique_relative_tai_by_nucleotide.pdf",plot 
 ```
 
 
-```{r fig.height=12,fig.width=12}
-
-clades <- read_tsv("../Data/clades.txt")
-clades <- clades %>% 
-  dplyr::slice(match(fungi.tree$tip.label,file_name_id)) %>%
-  dplyr::rename(Species=file_name_id,Clade=Major.clade)
-
-deta.matrix.long.gc <- deta.matrix.long %>%
-  left_join(gc.cont,by="Species") %>%
-  left_join(sphi,by="Species") %>% 
-  mutate(Model = ifelse(Species %in% improved.fits.species,"VarMut","ConstMut")) %>%
-  left_join(clades,by="Species") %>%
-  filter(Species %in% fungi.tree.filt$tip.label)
-
-test <- deta.matrix.long.gc %>% 
-  separate(Codon,into=c("First","Second","Third.nucleotide"),sep=c(1,2),remove = F) %>%
-  filter(Codon.Rank==1 & Third.nucleotide %in% c("C","T")) 
-  
-ggplot(test,aes(x=Third.nucleotide,y=GC*100)) +
-  geom_boxplot() +
-  xlab("Third nucleotide") +
-  ylab("Genome-wide GC%") +
-  stat_compare_means(vjust=1) +
-  theme_cowplot() +
-  ylim(NA,70) +
-  facet_wrap(~AA + Model,scales="free_x")
-
-ggplot(test,aes(x=Third.nucleotide,y=log(Sphi))) +
-  geom_boxplot() +
-  geom_point(position="jitter",aes(color=Clade)) +
-  xlab("Third nucleotide") +
-  ylab("S_phi") +
-  stat_compare_means(vjust=1) +
-  theme_cowplot() +
-  facet_wrap(~AA + Model,scales="free_x")
-
-```
-```{r}
-test <- deta.matrix.long.gc %>% 
-  separate(Codon,into=c("First","Second","Third.nucleotide"),sep=c(1,2),remove = F) %>%
-  filter(Codon.Rank==1 & Third.nucleotide %in% c("C","T"))
-  
-
-test.split <- test %>%
-  split(f = ~AA)
-
-tree.to.use <- fungi.tree.filt
-
-diff.in.gc <- lapply(test.split,function(x) {
-      #tryCatch({
-      x <- x %>%
-        column_to_rownames("Species")
-      x <- x[tree.to.use$tip.label,]
-      plm.lambda <- phylolm(GC ~ Third.nucleotide + Model + Sphi,
-                            data= x,
-                            phy = tree.to.use,
-                            model = "lambda")
-      model.sum <- summary(plm.lambda)
-      model.coef <- model.sum$coefficients
-      df <- model.coef %>% 
-        as.data.frame() %>% 
-        rownames_to_column("Coefficient") %>% 
-        #dplyr::select(-t.value) %>% 
-        mutate(Evo.Model = plm.lambda$model)
-      
-      return(df)#},
-      #error=function(e){return(NA)},
-      #warnings = function(w){})
-    }
-    )
-  
-
-diff.in.gc <- diff.in.gc[which(!is.na(diff.in.gc))]
-diff.in.gc <- diff.in.gc %>%  
-  bind_rows(.id="AA")
-
-diff.in.gc %>% 
-  filter(Coefficient == "Third.nucleotideT" & p.value < 0.05)
-
-```
-
-
 
 ```{r}
 dm.matrix.long <- dm.matrix %>%
@@ -743,14 +677,11 @@ deta.vs.wi.split.by.codon.for.gc <- deta.vs.wi.split.by.codon[codons.to.exclude]
 cor.sel.otai.pic <- lapply(deta.vs.wi.split.by.codon.for.tgcn,function(x)
     {
       
-       tmp <- calculateAcrossSpeciesCorrelations(x,tree=tree.to.use,x.var="Relative.tGCN",y.var="Selection",method="spearman")
+       tmp <- calculateAcrossSpeciesCorrelations(x,tree=tree.to.use,x.var="Relative.tGCN",y.var="Selection",approach="standard",method="spearman")
        return(tmp)
       
     }) %>% 
   bind_rows(.id="Codon")
-
-
-
 
 ```
 
@@ -851,8 +782,6 @@ savePlot("../Figures/All_species/sel_vs_tai_across_species.pdf",plot = sel.acros
 ```
 
 
-
-
 Another approach to look at this is to use phylogenetic generalized least squares (PGLS). Here we perform PGLS with Pagel's $\lambda$ as implemented in the R package *phylolm*. 
 
 ```{r warning = F}
@@ -935,101 +864,6 @@ ggsave2("../Figures/All_species/sel_vs_tai_pgls.pdf",plot=pgls.slopes,height=10)
 
 ```
 
-
-
-
-
-## Impact of GC% and genome size on C/T-ending codons
-
-```{r warning = F}
-
-pgls.sel.gc <- lapply(deta.vs.wi.split.by.codon.for.gc,function(x) {
-      tryCatch({
-      x <- x %>%
-        column_to_rownames("Species")
-      x <- x[tree.to.use$tip.label,]
-      x <- x %>%
-       mutate(across(c(Sphi,GC),~(. - mean(.,na.rm=T))/sd(.,na.rm=T)))
-      plm.lambda <- phylolm(Selection ~ GC + Sphi,
-                            data= x, 
-                            phy = tree.to.use,
-                            model = "lambda")
-  
-      model.sum <- summary(plm.lambda)
-      model.coef <- model.sum$coefficients
-      df <- model.coef %>% 
-        as.data.frame() %>% 
-        rownames_to_column("Coefficient") %>% 
-        dplyr::select(-t.value) %>% 
-        mutate(Evo.Model = plm.lambda$model)
-      
-      return(df)},
-      error=function(e){return(NA)},
-      warnings = function(w){})
-    }
-    )
-  
-
-pgls.sel.gc <- pgls.sel.gc[which(!is.na(pgls.sel.gc))]
-pgls.sel.gc <- pgls.sel.gc %>%  
-  bind_rows(.id="Codon")
-
-
-
-
-```
-
-
-
-
-```{r fig.width=8,fig.height=12}
-all.slope.pgls.gc <- pgls.sel.gc %>% 
-  ungroup() %>%
-  mutate(adj.p.value = p.adjust(p.value,method="BH"),
-        Codon=factor(Codon,levels=AnaCoDa::codons()),
-        Significant=ifelse(adj.p.value < 0.05,"*","")) %>%
-  rowwise() %>%
-  mutate(AA = AnaCoDa::codonToAA(as.character(Codon)),
-         Num.Codons = as.character(length(AnaCoDa::AAToCodon(AA)))) %>%
-  ungroup() %>%
-  mutate(Codon.AA = factor(paste(AA,Codon,sep="-"))) %>%
-  mutate(Coefficient = case_when(
-        Coefficient == "Genome.size" ~ "Genome size",
-        Coefficient == "Sphi" ~ "s_phi",
-        T ~ Coefficient
-      ),
-      Coefficient = factor(Coefficient,levels=c("Genome size","GC","Total.tGCN","s_phi"))  
-      ) %>% 
-  filter(Coefficient != "(Intercept)")
-
-
-pgls.slopes.ct <- ggplot(all.slope.pgls.gc,aes(x=Codon.AA,Estimate,y=Estimate,shape=Significant)) + 
-  geom_bar(stat="identity",position = position_dodge(),color="black",fill="white") + 
-  geom_point(aes(y = ifelse(Estimate > 0, Estimate + StdErr + 0.05, Estimate - StdErr - 0.05)),
-             position=position_dodge(0.9),
-             show.legend=FALSE) +
-  theme_cowplot() +
-  geom_errorbar(aes(ymin = Estimate - StdErr,ymax=Estimate + StdErr)) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  ylab("PGLS Slope") +
-  xlab("Codon") +
-  scale_shape_manual(values = c(NA, 8)) +
-  facet_wrap(~Coefficient,nrow=4)
-
-pgls.slopes.ct
-
-```
-
-
-
-
-
-
-```{r fig.width=14,fig.height=10}
-ggsave2("../Figures/All_species/sel_vs_tai_pgls.pdf",plot=pgls.slopes,height=8,width=10)
-ggsave2("../Figures/All_species/sel_vs_gc_pgls.pdf",plot=pgls.slopes.ct,height=8,width=10)
-
-```
 
 
 
@@ -1133,10 +967,7 @@ trna.phi.deta.inosine <- calculateSelectionVsModEnzyme(trna.phi.deta,
                                                    target.codons = c("GGC","TGC","ATC","ACC","GTC","TCC","AGC"))
 
 
-
-
 ```
-
 
 
 ```{r}
@@ -1189,7 +1020,24 @@ savePlot("../Figures/All_species/sel_vs_trna_mod_expression.pdf",plot=full.cor.b
 trna.phi.deta.target.pic.gc <- trna.phi.deta.elp %>%
   filter(Codon == "CAA")
 
+
 mod.gc <- ggplot(trna.phi.deta.target.pic.gc,aes(x=GC.pic,y=Phi.pic)) +
+           geom_point() +
+           xlab("GC% (PIC)") +
+           ylab(expression("Predicted gene expression (PIC)")) +
+           theme_cowplot() +
+           stat_cor(method="spearman",label.sep="\n",show.legend = F,cor.coef.name = "rho") +
+           facet_wrap(~Gene,scales="free",ncol = 3)
+           #ggtitle("Across-species changes in GC% vs. gene expression of\ntRNA modifier Elongator Complex proteins")
+           
+mod.gc
+
+
+trna.phi.deta.target.pic.gc.wide <- trna.phi.deta.target.pic.gc %>%
+  dplyr::select(Codon,Gene,Phi.pic) %>%
+  pivot_wider(id_cols=Codon,names_from=Gene,values_from=Phi.pic)
+
+mod.vs.mod <- ggplot(trna.phi.deta.target.pic.gc,aes(x=GC.pic,y=Phi.pic)) +
            geom_point() +
            xlab("GC% (PIC)") +
            ylab(expression("Predicted gene expression (PIC)")) +
@@ -1221,15 +1069,19 @@ trna.phi.deta.tgcn.target <- trna.phi.deta %>%
   dplyr::select(-Orthogroup,-Locus,-Modification,-Modified.Nucleotide) %>%
   pivot_wider(names_from="Gene",values_from = "Phi") %>%
   group_by(Codon) %>%
-  mutate(across(c(Selection,IKI3,ELP2,ELP3,GC,tGCN,Sphi),~(. - mean(.,na.rm = T))/sd(.,na.rm=T))) %>%
+  mutate(across(c(IKI3,ELP2,ELP3,GC,tGCN,Sphi),~(. - mean(.,na.rm = T))/sd(.,na.rm=T))) %>%
   ungroup()
 
 trna.phi.deta.phylolm <- trna.phi.deta.tgcn.target %>%
   split(f = ~Codon) %>%
   purrr::map(function(x)
     {
-      plm.lambda <- phylolm(Selection ~ IKI3 + ELP2 + ELP3 + tGCN + Sphi + GC,data= x %>% column_to_rownames("Species"), phy = tree.to.use,model = "lambda")
-      model.sum <- summary( plm.lambda )
+      plm.lambda <- phylolm(Selection ~ IKI3 + ELP2 + ELP3 + Sphi +  tGCN + GC,
+                            data= x %>% column_to_rownames("Species"), 
+                            phy = tree.to.use,
+                            model = "lambda")
+      
+      model.sum <- summary(plm.lambda)
       model.coef <- model.sum$coefficients
       df <- model.coef %>% 
         as.data.frame() %>% 
@@ -1248,7 +1100,8 @@ pgls.slope <-trna.phi.deta.phylolm %>%
   mutate(Coefficient = fct_relevel(Coefficient,c("IKI3","tGCN","ELP2","GC","ELP3","Sphi")),
          adj.p.value = p.adjust(p.value,method="BH"),
          Significant = ifelse(adj.p.value < 0.05,"*","")) %>%
-  filter(Coefficient != "(Intercept)")
+  filter(Coefficient != "(Intercept)",
+         )
 
 pgls.slope.bar <- ggplot(pgls.slope,aes(x=Codon.AA,y=Estimate,shape=Significant)) +
   geom_bar(position="dodge",stat="identity",color="black",fill="white") +
@@ -1274,23 +1127,54 @@ pgls.slope.bar
 
 
 
-
-
-
-
 ```{r fig.width=8,fig.height=4}
 layout <- "
-AABBBB
-AABBBB
-AABBBB
-##BBBB
+AABBB
+AABBB
+AABBB
 "
 trna.mod.sel <- (iki3.caa.ex  + (pgls.slope.bar + coord_flip())) + plot_annotation(tag_levels = "A") + plot_layout(design = layout)
 trna.mod.sel
-savePlot("../Figures/All_species/sel_vs_trna_mod_expression_pgls.pdf",plot=trna.mod.sel,family = "sans",width=8,height = 5)
+savePlot("../Figures/All_species/sel_vs_trna_mod_expression_pgls.pdf",plot=trna.mod.sel,family = "sans",width=8,height = 4)
 ```
 
 ### Inosine
+
+```{r}
+trna.phi.deta.ino.split <- trna.phi.deta.inosine %>%
+  mutate(Gene=fct_relevel(Gene,c("TAD2","TAD3"))) %>%
+  split(f = ~Gene + Codon)
+
+
+full.cor <- trna.phi.deta.ino.split %>%
+  purrr::map(~cor.test(.x$Phi.pic,.x$Selection.pic,method="spearman") %>% tidy()) %>%
+  bind_rows(.id="Gene.Codon") %>%
+  separate(col = Gene.Codon,into=c("Gene","Codon"),sep="\\.",remove = F) %>%
+  mutate(Gene=fct_relevel(Gene,c("IKI3","ELP2","ELP3")),
+         Gene.Codon = str_replace(Gene.Codon,"\\.","-"),
+         adj.p.value = p.adjust(p.value,method="BH"),
+         Significant = ifelse(adj.p.value < 0.05,"*",""))
+
+full.cor.bar <- ggplot(full.cor,aes(x=Gene.Codon,y=estimate,shape=Significant)) +
+  geom_bar(position="dodge",stat="identity",color="black",fill="white") +
+  geom_point(aes(y = ifelse(estimate > 0, estimate + 0.05, estimate - 0.05)),
+             position=position_dodge(0.9),
+             show.legend=FALSE) +
+  scale_shape_manual(values = c(NA, 8)) +
+  theme_cowplot() +
+  geom_hline(yintercept = 0) +
+  xlab("Gene - Codon") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab("Spearman Correlation")
+
+
+full.cor.bar 
+
+```
+
+
+
+
 
 ```{r fig.width=10}
 target.genes <- c("TAD2","TAD3")
@@ -1301,16 +1185,22 @@ trna.phi.deta.tgcn.target <- trna.phi.deta %>%
   dplyr::select(-Orthogroup,-Locus,-Modification,-Modified.Nucleotide) %>%
   pivot_wider(names_from="Gene",values_from = "Phi") %>%
   group_by(Codon) %>%
-  mutate(#Sphi = log(Sphi),
-         across(c(Selection,GC,Sphi,TAD2,TAD3,tGCN),~(. - mean(.,na.rm = T))/sd(.,na.rm=T))) %>%
+  mutate(C.favored = ifelse(Selection < 0, "Yes","No"),
+    across(c(TAD2,TAD3,GC,Sphi,tGCN),~(. - mean(.,na.rm = T))/sd(.,na.rm=T))
+         ) %>%
   ungroup()
 
 trna.phi.deta.phylolm <- trna.phi.deta.tgcn.target %>%
   split(f = ~Codon) %>%
   purrr::map(function(x)
     {
-      plm.lambda <- phylolm(Selection ~ TAD2 + TAD3 + tGCN + Sphi + GC,data= x %>% column_to_rownames("Species"), phy = tree.to.use,model = "lambda")
+      plm.lambda. <- phylolm(Selection ~ TAD2 + TAD3 + tGCN + GC + Sphi ,
+                            data= x %>% column_to_rownames("Species"), 
+                            phy = tree.to.use,
+                            model = "lambda")
+      print(cor(plm.lambda$fitted.values,plm.lambda$residuals,method="spearman"))
       model.sum <- summary( plm.lambda )
+      print(model.sum$adj.r.squared)
       model.coef <- model.sum$coefficients
       df <- model.coef %>% 
         as.data.frame() %>% 
@@ -1352,6 +1242,7 @@ ggsave2("../Figures/All_species/sel_vs_inosine_expression.pdf",plot=pgls.slope.b
 
 
 ```
+
 
 
 # Impact of GC% on Selection and tGCN
@@ -1482,6 +1373,8 @@ ggsave2("../Figures/All_species/gc_vs_sel.pdf",plot = gc.vs.sel,width=10,height=
 
 ## The impact of $s_{\phi}$
 
+The results in this section illustrate why we chose to control for $s_\phi$ in our regression analyses. This hyperparameter appears to correlate with 
+
 ```{r}
 
 all.species.comp <- ggplot(sel.summary,aes(x=Sphi,y=Mean.Abs.Selection)) +
@@ -1509,15 +1402,6 @@ bad.fits.only
 all.species.comp | bad.fits.only + plot_annotation(tag_levels = "A")
 
 
-```
-
-```{r}
-ggplot(pic.df,aes(x=Sphi,Mean.Abs.Selection)) +
-  geom_point() +
-  xlab(expression("s"[phi]~"(PIC)")) +
-  ylab("Per-species Mean Absolute\nSelection Coefficient (PIC)") +
-  stat_cor(method="spearman",label.sep="\n") +
-  theme_cowplot()
 ```
 
 

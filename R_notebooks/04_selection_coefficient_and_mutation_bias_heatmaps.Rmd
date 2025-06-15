@@ -510,8 +510,30 @@ ggsave2("../Figures/All_species/favored_codons_constmut.pdf",plot = codon.constm
 
 ```{r fig.width = 10,fig.height=12}
 
+createLabels <- function(label)
+{
+  label.p <- ggdraw() + 
+  draw_label(
+    label,
+    x = 0.5,
+    hjust = 0.5,  angle = 90, size=24
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 2)
+  )
+  return(label.p)
+}
 
-sel.mut.codon <- ((codon.sel.compare + theme(legend.position = "none")) | codon.constmut.compare)
+ag.duet <- createLabels("A/G Duet")
+ct.duet <- createLabels("C/T Duet")
+quart <- createLabels("Quartet")
+
+labels.p <- ag.duet / ct.duet / quart 
+
+
+sel.mut.codon <- (labels.p | (codon.sel.compare + theme(legend.position = "none")) | codon.constmut.compare) + plot_layout(widths = c(0.1,1,1))
 sel.mut.codon
 ggsave2("../Figures/All_species/codon_favored_across_species.pdf",plot=sel.mut.codon,width=12,height = 13)
 
@@ -894,15 +916,17 @@ t.test(compare.hclust[[1]]$Corr.tAI.vs.Sel.Coef,compare.hclust[[2]]$Corr.tAI.vs.
 ```
 
 ```{r}
+
 sphi.files <- list.files(path="../Final_runs",pattern="sphi.txt",full.names = T,recursive = T)
 species.per.sphi.file <- lapply(str_split(sphi.files,pattern="/"),"[",4) %>% unlist()
 names(sphi.files) <- species.per.sphi.file
 sphi <- lapply(sphi.files,function(x)
   {
-   data.frame(Sphi=as.numeric(readLines(x)))
+   varmut.fit <- str_detect(x,"Results_k_2_selectionShared/")
+   data.frame(Sphi=as.numeric(readLines(x)),VarMut.Fit = varmut.fit)
   }) %>%
-  bind_rows(.id="Species")
-
+  bind_rows(.id="Species") %>%
+  filter((Species %in% improved.fits.species & VarMut.Fit) | (!Species %in% improved.fits.species & !VarMut.Fit))
 
 compare.hclust.sphi <- deta.dend.clust %>% 
   as.data.frame() %>% 
@@ -919,25 +943,6 @@ t.test(compare.hclust.sphi[[1]]$Sphi,compare.hclust.sphi[[2]]$Sphi)
 
 
 ```
-
-
-```{r}
-compare.hclust.sphi <- deta.dend.clust %>% 
-  as.data.frame() %>% 
-  rownames_to_column("Species") %>% 
-  left_join(sphi) %>% 
-  left_join(corr.df.ordered) %>%
-  dplyr::rename(HClust=".") %>% 
-  mutate(Sphi.low = ifelse(Sphi >= 0.5,1,2)) %>% 
-  group_by(Sphi.low) %>% 
-  group_split()
-
-t.test(compare.hclust.sphi[[1]]$Corr.Gene.Exp.vs.Phi,compare.hclust.sphi[[2]]$Corr.Gene.Exp.vs.Phi)
-t.test(compare.hclust.sphi[[1]]$Corr.tAI.vs.Sel.Coef,compare.hclust.sphi[[2]]$Corr.tAI.vs.Sel.Coef)
-
-
-```
-
 
 
 # Mutation bias $\Delta\mathit{M}$
