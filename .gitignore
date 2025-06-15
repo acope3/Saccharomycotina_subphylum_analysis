@@ -52,7 +52,7 @@ rsconnect/
 **/parameter.Rda
 **/mcmc.pdf
 **/CSP_traces_CUB_plot.pdf
-**/DS.Store
-
+**/DS_Store
+**/.DS_Store
 **/._*
 
