@@ -1,10 +1,10 @@
 library(tidyverse)
 
-all.species <- readLines("~/Labella2019_scripts/all_fungi.txt")
-improved.species <- readLines("~/Labella2019_scripts/improved_species_by_gene_expression_2022_07_09.txt")
+all.species <- readLines("../Data/all_fungi.txt")
+improved.species <- readLines("../Data/improved_species_by_gene_expression_2022_07_09.txt")
 nonimproved.species <- setdiff(all.species,improved.species)
 
-k1.phi <- paste0("/data2/Labella2019/Final_runs/Results_k_1/",nonimproved.species,"/run_2/Parameter_est/gene_expression.txt")
+k1.phi <- paste0("../Final_runs/Results_k_1/",nonimproved.species,"/run_2/Parameter_est/gene_expression.txt")
 k2.phi <- paste0("/data2/Labella2019/Final_runs/Results_k_2_selectionShared/",improved.species,"/run_2/Parameter_est/gene_expression.txt")
 improved.species <- str_extract(improved.species,"[A-Za-z0-9_]*[a-z]+_[a-z]+(_JCM[0-9]{4}){0,1}")
 nonimproved.species <- str_extract(nonimproved.species,"[A-Za-z0-9_]*[a-z]+_[a-z]+(_JCM[0-9]{4}){0,1}")
@@ -30,7 +30,8 @@ cluster <- cluster %>%
   separate(col = X2,sep = "@",into=c("Species","Gene")) %>% 
   dplyr::rename(Orthogroup=X1)
 
-cluster.seq <- cluster %>% inner_join(seqid_index,by=c("Species","Gene"))
+cluster.seq <- cluster %>% 
+  inner_join(seqid_index,by=c("Species","Gene"))
 
 cluster.seq <- cluster.seq %>% 
   mutate(Species = purrr::map_chr(Species,function(x){
