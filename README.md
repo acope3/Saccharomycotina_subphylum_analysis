@@ -52,7 +52,7 @@ We identified tRNA genes using `tRNAscan-SE 2.0` using the default settings for 
 
 ## Re-creating results from Cope and Shah 2025
 
-Results from our manuscript can be recreated using the R markdown files found in the `R_notebooks/` directory. Running these in order should re-create the the analyses presented in the main text and SI Appendix. There may also be some analyses that did not make it to the final version. To run these files, you will need will need the following R packages (as well as any associated dependencies). Note that `R_notebooks/00_create_csp_data_matrices.R`, `R_notebooks/01_determine_best_model_fit.R`, and `R_notebooks/02_get_elongation_waiting_times.R` are mostly intended for setting up downstream analyses and some basic sanity checks, such as the correlation between amino acid frequency and tGCN. These notebooks can likely be skipped, as the output of these notebooks should be included in `Post_analysis/`.
+Results from our manuscript can be recreated using the R markdown files found in the `R_notebooks/` directory. Running these in order should re-create the the analyses presented ingit  the main text and SI Appendix. There may also be some analyses that did not make it to the final version. To run these files, you will need will need the following R packages (as well as any associated dependencies). Note that `R_notebooks/00_create_csp_data_matrices.R`, `R_notebooks/01_determine_best_model_fit.R`, and `R_notebooks/02_get_elongation_waiting_times.R` are mostly intended for setting up downstream analyses and some basic sanity checks, such as the correlation between amino acid frequency and tGCN. These notebooks can likely be skipped, as the output of these notebooks should be included in `Post_analysis/`.
 
 | Software          | version       |
 |---------------    |-------------  |
@@ -73,7 +73,7 @@ Results from our manuscript can be recreated using the R markdown files found in
 | ggpubr            | 0.6.0         |
 | reshape2          | 1.4.4         |
 | cowplot           | 1.1.3         |
-| RColorBrewee      | 1.1-3         |
+| RColorBrewer      | 1.1-3         |
 | dendextend        | 1.18.1        |
 | factoextra        | 1.0.7         |
 | tidyverse         | 2.0.0         |
