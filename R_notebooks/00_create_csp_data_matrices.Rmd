@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(Biostrings)
 library(ape)
-library(AnaCoDa,lib.loc="~/R_dev")
+library(AnaCoDa)
 
 
 

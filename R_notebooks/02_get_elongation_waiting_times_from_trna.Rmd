@@ -167,15 +167,6 @@ trna.count <- trna.count %>%
   filter(Species %in% all.genomes)
 
 
-# codons <- as.character(
-#   reverseComplement(
-#     DNAStringSet(
-#       str_extract(colnames(trna.count)[2:ncol(trna.count)],"[ACTG]{3}"
-#                   ))))
-# colnames(trna.count)[2:ncol(trna.count)] <- codons
-
-# trna.count <- trna.count %>% 
-#   mutate(CTG=ifelse(is.na(CTG),0,CTG))
 
 trna.count.long <- trna.count %>% 
   pivot_longer(-Species,names_to="Codon", values_to="tGCN")

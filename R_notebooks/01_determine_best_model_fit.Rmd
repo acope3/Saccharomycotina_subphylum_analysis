@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ape)
 library(cowplot)
-library(ggpointdensity)
 library(ggtree)
 library(scales)
 suppressMessages(source("helperFunctions.R"))
@@ -105,12 +104,11 @@ plotSpecies <- function(species.df,cub=c("Phi_Shared_Mutation","Phi_Variable_Mut
   species.df.wide <- species.df %>% pivot_wider(id_cols = c("Species","GeneID","Empirical"),names_from="CUB",values_from = "Predicted")
   species.df$CUB <- factor(species.df$CUB,levels=c(cub[1],cub[2]))
   levels(species.df$CUB) <- c("ConstMut","VarMut")
-  emp.vs.pred <- ggplot(species.df,aes(x=Empirical,y=Predicted)) + geom_point(size=0.5,show.legend = F) + 
+  emp.vs.pred <- ggplot(species.df,aes(x=Empirical,y=Predicted)) + 
+               geom_point(size=0.5,show.legend = F) + 
                scale_x_log10(labels = trans_format("log10", math_format(10^.x))) + 
                scale_y_log10(labels = trans_format("log10", math_format(10^.x))) +
                theme_cowplot() +
-               #viridis::scale_color_viridis(option = "magma") + 
-               #scale_color_manual(values = c("#E41A1C","#377EB8"),labels = c("Lower GC3% ","Higher GC3%"),name = "Gene Cluster") + 
                stat_cor(method="spearman",label.sep = "\n",label.x.npc = "left",label.y.npc = "top",show.legend = F) +
                stat_cor(mapping=aes(x=Empirical,y=Predicted),method="spearman",label.sep = "\n",label.x.npc = "left",label.y.npc = "bottom",inherit.aes=F) +
                facet_wrap(~CUB) +
